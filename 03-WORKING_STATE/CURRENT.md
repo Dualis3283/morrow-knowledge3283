@@ -6,56 +6,69 @@
 
 ### GitHub
 - Canonical public knowledge repo: **Dualis3283/morrow-knowledge3283**
-- Read access: verified.
-- Write access through the active GitHub integration: verified.
-- Commit/readback workflow: operational.
+- Read/write + independent readback: verified.
 - Public-safety rule applies: no sensitive personal/private source material.
-- Private website repo: **Dualis3283/david-walsh-site**
-- Website repo baseline/QA commit: **ce4d93ba2553520e7fb4d7103d74608da2304f10**
-- GitHub Actions production smoke workflow: **passed** on first run.
+- Private website/source repo: **Dualis3283/david-walsh-site**
+- Website source recovery: **complete for the public V18 route/asset graph**
+- GitHub Actions QA is active for:
+  - resolver unit regressions;
+  - route/marker smoke tests;
+  - internal link and asset checks;
+  - recovered-source secret scan;
+  - immutable deployment equivalence;
+  - live resolver contract parity.
 
 ### Cloudflare
 - Cloudflare MCP connection: operational.
-- Pages project: **david-walsh**
-- **Current production: V18 / `d7000b0a`**
-- V18 deployment succeeded on 1 Oct 2026.
-- Current Pages deployment is still ad hoc/direct-style, not Git clone/build driven.
-- Pages Functions active in V18.
-- Web Analytics not configured on the Pages project.
-- R2 exists as a capability but is not enabled.
+- Production Pages project: **david-walsh**
+- **Current canonical production: Git-backed deployment `b861c0a4`**
+- Full deployment ID: `b861c0a4-f6ba-4774-8900-a940dd6b4849`
+- Git commit: `9a814dc8821cc5d5157163b6e213e8c55ce3e4b7`
+- Trigger: **github:push**
+- Git repository: **Dualis3283/david-walsh-site**
+- Production branch: **main**
+- Build output: **site/**
+- Pages Functions: **enabled**
+- Compatibility date: **2026-09-24**
+- All Cloudflare stages: **success**
+- Canonical public hostname `david-walsh.pages.dev`: full equivalence gate **passed**
+- Immutable deployment URL `b861c0a4.david-walsh.pages.dev`: full equivalence gate **passed**
+- Preserved rollback deployment: **V18 Direct Upload `d7000b0a`**
+- Separate Git-backed staging project: **david-walsh-staging**
+- Staging preview deployment `094e3343`: verified equivalent to V18 before production cutover.
+- Web Analytics is not configured.
+- R2 is not enabled.
 - D1: no databases currently.
 - KV: no namespaces currently.
-- Worker `morrow-knowledge3283` exists but has no bindings/routes and is not yet an operational backend.
-- Browser Rendering successfully recovered the V18 homepage/route graph, then reached rate limits during bulk source recovery.
+- Worker `morrow-knowledge3283` remains an unused/unbound foundation.
 
 ### Notion
-- **Morrow — Project Pipeline** database remains the operational task/status source.
-- Duplicate/superseded records have been archived rather than deleted.
-- The Project Morrow measurement foundation is now active.
+- **Morrow — Project Pipeline** remains the operational task/status source.
+- Duplicate/superseded records are archived rather than deleted.
+- Project Morrow measurement foundation is active.
 
 ## Current project gates
 
 ### Now
-1. **Morrow knowledge consolidation**
-   - maintain repository;
-   - preserve sources/provenance;
-   - classify duplicates/superseded state;
-   - maintain public-safety boundary.
 
-2. **Website Git source recovery**
-   - private `david-walsh-site` repo created;
-   - V18 production baseline and route graph recorded;
-   - production smoke tests operational and passing;
-   - finish source/assets recovery after Browser Rendering cooldown;
-   - do **not** connect Git to Cloudflare production until reproduction/preview equivalence is proven.
+1. **Git-backed website operations**
+   - GitHub is now source of truth for website code.
+   - Cloudflare production is driven by `main`.
+   - `cloudflare-preview` is the dedicated preview branch.
+   - Use staging/preview + QA before significant production changes.
+   - Preserve `d7000b0a` as rollback until several Git-backed releases have proven stable.
 
-3. **Deck Planner Companion App**
-   - V18 live;
-   - phone review;
-   - Shorikai/Victor regressions;
-   - accessibility QA;
-   - resolver/rate-limit hardening;
-   - convert known parsing failures into regression fixtures once exact lists are captured.
+2. **Deck Planner Companion App**
+   - V18 public frontend recovered into Git.
+   - `/api/resolve-deck` Pages Function reconstructed from the V18 contract.
+   - Shorikai/Matzalantli and Victor Room multi-face regression tests are automated and passing.
+   - Continue phone review, accessibility QA, and broader full-deck regression fixtures when useful.
+   - Future D1/KV work remains optional until a demonstrated need justifies it.
+
+3. **Project Morrow measurement foundation**
+   - Workflow 01 logged.
+   - Workflow 02 logged.
+   - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
    - review 18-page v0.7 core book;
@@ -63,17 +76,14 @@
    - regenerate storefront/listing previews;
    - then pricing/launch preparation.
 
-5. **Project Morrow measurement foundation**
-   - Workflow 01 logged;
-   - continue until 20 eligible substantive workflows are captured.
-
-6. **Morrow architecture/infrastructure**
-   - GitHub = versioned knowledge/source;
+5. **Morrow architecture/infrastructure**
+   - GitHub = durable/versioned knowledge and website source;
    - Notion = operational pipeline;
    - Cloudflare = runtime/deployment truth;
-   - Drive/files = asset/recovery layer.
+   - Drive/files = authoritative asset/recovery layer where appropriate.
 
 ### Next
+- Add branch/merge safeguards so normal website work follows QA → preview → merge → production.
 - Compleated Loyalty physical print proof from Print Master v2.
 - Continue MTG collection/deck knowledge.
 - Continue Dualis catalogue/corpus organisation.
@@ -88,12 +98,14 @@
 - Project Morrow historical H0/Transition/M0 baseline.
 - FitzChivalry character-study reference.
 - GitHub Morrow ethos and core repository structure.
-- First website Git/QA baseline commit and first successful production smoke test.
+- Website V18 public source/asset recovery.
+- Reconstructed Deck Planner Pages resolver + multi-face regression tests.
+- Isolated Git→Cloudflare staging proof.
+- **GitHub→Cloudflare production cutover, independently verified.**
 
 ## Important unknowns
 
 - Physical print behaviour for Compleated Loyalty.
-- Complete lossless reconstruction of V18 source/assets is still pending.
-- Git-backed Cloudflare preview equivalence has not yet been demonstrated.
+- User-side visual/interaction review of the newly Git-backed production site remains useful even though automated equivalence is complete.
 - R2/D1/KV architecture should remain optional until a demonstrated need justifies it.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.
