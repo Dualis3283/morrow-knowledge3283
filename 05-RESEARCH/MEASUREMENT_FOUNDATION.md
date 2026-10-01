@@ -113,3 +113,18 @@ Foundation is complete when:
 - Metric Definition v1 is frozen;
 - baseline is archived;
 - a later comparison window can use the same definitions.
+
+
+## Qualitative evidence stream
+
+The six core metrics capture observable workflow events, but they do not fully represent the human cost of continuity failure.
+
+Public-safe user-reported observations are therefore recorded separately in:
+
+`05-RESEARCH/QUALITATIVE_FINDINGS.md`
+
+Rules:
+- qualitative findings do **not** increment the 20-workflow foundation sample;
+- they do not change the six core metric definitions mid-window;
+- they must separate report, interpretation and confounders;
+- they may inform Metric Definition v1 only after the 20-workflow baseline is complete.
