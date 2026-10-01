@@ -14,25 +14,14 @@ This log implements the 20-workflow foundation defined in `MEASUREMENT_FOUNDATIO
 | Context retrieved successfully? | Yes |
 | User repetition required? | No |
 | Evidence validation required? | Yes |
-| Evidence used | Notion pipeline/current state; live Cloudflare Pages readback; GitHub repository/write/readback; GitHub Actions result |
 | External write/action? | Yes |
 | Independent verification performed? | Yes |
 | Defect found? | Yes — implementation syntax error during an attempted combined recovery script, caught before repository write |
 | Defect caught before final release? | Yes |
 | Post-release defect? | No |
 | Material rework after completion declared? | No |
-| Root-cause category | Implementation error |
 | External-system issue | Cloudflare Browser Rendering rate limit during bulk source recovery |
 | Final outcome | Private website repo created; V18 baseline/route graph recorded; production smoke workflow committed and passed |
-| Lesson / guardrail | Split complex multi-system recovery into smaller verifiable steps; establish QA guardrails before source switching; do not retry aggressively through Browser Rendering rate limits; production Git integration remains blocked until reproducibility is proven |
-
-### Verification evidence
-
-- Website repository: `Dualis3283/david-walsh-site`
-- Baseline commit: `ce4d93ba2553520e7fb4d7103d74608da2304f10`
-- GitHub Actions workflow: **Production smoke test**
-- First run: **success**
-- Critical verification step: **Verify live V18 production routes and markers — success**
 
 ---
 
@@ -48,7 +37,6 @@ This log implements the 20-workflow foundation defined in `MEASUREMENT_FOUNDATIO
 | Context retrieved successfully? | Yes |
 | User repetition required? | No |
 | Evidence validation required? | Yes |
-| Evidence used | GitHub source/readback; recovered V18 manifest; Cloudflare project/deployment state; staging deployment; GitHub Actions; live resolver probes |
 | External write/action? | Yes |
 | Independent verification performed? | Yes — multiple independent gates |
 | Defects/configuration issues found? | Yes — all caught before an unverified production state was accepted |
@@ -56,87 +44,101 @@ This log implements the 20-workflow foundation defined in `MEASUREMENT_FOUNDATIO
 | Material rework after completion declared? | No |
 | Final outcome | Existing Cloudflare production project converted from ad-hoc Direct Upload to verified GitHub-backed deployment |
 
-### What was attempted and learned
+### Key evidence
+- staging deployment: `094e3343` — full equivalence passed;
+- first Git-backed canonical production: `b861c0a4`;
+- V18 Direct Upload rollback preserved: `d7000b0a`;
+- resolver reconstruction and multi-face regression suite passed.
 
-1. **Cloudflare Browser Rendering recovery**
-   - successfully recovered the homepage/route graph;
-   - bulk recovery hit Browser Rendering rate limits;
-   - response: moved recovery to GitHub Actions instead of repeatedly retrying the constrained service.
+---
 
-2. **GitHub Actions recovery**
-   - captured 10 public routes and same-origin assets;
-   - generated SHA-256 recovery manifest;
-   - final corrected recovery had no skipped assets.
+## Workflow 03 — Enforce a QA-gated production branch without native branch protection
 
-3. **QA parser false positive**
-   - link scanner interpreted JavaScript template text such as `${escapeHtml(fact.imageUri)}` as rendered HTML;
-   - caught during QA before production source switching;
-   - fixed by excluding script/style bodies while preserving external script references.
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Project Morrow infrastructure  
+**Task type:** repository hardening + CI/CD gate design + production branch separation + runtime verification
 
-4. **Recovery branch race**
-   - an older recovery workflow attempted to push after `main` advanced;
-   - Git rejected the unsafe fast-forward;
-   - this was treated as a successful safety control, not worked around destructively.
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes |
+| Independent verification performed? | Yes — GitHub branch refs, workflow steps, Cloudflare deployment stages, canonical-hostname verification |
+| Constraint found? | Yes — native branch protection unavailable for the private repo on the current GitHub plan |
+| Unsafe workaround used? | No — repo remained private |
+| Defect caught before release? | No release defect; architecture was adapted to the plan constraint |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Final outcome | Production now deploys only from a QA-promoted `production` branch rather than directly from `main` |
 
-5. **Deck Planner runtime reconstruction**
-   - recovered V18 frontend contract for `POST /api/resolve-deck`;
-   - rebuilt the Pages Function in source control;
-   - added focused regressions for Matzalantli/multi-face cards and Victor Room cards;
-   - live V18 resolver probe and reconstructed resolver both returned the expected canonical multi-face cards with `notFound: []`.
+### Constraint evidence
 
-6. **Cloudflare source schema**
-   - first combined staging source creation returned generic `8000000`;
-   - isolated empty-project creation succeeded;
-   - source endpoint inspection showed legacy `deployments_enabled` remained required alongside newer source controls;
-   - Git source attachment succeeded once the full schema was supplied.
+GitHub branch protection read returned HTTP 403 with:
 
-7. **Preview path filter**
-   - first staging preview was skipped with `skip_reason: path_config`;
-   - root cause: empty `path_includes`;
-   - corrected to `["*"]`, after which Git clone/build/deploy succeeded.
+> “Upgrade to GitHub Pro or make this repository public to enable this feature.”
 
-### Verification evidence
+Decision:
+- do not make the website source public solely to unlock branch protection;
+- preserve privacy;
+- enforce the critical safety property at the deployment boundary.
 
-**Staging**
-- Project: `david-walsh-staging`
-- Deployment: `094e3343`
-- Trigger: GitHub push
-- Clone/build/deploy: success
-- Pages Functions: active
-- Full equivalence workflow: success
+### Architecture implemented
 
-**Production**
-- Repository: `Dualis3283/david-walsh-site`
-- Cutover commit: `9a814dc8821cc5d5157163b6e213e8c55ce3e4b7`
-- Cloudflare canonical deployment: **`b861c0a4`**
-- Full deployment ID: `b861c0a4-f6ba-4774-8900-a940dd6b4849`
-- Trigger: GitHub push
-- Queue / initialize / clone / build / deploy: success
-- Pages Functions: active
-- Immutable deployment full equivalence: success
-- Canonical public hostname full equivalence: success
-- Preserved rollback: **`d7000b0a`**
+- `main` = tested integration branch.
+- `production` = Cloudflare live source.
+- feature branches = change isolation and staging previews.
+- Site QA runs for PRs to `main` and pushes to `main`.
+- Promotion runs only for successful push-triggered Site QA on `main`.
+- Promotion checks that current `production` is an ancestor of the verified commit.
+- Promotion uses a normal fast-forward push; no force push is permitted by the workflow.
+- Cloudflare production branch changed from `main` to `production`.
+- Staging previews expanded to ordinary feature branches with PR comments.
 
-### Workflow 02 lessons / guardrails
+### Verification sequence
 
-- Prove a source-control integration in a separate environment before production.
-- Attach Git to production with automatic production deployment disabled first.
-- A source switch is not complete until both immutable and canonical URLs pass verification.
-- Use content hashes when “looks the same” is not strong enough.
-- Turn known failure classes into tests before migrating the runtime.
-- Treat Git non-fast-forward protection as a safety feature.
-- Query actual API schemas instead of relying on deprecation labels or remembered request shapes.
+Gate commit:
+- `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
 
-### Foundation raw counts after Workflow 02
+Observed sequence:
+1. `main` received the gate commit.
+2. `production` remained on `9a814dc...` while QA ran.
+3. Site QA completed successfully:
+   - Resolver regression tests — success.
+   - Repository static validation — success.
+   - Source secret scan — success.
+   - Current production health — success.
+4. **Promote production** triggered from the successful Site QA workflow.
+5. Fast-forward-only promotion — success.
+6. `production` advanced exactly to `7af90a46...`.
+7. Cloudflare created production deployment **`c8709b99`** from branch `production`.
+8. Queue / initialize / clone / build / deploy — all success.
+9. Pages Functions active.
+10. Canonical `david-walsh.pages.dev` full verification — success:
+    - V18 static equivalence;
+    - route/marker smoke;
+    - internal links/assets;
+    - resolver contract parity;
+    - secret scan.
 
-- Eligible workflows logged: **2 / 20**
-- Prior-state retrievals required: **2**
-- Successful retrievals without user repetition: **2**
-- Eligible workflows with persistent external actions: **2**
-- Workflows with independent verification: **2**
-- Post-release defects observed in the logged workflows: **0**
-- Workflows requiring material rework after being presented as complete: **0**
+### Workflow 03 lessons / guardrails
 
-Implementation/configuration defects and external-system constraints remain recorded per workflow rather than collapsed into a misleading aggregate percentage.
+- Separate “can push code” from “can deploy production”.
+- When native branch protection is unavailable, isolate production behind a distinct branch and gate branch advancement with CI.
+- Never make a private source repository public merely to gain a convenience control unless that trade-off is explicitly intended.
+- Fast-forward-only promotion prevents the automation from silently rewriting production history.
+- Staging previews should be available before production promotion.
+- The public canonical hostname remains the final truth check.
+
+### Foundation raw counts after Workflow 03
+
+- Eligible workflows logged: **3 / 20**
+- Prior-state retrievals required: **3**
+- Successful retrievals without user repetition: **3**
+- Eligible workflows with persistent external actions: **3**
+- Workflows with independent verification: **3**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
 
 These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

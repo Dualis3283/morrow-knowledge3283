@@ -6,94 +6,121 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current production deployment: **`b861c0a4`**
-- Full deployment ID: `b861c0a4-f6ba-4774-8900-a940dd6b4849`
-- Git commit: `9a814dc8821cc5d5157163b6e213e8c55ce3e4b7`
+- Current canonical deployment: **`c8709b99`**
+- Full deployment ID: `c8709b99-1b39-46f5-ae87-2edc7ca7de57`
+- Git commit: `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
-- Production branch: **main**
+- Cloudflare production branch: **production**
+- Integration branch: **main**
 - Static output: **site/**
 - Pages Functions: **active**
 - Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
 
-The previous Direct Upload V18 deployment **`d7000b0a`** remains the known-good rollback point.
+Rollback references:
+- prior verified Git-backed production: **`b861c0a4`**
+- Direct Upload V18: **`d7000b0a`**
 
-Earlier V7 and V14 records remain historical checkpoints only.
+## Gated deployment model
 
-## Git-backed deployment model
+Normal path:
 
-The website has now transitioned from ad-hoc Direct Upload to:
+**feature branch → staging preview / PR → Site QA → main → Site QA → fast-forward promotion → production → Cloudflare production → public verification**
 
-**GitHub source → QA → isolated Cloudflare preview → equivalence verification → main → Cloudflare production → public readback**
+Cloudflare production is no longer driven directly by `main`.
 
-A separate Pages project, **`david-walsh-staging`**, is retained for safe Git-backed staging.
+### Gate mechanics
 
-Preview branch:
-- `cloudflare-preview`
+- PRs targeting `main` run **Site QA**.
+- Pushes to `main` run **Site QA**.
+- Site QA validates:
+  - Deck Planner resolver regressions;
+  - repository-static route/assets structure;
+  - source secret scan;
+  - current production health for push events.
+- **Promote production** runs only when:
+  - Site QA concluded successfully;
+  - the checked branch was `main`;
+  - the Site QA event was a push.
+- Promotion is **fast-forward only**.
+- If `production` is not an ancestor of the verified `main` commit, promotion fails instead of force-updating.
+- Cloudflare deploys only from `production`.
 
-Production branch:
-- `main`
+## GitHub plan limitation
 
-## Production cutover evidence
+Native GitHub branch protection was tested for `main`.
 
-Before the Git-backed production switch, the following passed against staging deployment **`094e3343`**:
+GitHub returned a 403 stating that this private repository requires **GitHub Pro** or must be made public to enable branch protection.
 
-- private GitHub repository clone;
-- build;
-- Pages Functions bundling;
-- deployment;
-- byte-level SHA-256 equivalence against recovered V18 routes/assets;
-- route/marker smoke tests;
-- internal link/asset tests;
-- Deck Planner resolver unit regressions;
-- live resolver contract parity;
-- recovered-source secret scan.
+Decision:
+- keep the repository private;
+- do not weaken privacy to obtain native branch protection;
+- enforce the deployment gate using separate `main` and `production` branches plus GitHub Actions.
 
-After cutover, the same complete verification gate passed against:
+This means direct Git pushes are not technically forbidden by GitHub itself, but an ordinary push to `main` cannot directly deploy production.
 
-- immutable production deployment **`b861c0a4.david-walsh.pages.dev`**
-- canonical public hostname **`david-walsh.pages.dev`**
+## Staging
 
-Cloudflare independently reports **`b861c0a4`** as the canonical deployment.
+Separate Pages project:
+- **`david-walsh-staging`**
+
+Staging now:
+- accepts previews from ordinary non-production branches;
+- has PR preview comments enabled;
+- keeps production deployments disabled.
+
+This makes feature-branch previews the default safe test surface.
+
+## Verification evidence for the gated architecture
+
+Gate implementation commit:
+- `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
+
+Sequence observed:
+1. `main` advanced to the gate commit.
+2. `production` remained on the prior verified commit while Site QA ran.
+3. Site QA passed:
+   - resolver regressions;
+   - repository-static validation;
+   - source secret scan;
+   - current production health.
+4. Promote production ran.
+5. Promotion fast-forwarded `production` to exactly the tested SHA.
+6. Cloudflare detected the `production` branch push.
+7. Queue / initialize / clone / build / deploy all passed.
+8. New production deployment: **`c8709b99`**.
+9. Canonical hostname then passed:
+   - V18 static equivalence;
+   - route/marker smoke test;
+   - internal links/assets;
+   - resolver contract parity;
+   - secret scan.
 
 ## Deployment protocol
 
 For meaningful website/app changes:
 
-1. Recover current `main` state and current Cloudflare production ID.
-2. Classify the requested delta.
-3. Make the smallest source change.
-4. Run GitHub QA.
-5. Use preview/staging for structural, runtime, asset, parser, or high-risk changes.
-6. Verify preview route/assets/runtime behaviour.
-7. Merge/promote only after checks pass.
-8. Confirm Cloudflare deployment stages.
-9. Independently verify the immutable deployment URL.
-10. Independently verify the canonical public hostname.
+1. Create a feature branch when practical.
+2. Let Cloudflare staging create a preview.
+3. Run/inspect PR Site QA.
+4. Merge or otherwise advance `main`.
+5. Wait for push-triggered Site QA.
+6. Do not manually move `production` if QA fails.
+7. Let **Promote production** fast-forward the verified commit.
+8. Confirm Cloudflare production stages.
+9. Verify immutable deployment when risk warrants it.
+10. Verify canonical public hostname.
 11. Record commit SHA ↔ Cloudflare deployment ID.
-12. Preserve a rollback point and checkpoint Morrow/Notion.
-
-## Reusable lessons from the cutover
-
-- Deployment acceptance is not deployment verification.
-- Git attachment should be separated from production enablement.
-- A staging project can prove Git clone/build/Functions before touching the live project.
-- Cloudflare source attachment currently requires legacy `deployments_enabled` alongside newer deployment controls.
-- Empty `path_includes` can result in `skip_reason: path_config`; explicit `["*"]` was required for this workflow.
-- A QA parser must distinguish rendered HTML attributes from JavaScript template strings inside `<script>` blocks.
-- Git safely blocked a stale recovery run from overwriting a newer branch head.
-- Byte-level equivalence is stronger than “the page loads”.
-- Keep rollback IDs before structural deployment changes.
-- Public verification should cover the canonical hostname, not only an immutable deployment URL.
+12. Preserve rollback points and checkpoint Morrow/Notion.
 
 ## Deck Planner Companion App
 
-**Status:** live alpha / hardening, now under source control and regression testing.
+**Status:** live alpha / hardening, source-controlled and regression-tested.
 
 Current state:
 - live route: `/projects/deck-planner/`;
 - same-origin resolver: `/api/resolve-deck`;
-- Pages Function source now stored at `functions/api/resolve-deck.js`;
+- Pages Function source: `functions/api/resolve-deck.js`;
 - V18 resolver contract reproduced;
 - Matzalantli/multi-face and Room aliases covered by automated regression tests;
 - Scryfall fallback and 75-card collection batching are tested.
@@ -101,5 +128,5 @@ Current state:
 Next checks:
 - phone review;
 - accessibility QA;
-- add full-deck fixtures when they add value beyond the focused failure-class regressions;
+- add full-deck fixtures when they add value;
 - future backend/data design only when it solves a demonstrated problem.

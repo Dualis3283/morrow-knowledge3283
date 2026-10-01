@@ -10,32 +10,38 @@
 - Public-safety rule applies: no sensitive personal/private source material.
 - Private website/source repo: **Dualis3283/david-walsh-site**
 - Website source recovery: **complete for the public V18 route/asset graph**
-- GitHub Actions QA is active for:
+- Website branch roles:
+  - `main` = integration / tested source;
+  - `production` = Cloudflare live source;
+  - feature branches = change isolation / staging previews.
+- Native GitHub branch protection for this private repository is **not available on the current plan**; GitHub returned: “Upgrade to GitHub Pro or make this repository public to enable this feature.”
+- Privacy was preserved; the repository was not made public.
+- Deployment safety is therefore enforced at the production branch/runtime boundary.
+- GitHub Actions now provide:
   - resolver unit regressions;
-  - route/marker smoke tests;
-  - internal link and asset checks;
-  - recovered-source secret scan;
-  - immutable deployment equivalence;
-  - live resolver contract parity.
+  - repository-static validation;
+  - source secret scan;
+  - current-production health check on pushes to `main`;
+  - fast-forward-only promotion from verified `main` to `production`;
+  - full immutable/canonical deployment equivalence checks.
 
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: Git-backed deployment `b861c0a4`**
-- Full deployment ID: `b861c0a4-f6ba-4774-8900-a940dd6b4849`
-- Git commit: `9a814dc8821cc5d5157163b6e213e8c55ce3e4b7`
+- **Current canonical production: `c8709b99`**
+- Full deployment ID: `c8709b99-1b39-46f5-ae87-2edc7ca7de57`
+- Git commit: `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
 - Trigger: **github:push**
-- Git repository: **Dualis3283/david-walsh-site**
-- Production branch: **main**
+- Git source branch: **production**
 - Build output: **site/**
 - Pages Functions: **enabled**
 - Compatibility date: **2026-09-24**
-- All Cloudflare stages: **success**
-- Canonical public hostname `david-walsh.pages.dev`: full equivalence gate **passed**
-- Immutable deployment URL `b861c0a4.david-walsh.pages.dev`: full equivalence gate **passed**
-- Preserved rollback deployment: **V18 Direct Upload `d7000b0a`**
-- Separate Git-backed staging project: **david-walsh-staging**
-- Staging preview deployment `094e3343`: verified equivalent to V18 before production cutover.
+- Queue / initialize / clone / build / deploy: **all success**
+- Canonical public hostname `david-walsh.pages.dev`: full equivalence/runtime gate **passed**
+- Previous verified Git-backed production: **`b861c0a4`**
+- Preserved Direct Upload rollback: **`d7000b0a`**
+- Separate staging project: **david-walsh-staging**
+- Staging previews are enabled for ordinary non-production branches and PR preview comments are enabled.
 - Web Analytics is not configured.
 - R2 is not enabled.
 - D1: no databases currently.
@@ -51,12 +57,15 @@
 
 ### Now
 
-1. **Git-backed website operations**
-   - GitHub is now source of truth for website code.
-   - Cloudflare production is driven by `main`.
-   - `cloudflare-preview` is the dedicated preview branch.
-   - Use staging/preview + QA before significant production changes.
-   - Preserve `d7000b0a` as rollback until several Git-backed releases have proven stable.
+1. **Gated website operations**
+   - Work should begin on a feature branch when practical.
+   - PRs to `main` run Site QA.
+   - Pushes to `main` run Site QA again.
+   - A successful push-triggered Site QA run is required before automation can fast-forward `production`.
+   - Promotion refuses non-fast-forward changes.
+   - Cloudflare production deploys only from `production`.
+   - Significant changes should still receive preview/staging and post-deploy canonical verification.
+   - Preserve `d7000b0a` until several gated releases have proven stable.
 
 2. **Deck Planner Companion App**
    - V18 public frontend recovered into Git.
@@ -68,6 +77,7 @@
 3. **Project Morrow measurement foundation**
    - Workflow 01 logged.
    - Workflow 02 logged.
+   - Workflow 03 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -83,11 +93,11 @@
    - Drive/files = authoritative asset/recovery layer where appropriate.
 
 ### Next
-- Add branch/merge safeguards so normal website work follows QA → preview → merge → production.
+- Use the gated branch path for the next substantive website change and verify it in normal operation.
+- Optional future improvement: GitHub Pro could add native branch protection on this private repo; do not make the repo public solely for that feature.
 - Compleated Loyalty physical print proof from Print Master v2.
 - Continue MTG collection/deck knowledge.
 - Continue Dualis catalogue/corpus organisation.
-- Continue cross-project visual standard where useful.
 
 ## Completed / locked
 
@@ -101,11 +111,13 @@
 - Website V18 public source/asset recovery.
 - Reconstructed Deck Planner Pages resolver + multi-face regression tests.
 - Isolated Git→Cloudflare staging proof.
-- **GitHub→Cloudflare production cutover, independently verified.**
+- GitHub→Cloudflare production cutover.
+- **QA-gated `main` → `production` promotion architecture, independently verified.**
 
 ## Important unknowns
 
 - Physical print behaviour for Compleated Loyalty.
-- User-side visual/interaction review of the newly Git-backed production site remains useful even though automated equivalence is complete.
-- R2/D1/KV architecture should remain optional until a demonstrated need justifies it.
+- Native branch protection remains unavailable on the current private-repository GitHub plan.
+- User-side visual/interaction review remains useful despite automated equivalence.
+- R2/D1/KV architecture should remain optional until demonstrated needs justify it.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.
