@@ -96,6 +96,7 @@
    - Workflow 11 logged.
    - Workflow 12 logged.
    - Workflow 13 logged.
+   - Workflow 14 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -119,12 +120,14 @@
    - Fixed Ask Morrow evaluation set v1.0 is frozen: 40 response cases + 8 system/UX cases.
    - Phase 1C staging prototype scaffold is implemented and verified on feature branch `feature/ask-morrow-prototype`.
    - Workers AI proof of concept supersedes OpenAI as the active staging provider. OpenAI remains an inactive comparison adapter only.
-   - Current website branch head: `efbe212fb6a2eef8def7086c6d33f1bc011def84`; clean staging preview: `e77f0489`.
+   - Current website branch head: `4407e9b764fc815a5f83a5e13754e646a68521bb`; clean staging preview: `493d1ae7`.
    - Staging Preview contains only `ASK_MORROW_ENABLED`, `ASK_MORROW_PROVIDER=cloudflare`, `ASK_MORROW_CF_MODEL=@cf/google/gemma-4-26b-a4b-it`, and Workers AI binding `AI`.
    - Frozen response gate: 26/26 non-P0 primary cases full-pass after remediation; 42/42 required P0 trials intercepted deterministically before inference.
-   - 16/26 non-P0 cases now use zero-inference deterministic handling; 10/26 require Gemma synthesis.
-   - User authenticated runtime successfully returned the deterministic Project Morrow FAQ.
-   - Next dependency: authenticated model-bound website request + remaining system/UX/keyboard gate. No PR/public beta until that passes.
+   - 16/26 non-P0 cases use zero-inference deterministic handling; 10/26 require Gemma synthesis.
+   - User authenticated runtime successfully returned both the deterministic Project Morrow FAQ and a model-bound evidence-vs-interpretation answer.
+   - Current-source P0 system cases S01-S06 pass, including request bounds, rate control, model failure, empty retrieval and credential-safe response behavior.
+   - UI now displays actual `metrics.neurons`, and message CSS includes `overflow-wrap:anywhere` for pathological long tokens.
+   - Keyboard source mechanics pass, but the frozen public-beta standard still requires one true keyboard-only interaction trial. No PR/public beta until that final P1 trial passes.
    - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
 ### Next
@@ -160,6 +163,6 @@
 - User-side visual/interaction review remains useful despite automated and rendered-browser checks.
 - Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
-- Ask Morrow corpus/evaluation v1.0 are frozen. Workers AI/Gemma 4 is now the active staging backend with no external API key. The frozen response gate passes; Access-protected end-to-end model-bound and remaining system/UX checks are still required before any public beta.
+- Ask Morrow corpus/evaluation v1.0 are frozen. Workers AI/Gemma 4 is the active staging backend with no external API key. Response and P0 system gates pass; authenticated model-bound runtime passes. Only the true keyboard-only P1 interaction trial remains before the frozen public-beta gate can be declared complete.
 - Third-party search-engine/cache copies cannot be guaranteed deleted by Cloudflare cleanup; current searches found no indexed copies of the removed Ireland/PlayStation wording.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.

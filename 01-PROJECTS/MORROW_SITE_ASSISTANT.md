@@ -434,3 +434,54 @@ Current staging is Cloudflare-only:
 - real production unchanged at `f030df30`.
 
 **Next:** close the Access-protected system/UX gate with at least one authenticated model-bound website request plus keyboard-only interaction review. No production/public-beta promotion yet.
+
+
+## Phase 1C system/UX checkpoint — 1 October 2026
+
+The authenticated model-bound staging path is verified.
+
+User-side live prompt:
+**“How should Morrow treat evidence and interpretation?”**
+
+The response correctly separated evidence from interpretation, preserved uncertainty/unknowns, reflected the Morrow sequence, and did not invent unsupported facts.
+
+Because this prompt is not a deterministic FAQ/routing fast path, it confirms:
+`UI → Pages Function → frozen retrieval → env.AI → Gemma 4 → grounded response → UI`.
+
+Current website head:
+`4407e9b764fc815a5f83a5e13754e646a68521bb`
+
+Current clean staging preview:
+`493d1ae7`
+
+Current-source P0 system results:
+- malformed/missing request: pass;
+- oversized request: pass;
+- rate control: pass at request 11 with 429 + Retry-After 60;
+- simulated Workers AI failure: controlled 502, no fabricated answer;
+- empty retrieval: approved fallback, modelCalled false;
+- credential-safe response shape: pass.
+
+Additional pre-release fixes:
+- UI now reads actual `metrics.neurons` instead of stale `estimatedNeurons`;
+- long messages now use `overflow-wrap:anywhere`;
+- unit suite: **24/24 pass** after those fixes.
+
+Keyboard mechanics:
+- programmatic label: pass;
+- native submit button: pass;
+- native nav toggle + ARIA control: pass;
+- visible global focus rule: pass;
+- no negative tabindex on primary controls: pass;
+- no nav focus trap: pass;
+- textarea Enter behavior is not overridden;
+- input refocuses after request completion.
+
+Mobile:
+- prior real 390×844 and 320×568 rendered geometry remains valid because layout rules are unchanged except stronger long-text wrapping;
+- live protected mobile use succeeded;
+- pathological unbroken tokens now explicitly wrap.
+
+**Remaining frozen gate:** one true keyboard-only interaction walkthrough is still required. Source-level accessibility evidence is not substituted for that trial.
+
+No merge / production promotion yet.

@@ -1187,3 +1187,100 @@ Still required before public beta:
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 14 — Ask Morrow live model runtime and system gate
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** authenticated runtime verification + P0 system gate + UI remediation
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — staging UI fixes and Cloudflare preview deploy |
+| Independent verification performed? | Yes — user authenticated live model response, current-source API simulations, regression tests, Cloudflare deployment readback |
+| Pre-release defects found? | Yes — stale neuron display field; pathological long-token overflow not explicitly guarded |
+| Defects caught before production? | Yes |
+| Post-release defect? | Not applicable — staging only |
+| Material rework after completion declared? | No |
+| Final outcome | Model-bound runtime and all P0 system cases pass; one true keyboard-only P1 trial remains |
+
+### Live model-bound evidence
+
+The user asked:
+**“How should Morrow treat evidence and interpretation?”**
+
+The returned answer correctly distinguished evidence from interpretation, preserved unknowns/reasonable disagreement, and reflected the Morrow sequence. This prompt is not a deterministic fast path, so it verifies the live Workers AI path through `env.AI`.
+
+### P0 system gate
+
+- S01 malformed JSON: 400;
+- S01 missing message: 400;
+- S02 oversized message: 413;
+- S03 rate control: requests 1–10 accepted; 11+ = 429 / Retry-After 60;
+- S04 simulated Workers AI failure: controlled 502 / no answer fabricated;
+- S05 empty retrieval: approved fallback / modelCalled false;
+- S06 active Cloudflare provider needs no external model credential and response/error shapes expose none.
+
+### UI remediation
+
+1. Client used stale `metrics.estimatedNeurons` while server returns actual `metrics.neurons`.
+   - fixed;
+   - regression added.
+
+2. Added defensive `overflow-wrap:anywhere` to transcript messages.
+   - long-text/mobile regression added.
+
+Current unit suite:
+**24 / 24 pass**.
+
+### Current staging
+
+- feature head: `4407e9b764fc815a5f83a5e13754e646a68521bb`;
+- preview: **`493d1ae7`**;
+- deployment: success;
+- provider variables: Cloudflare-only;
+- `AI` binding present;
+- real production unchanged.
+
+### P1 status
+
+Mobile:
+- prior 390×844 and 320×568 rendered checks pass;
+- layout CSS unchanged except stronger overflow wrapping;
+- live user interaction on mobile succeeded.
+
+Keyboard:
+- exact source mechanics pass: native controls, visible focus rule, label, submit semantics, no trap, no textarea Enter override, refocus after completion.
+- Cloudflare Browser Rendering could not reliably execute the full isolated client chain, so that attempt is not counted as the frozen S07 trial.
+
+Therefore the public-beta gate remains **not fully closed**.
+
+### Next
+
+Run one true keyboard-only walkthrough on staging using a desktop/laptop keyboard or external keyboard:
+1. Tab reaches Menu/navigation/prompt buttons/textarea/Ask Morrow button;
+2. focus is visibly indicated;
+3. Enter on focused Ask Morrow button submits;
+4. focus returns to textarea after completion;
+5. no focus trap occurs.
+
+If that passes, the frozen public-beta gate can be scored complete.
+
+### Foundation raw counts after Workflow 14
+
+- Eligible workflows logged: **14 / 20**
+- Prior-state retrievals required: **14**
+- Successful retrievals without user repetition: **14**
+- Eligible workflows with persistent external actions: **14**
+- Workflows with independent verification: **14**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
