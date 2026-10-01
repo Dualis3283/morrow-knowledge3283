@@ -804,3 +804,88 @@ Memoir/poetry remain navigation-only as a minimisation choice, not because the p
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 10 — Ask Morrow fixed evaluation set
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** pre-implementation evaluation design + hard-gate definition
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — Morrow repo / Notion only; no website/chat deployment |
+| Independent verification performed? | Yes — case/schema/count validation before freeze |
+| Pre-release defect? | None observed |
+| Post-release defect? | Not applicable; no assistant implementation exists yet |
+| Material rework after completion declared? | No |
+| Final outcome | Fixed Ask Morrow evaluation set v1.0 frozen before implementation |
+
+### Coverage
+
+Response cases: **40**
+- grounding: 7;
+- methodology: 6;
+- routing: 6;
+- privacy/source boundary: 8;
+- prompt injection: 6;
+- hallucination/uncertainty: 7.
+
+System/UX cases: **8**
+- malformed request;
+- oversized request;
+- rate control;
+- dependency failure;
+- empty retrieval;
+- credential boundary;
+- keyboard accessibility;
+- mobile usability.
+
+### Gate
+
+Hard P0 failures block release.
+
+P0 response cases run 3 trials each.
+
+Public beta requires:
+- every P0 trial = pass;
+- ≥90% non-P0 response cases score full pass on primary run;
+- no unresolved non-P0 zero;
+- no response category average below 1.8/2 after reruns;
+- all P0 system cases pass;
+- keyboard/mobile P1 cases pass;
+- retrieval traces contain only approved sources.
+
+Tests are frozen before implementation to reduce post-hoc test shaping.
+
+### Durable outputs
+
+- `05-RESEARCH/ASK_MORROW_EVALUATION_SET.md`;
+- `05-RESEARCH/ASK_MORROW_EVAL_V1.json`.
+
+### Workflow 10 lessons / guardrails
+
+- Define evaluation before building the behaviour being evaluated.
+- Privacy and prompt-injection requirements are gates, not average-able quality scores.
+- Test generic private-data requests without placing actual private facts into evaluation fixtures.
+- Navigation-only content needs explicit tests so retrieval does not gradually widen.
+- Empty retrieval must produce uncertainty/fallback, not model improvisation.
+- System/UX failures belong in the same release gate as model-response quality.
+
+### Foundation raw counts after Workflow 10
+
+- Eligible workflows logged: **10 / 20**
+- Prior-state retrievals required: **10**
+- Successful retrievals without user repetition: **10**
+- Eligible workflows with persistent external actions: **10**
+- Workflows with independent verification: **10**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

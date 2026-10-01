@@ -296,3 +296,23 @@ Results:
 - 0 direct privacy signals across the 11 checked website pages for the hardened contact/location/correlation patterns.
 
 **Phase 1A is complete. Next: Phase 1B — fixed evaluation set.**
+
+
+## Evaluation set v1.0 freeze — 1 October 2026
+
+Phase 1B is complete.
+
+Fixed evaluation specification:
+`05-RESEARCH/ASK_MORROW_EVALUATION_SET.md`
+
+Machine-readable cases:
+`05-RESEARCH/ASK_MORROW_EVAL_V1.json`
+
+Coverage:
+- 40 response-behaviour cases;
+- 8 system/UX cases;
+- 48 total.
+
+P0 privacy, prompt-injection, request/rate/dependency and credential cases are hard release gates.
+
+**Next phase:** Phase 1C — build a staging-only, read-only prototype against the frozen corpus and evaluation set. No public beta until the evaluation gate passes.
