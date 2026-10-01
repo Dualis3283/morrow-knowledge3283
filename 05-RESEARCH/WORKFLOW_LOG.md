@@ -219,3 +219,136 @@ The existing gold Deck Planner heading was already correct and was intentionally
 - Workflows requiring material rework after being presented complete: **0**
 
 These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 05 — Deck Planner live mobile touch-target hardening
+
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Deck Planner Companion App  
+**Task type:** live rendered-browser audit + source retrieval + feature-branch implementation + QA guardrail + staged/PR/gated release + post-deploy verification
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes |
+| Independent verification performed? | Yes — production render audit, staging renders, branch QA, PR QA, post-merge QA, production hash comparison, live mobile audit, smoke test, resolver probe |
+| Defect/improvement found? | Yes — 3 live controls below the preferred 44px mobile comfort target |
+| Standards context | Controls remained above the WCAG 2.2 AA 24×24 target-size floor; this was usability hardening, not a recorded AA failure |
+| Defect caught before new release? | Yes — improvement identified on current production, then fixed/verified in staging before promotion |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Final outcome | Three targeted mobile controls raised to 44px minimum and protected by automated regression; production verified clean |
+
+### Baseline rendered evidence
+
+Live production at **390×844**, touch mobile, DPR 2:
+- horizontal overflow: none;
+- duplicate IDs: none;
+- broken ARIA references: none;
+- heading-level skips: none;
+- all three dialogs had programmatic names;
+- project-status diagnostic control: **32.7px** high;
+- Review settings disclosure: **32.2px** high;
+- Filter roles select: **40px** high.
+
+The first simultaneous Browser Rendering accessibility-tree request hit Cloudflare rate limiting. The audit was consolidated into a single rendered-DOM pass instead of repeatedly calling the API.
+
+### Implementation
+
+Feature branch:
+- `feature/deck-planner-mobile-touch-targets`
+
+Feature commit:
+- `630a4c2d8abd4a2b979619f15a62578063849f04`
+
+Scoped CSS:
+- small screens / coarse pointers apply `min-height: 44px` to:
+  - `.status-pill.source-navigable`;
+  - `.audit-options > summary`;
+  - `.tag-tools select`.
+
+No parser, resolver, deck-analysis logic, or project-save format changed.
+
+Static QA was extended so those three selectors must retain a 44px minimum-height rule.
+
+### Staging / PR verification
+
+- Feature Site QA: **success**.
+- Staging deployment: **`03d957b5`**, success, Pages Functions active.
+- 390×844 staging render:
+  - all three target controls: **44px** high;
+  - no horizontal overflow;
+  - no unnamed visible controls;
+  - no duplicate IDs;
+  - no broken ARIA references.
+- 320×568 staging stress render:
+  - no horizontal overflow;
+  - visible target controls meet the 44px minimum;
+  - Filter roles remains unrendered until its containing disclosure is opened.
+- PR #2: **Harden Deck Planner mobile touch targets**.
+- PR-triggered Site QA: **success**.
+
+### Production sequence
+
+1. PR #2 squash-merged to `main` as `cd7170e245be93bd678dabad21cb86ea238ed3d4`.
+2. `production` remained on the prior SHA while post-merge Site QA ran.
+3. Post-merge Site QA: **success**.
+4. Promote production workflow: **success**.
+5. Fast-forwarded `production` exactly to the tested main SHA.
+6. Cloudflare production deployment: **`60605cf7`**.
+7. Queue / initialize / clone / build / deploy: all success.
+8. Static deployment comparison vs `91c284e3`: **exactly one changed file**, Deck Planner HTML.
+9. Canonical 390×844 production render:
+   - project status = 44px;
+   - Review settings = 44px;
+   - Filter roles = 44px;
+   - no horizontal overflow;
+   - no unnamed visible controls;
+   - no duplicate IDs;
+   - no broken ARIA references.
+10. Production smoke: **success**.
+11. Resolver contract probe: **success**.
+12. Feature branch auto-deleted.
+
+### Full-deck fixture housekeeping finding
+
+Authoritative retrieval across Morrow GitHub, Notion and the file library did **not** recover the literal current full Shorikai or Victor lists.
+
+What is durably retained:
+- Shorikai's prior real regression parsed as **100 total cards / 85 unique names**;
+- the historical 84/85 symptom came from `Matzalantli, the Great Door` mapping to the canonical multi-face name `Matzalantli, the Great Door // The Core`;
+- Room/split-face targeted fixtures remain retained.
+
+What is not retained:
+- the literal dated Shorikai 100-card input;
+- the literal current Victor full-deck input.
+
+Guardrail:
+- never fabricate a real-deck fixture from memory or a partial summary;
+- when a real list is used as regression evidence, store the literal dated input and expected result together;
+- full Shorikai/Victor executable fixtures remain blocked until the authoritative inputs are recovered or supplied.
+
+### Workflow 05 lessons / guardrails
+
+- Rendered mobile measurements add evidence that source-only CSS inspection cannot provide.
+- A standards-compliant control can still deserve usability hardening; record the distinction instead of overstating a standards failure.
+- Consolidate Browser Rendering diagnostics when Cloudflare rate limits repeated calls.
+- For narrow UI releases, combine expected-delta file hashes with rendered behavior checks and critical runtime probes.
+- Regression evidence is incomplete if the exact real-world input is discarded.
+
+### Foundation raw counts after Workflow 05
+
+- Eligible workflows logged: **5 / 20**
+- Prior-state retrievals required: **5**
+- Successful retrievals without user repetition: **5**
+- Eligible workflows with persistent external actions: **5**
+- Workflows with independent verification: **5**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

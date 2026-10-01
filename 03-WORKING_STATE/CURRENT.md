@@ -29,9 +29,9 @@
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: `91c284e3`**
-- Full deployment ID: `91c284e3-064f-4284-83f1-2c2618b97d74`
-- Git commit: `0f4f9527d5bde91778e1a3693eff9f8928a729c4`
+- **Current canonical production: `60605cf7`**
+- Full deployment ID: `60605cf7-ddda-45d6-b5f5-88fab54e7b57`
+- Git commit: `cd7170e245be93bd678dabad21cb86ea238ed3d4`
 - Trigger: **github:push**
 - Git source branch: **production**
 - Build output: **site/**
@@ -39,7 +39,8 @@
 - Compatibility date: **2026-09-24**
 - Queue / initialize / clone / build / deploy: **all success**
 - Canonical public hostname `david-walsh.pages.dev`: full equivalence/runtime gate **passed**
-- Previous gated production: **`c8709b99`**
+- Previous gated production: **`91c284e3`**
+- Earlier gated production: **`c8709b99`**
 - Earlier verified Git-backed production: **`b861c0a4`**
 - Preserved Direct Upload rollback: **`d7000b0a`**
 - Separate staging project: **david-walsh-staging**
@@ -74,8 +75,10 @@
    - `/api/resolve-deck` Pages Function reconstructed from the V18 contract.
    - Shorikai/Matzalantli and Victor Room multi-face regression tests are automated and passing.
    - Nine duplicate `aria-label` attributes removed from Deck Planner production markup.
-   - Automated HTML accessibility sanity test now prevents duplicate attributes/IDs and broken `aria-labelledby` / `aria-describedby` references.
-   - Continue phone review, broader accessibility QA, and full-deck regression fixtures when useful.
+   - Automated HTML accessibility sanity test prevents duplicate attributes/IDs and broken `aria-labelledby` / `aria-describedby` references.
+   - Live 390×844 mobile audit found three controls below the preferred 44px comfort target; all three are now 44px minimum on small/coarse-pointer devices.
+   - 390×844 and 320×568 rendered checks show no horizontal overflow.
+   - Full literal Shorikai/Victor lists are not currently retained in durable sources; do not fabricate full-deck fixtures. Capture exact dated inputs before adding those fixtures.
    - Future D1/KV work remains optional until a demonstrated need justifies it.
 
 3. **Project Morrow measurement foundation**
@@ -83,6 +86,7 @@
    - Workflow 02 logged.
    - Workflow 03 logged.
    - Workflow 04 logged.
+   - Workflow 05 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -118,12 +122,14 @@
 - Isolated Git→Cloudflare staging proof.
 - GitHub→Cloudflare production cutover.
 - QA-gated `main` → `production` promotion architecture, independently verified.
-- **First ordinary gated feature release: Deck Planner accessibility cleanup via PR #1.**
+- First ordinary gated feature release: Deck Planner accessibility cleanup via PR #1.
+- **Deck Planner mobile touch-target hardening via PR #2, rendered and verified on production.**
 
 ## Important unknowns
 
 - Physical print behaviour for Compleated Loyalty.
 - Native branch protection remains unavailable on the current private-repository GitHub plan.
-- User-side visual/interaction review remains useful despite automated equivalence.
+- User-side visual/interaction review remains useful despite automated and rendered-browser checks.
+- Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.

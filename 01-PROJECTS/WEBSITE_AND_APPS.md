@@ -6,9 +6,9 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`91c284e3`**
-- Full deployment ID: `91c284e3-064f-4284-83f1-2c2618b97d74`
-- Git commit: `0f4f9527d5bde91778e1a3693eff9f8928a729c4`
+- Current canonical deployment: **`60605cf7`**
+- Full deployment ID: `60605cf7-ddda-45d6-b5f5-88fab54e7b57`
+- Git commit: `cd7170e245be93bd678dabad21cb86ea238ed3d4`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
 - Cloudflare production branch: **production**
@@ -18,7 +18,8 @@
 - Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
 
 Rollback references:
-- previous gated production: **`c8709b99`**
+- previous gated production: **`91c284e3`**
+- earlier gated production: **`c8709b99`**
 - earlier verified Git-backed production: **`b861c0a4`**
 - Direct Upload V18: **`d7000b0a`**
 
@@ -124,6 +125,55 @@ The release removed **9 duplicated `aria-label` attributes** and added an automa
 - missing targets referenced by `aria-labelledby`;
 - missing targets referenced by `aria-describedby`.
 
+## Second ordinary gated feature release
+
+**PR #2 — Harden Deck Planner mobile touch targets**
+
+- Feature branch: `feature/deck-planner-mobile-touch-targets`
+- Feature commit: `630a4c2d8abd4a2b979619f15a62578063849f04`
+- Staging deployment: `03d957b5`
+- PR-triggered Site QA: success
+- Squash merge to `main`: `cd7170e245be93bd678dabad21cb86ea238ed3d4`
+- Post-merge Site QA: success
+- Automatic fast-forward promotion: success
+- Production deployment: **`60605cf7`**
+- Cloudflare queue / initialize / clone / build / deploy: all success
+- Collateral-drift check: **exactly one static file changed** — `/projects/deck-planner/index.html`
+- Production smoke: success
+- Resolver contract probe: success
+- Merged feature branch auto-deleted.
+
+### Live mobile evidence
+
+Rendered production audit at **390×844 / DPR 2 / touch input**:
+- horizontal overflow: **none**;
+- duplicate IDs: **none**;
+- broken ARIA references: **none**;
+- unnamed visible form/button controls: **none**;
+- project-status diagnostic control: **44px high**;
+- Review settings disclosure: **44px high**;
+- Filter roles select: **44px high**.
+
+A narrower **320×568** staging stress pass also showed no horizontal overflow. The Filter roles control is inside a collapsed Advanced Tag Table at that state, so it has no rendered box until the disclosure is opened.
+
+The three controls were already above the WCAG 2.2 AA 24×24 target-size floor. This release intentionally raises them to a more comfortable **44px mobile target**, consistent with the existing chapter-toggle treatment.
+
+### New permanent guardrail
+
+`tests/html-a11y.mjs` now asserts a 44px minimum-height rule for:
+- `.status-pill.source-navigable`;
+- `.audit-options > summary`;
+- `.tag-tools select`.
+
+### Full-deck fixture source gap
+
+The durable QA archive retains the verified Shorikai result (**100 total cards / 85 unique names**) and the Matzalantli front-face failure mode, but not the literal full deck list itself. The current full Victor list is also not retained as a literal dated input.
+
+Therefore:
+- do **not** reconstruct those fixtures from memory or partial deck summaries;
+- when the authoritative full lists are available, store the literal dated inputs under the test fixture layer before creating executable full-deck regressions;
+- future real-deck regression records should preserve **input + expected result**, not only the result summary.
+
 ## Deployment protocol
 
 For meaningful website/app changes:
@@ -153,10 +203,12 @@ Current state:
 - Matzalantli/multi-face and Room aliases covered by automated regression tests;
 - HTML accessibility sanity checks are automated;
 - nine duplicate form-field `aria-label` attributes have been removed from production;
+- key mobile diagnostic/disclosure/filter controls have a 44px small-screen/coarse-pointer minimum;
+- rendered mobile audits at 390px and 320px show no horizontal overflow;
 - Scryfall fallback and 75-card collection batching are tested.
 
 Next checks:
-- phone review;
-- broader accessibility QA / phone review;
-- add full-deck fixtures when they add value;
+- user-side phone/interaction review remains useful after rendered-browser QA;
+- continue broader accessibility QA where it adds evidence;
+- capture exact dated Shorikai/Victor full lists before adding full-deck executable fixtures;
 - future backend/data design only when it solves a demonstrated problem.
