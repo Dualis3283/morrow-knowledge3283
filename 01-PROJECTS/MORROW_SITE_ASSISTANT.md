@@ -1,6 +1,6 @@
 # Ask Morrow — Public Website Assistant
 
-**Status:** Feasibility confirmed; planning only  
+**Status:** Phase 0 complete; public corpus definition / read-only prototype next  
 **Date:** 1 October 2026
 
 ## Purpose
@@ -177,9 +177,11 @@ This preserves continuity of method without falsely claiming continuity of priva
 ## Suggested implementation phases
 
 ### Phase 0 — public Morrow page
-Create the dedicated explanatory page before chat.
+**Complete 1 October 2026.** The dedicated public page is live at `/projects/morrow/`, uses only public-safe Morrow material, and explicitly distinguishes public method continuity from private memory continuity.
 
-### Phase 1 — read-only prototype
+### Phase 1 — public corpus + read-only prototype
+- freeze the approved public knowledge corpus and source registry;
+- define the fixed evaluation set before exposing the assistant;
 - same-origin Pages Function;
 - Morrow instructions;
 - small curated corpus;
@@ -201,3 +203,26 @@ Only add durable sessions, richer retrieval or additional tools if actual use de
 **Feasible with the current website architecture.**
 
 Existing Pages Functions already prove the site can host same-origin server logic. No new database is required for a privacy-first v1. The main new dependency is a server-side model API credential plus a deliberately curated public knowledge corpus.
+
+
+## Phase 0 production evidence — 1 October 2026
+
+- Website merge: `e7b00b2e0c31b5898991d9df747f931ad2303f25`.
+- Cloudflare production: `80cea668`.
+- Public route: `/projects/morrow/`.
+- 390×844 canonical mobile render: passed with no horizontal overflow or duplicate IDs.
+- Homepage Project Morrow CTA: verified live.
+- Discovery metadata / sitemap / robots / social card: verified live.
+- Production smoke and Deck Planner resolver contract: passed.
+
+### Next concrete dependency
+
+Before implementing `/api/morrow-chat`, define an explicit **public Morrow corpus manifest**:
+- included source files;
+- excluded/private source classes;
+- source dates/versions;
+- approved factual/project summaries;
+- how answers cite or route back to website sources;
+- behaviour when the corpus does not contain an answer.
+
+Then build a staging-only read-only prototype and evaluate it before any public beta.

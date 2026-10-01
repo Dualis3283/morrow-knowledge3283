@@ -6,9 +6,9 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`60605cf7`**
-- Full deployment ID: `60605cf7-ddda-45d6-b5f5-88fab54e7b57`
-- Git commit: `cd7170e245be93bd678dabad21cb86ea238ed3d4`
+- Current canonical deployment: **`80cea668`**
+- Full deployment ID: `80cea668-df13-46ce-9a69-1782ec70c2d5`
+- Git commit: `e7b00b2e0c31b5898991d9df747f931ad2303f25`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
 - Cloudflare production branch: **production**
@@ -18,7 +18,8 @@
 - Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
 
 Rollback references:
-- previous gated production: **`91c284e3`**
+- previous gated production: **`60605cf7`**
+- earlier gated production: **`91c284e3`**
 - earlier gated production: **`c8709b99`**
 - earlier verified Git-backed production: **`b861c0a4`**
 - Direct Upload V18: **`d7000b0a`**
@@ -39,6 +40,7 @@ Cloudflare production is no longer driven directly by `main`.
   - Deck Planner resolver regressions;
   - repository-static route/assets structure;
   - HTML accessibility sanity checks;
+  - discovery metadata validation;
   - source secret scan;
   - current production health for push events.
 - **Promote production** runs only when:
@@ -173,6 +175,72 @@ Therefore:
 - do **not** reconstruct those fixtures from memory or partial deck summaries;
 - when the authoritative full lists are available, store the literal dated inputs under the test fixture layer before creating executable full-deck regressions;
 - future real-deck regression records should preserve **input + expected result**, not only the result summary.
+
+
+
+## Third ordinary gated feature release
+
+**PR #3 — Add Project Morrow page and discovery foundation**
+
+- Feature branch: `feature/morrow-discovery-foundation`
+- Final feature SHA: `e8a0f5b28033e5f4c940c6bddabf57ab25d40380`
+- Final staging deployment: `68a4be48`
+- PR-triggered Site QA: success
+- Squash merge to `main`: `e7b00b2e0c31b5898991d9df747f931ad2303f25`
+- Post-merge Site QA: success
+- Automatic fast-forward promotion: success
+- Production deployment: **`80cea668`**
+- Cloudflare queue / initialize / clone / build / deploy: all success
+- Production smoke: success
+- Resolver contract probe: success
+
+### Public additions
+
+- Dedicated Project Morrow page: `/projects/morrow/`.
+- Homepage CTA: **Explore Project Morrow**.
+- `robots.txt` with canonical sitemap reference.
+- `sitemap.xml` covering the principal public routes.
+- Reusable 1200×630 site social card.
+- Canonical Open Graph / Twitter metadata across principal pages.
+- Factual JSON-LD across the public discovery set.
+- Deck Planner brought into the same discovery standard.
+- Automated `tests/metadata.mjs` discovery guardrail added to Site QA.
+
+### Expected-delta verification
+
+Compared with production `60605cf7`, **14 public files changed and all 14 were expected**:
+
+- 10 existing HTML pages receiving metadata/intentional homepage CTA changes;
+- new `/projects/morrow/index.html`;
+- new `/assets/social-card.png`;
+- new `/robots.txt`;
+- new `/sitemap.xml`.
+
+No shared CSS/JS, resolver function, PDFs or unrelated media assets changed.
+
+### Canonical live verification
+
+At `https://david-walsh.pages.dev/projects/morrow/`, a consolidated 390×844 touch render verified:
+- HTTP 200;
+- no horizontal overflow;
+- no duplicate IDs;
+- one H1: **Context before conclusion.**;
+- canonical URL correct;
+- one JSON-LD block;
+- Open Graph image points to the new social card;
+- homepage contains the Project Morrow CTA;
+- robots references the canonical sitemap;
+- sitemap contains Project Morrow and Deck Planner;
+- social card returns HTTP 200 as `image/png`.
+
+### Pre-release defects caught
+
+The first version of the new metadata validator contained a JavaScript quoting/syntax defect. A first attempted repair remained syntactically invalid. Both were caught **before merge** by independently reproducing the exact QA suite in the connected workbench.
+
+The final validator was simplified, run through `node --check`, executed successfully across all 11 targeted pages, then independently passed the formal PR and post-merge GitHub Actions gates.
+
+**Lesson:** run newly authored QA code itself before treating the existence of the test as evidence. A broken guardrail is not a guardrail.
+
 
 ## Deployment protocol
 
@@ -325,3 +393,20 @@ Several existing public assets are in the ~400–650 KB range, including:
 - `in-my-own-light.png` ~412 KB.
 
 These sizes alone do not prove a performance problem. Before changing assets, measure rendered dimensions, loading behaviour and real page performance. Prefer evidence over blanket recompression.
+
+
+### Implemented outcome — 1 October 2026
+
+The high-priority discovery/Morrow items from this audit are now live:
+- Project Morrow has a dedicated public page.
+- Principal public routes have consistent canonical/social metadata and factual JSON-LD.
+- A reusable 1200×630 share card exists.
+- `robots.txt` and `sitemap.xml` are live.
+- Discovery metadata is now a Site QA gate.
+
+Remaining attention from the audit:
+- visitor contact/feedback path;
+- privacy-conscious analytics/measurement;
+- eventual projects index as the catalogue grows;
+- evidence-led release-page enrichment;
+- performance measurement before media optimisation.

@@ -421,3 +421,143 @@ A public AI assistant should preserve **method continuity without pretending to 
 - Workflows requiring material rework after being presented complete: **0**
 
 These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 07 — Project Morrow public page & discovery foundation
+
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Project Morrow / Ask Morrow  
+**Task type:** public-safe source synthesis + information architecture + metadata engineering + staging/PR release + production verification
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes |
+| Independent verification performed? | Yes — source audits, exact QA reproduction, staging render, PR QA, post-merge QA, production file-delta comparison, canonical browser audit, smoke and resolver probes |
+| Defects found before release? | Yes — metadata validator syntax defect; first repair also invalid |
+| Defects caught before merge? | Yes |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Final outcome | Project Morrow is now a first-class public route and the site's discovery/share foundation is live with permanent QA guardrails |
+
+### Context and intent
+
+Workflow 06 established that the next high-value website work was:
+1. search/social discovery foundations; and
+2. a dedicated public Project Morrow destination that could later ground a read-only Ask Morrow assistant.
+
+The chatbot itself was deliberately excluded from this release.
+
+### Implementation
+
+Feature branch:
+- `feature/morrow-discovery-foundation`
+
+Final feature SHA:
+- `e8a0f5b28033e5f4c940c6bddabf57ab25d40380`
+
+Added/changed:
+- `/projects/morrow/` built from public-safe Morrow ethos/operating-model material;
+- homepage CTA to Project Morrow;
+- canonical Open Graph / Twitter metadata across the principal public pages;
+- factual JSON-LD;
+- Deck Planner discovery metadata;
+- `robots.txt`;
+- `sitemap.xml`;
+- 1200×630 generic site social card;
+- metadata validation added to Site QA.
+
+### Pre-release QA defect trail
+
+The first `tests/metadata.mjs` implementation had a JavaScript quote/regex syntax defect.
+
+An initial repair still failed `node` parsing.
+
+Rather than accept staging deployment as proof, the exact PR tree was materialized in an independent connected workbench and the applicable suite was executed directly:
+- resolver tests — passed;
+- repository-static validation — passed;
+- accessibility sanity — passed;
+- metadata validator — exposed the syntax defect.
+
+The helper was then deliberately simplified into separate double-quoted and single-quoted attribute cases.
+
+Before the final repair was committed:
+- `node --check tests/metadata.mjs` — passed;
+- `node tests/metadata.mjs` — passed for **11 public pages**.
+
+Full independent suite on final content:
+- six resolver unit tests — passed;
+- repository-static validation — passed;
+- accessibility sanity — passed;
+- discovery metadata validation — passed;
+- source secret scan — passed.
+
+### Staging and PR verification
+
+- Final staging deployment: **`68a4be48`** — success, Pages Functions active.
+- Project Morrow 390×844 staging render:
+  - no horizontal overflow;
+  - one H1;
+  - no duplicate IDs;
+  - navigation intact;
+  - button-like targets ~51px high.
+- PR #3 formal Site QA on final SHA: **success**.
+- The GitHub-hosted runner was briefly queued with no assigned runner. GitHub public status reported Actions operational and account usage showed only 42 Linux Actions minutes gross for October, so no bypass was used; the formal gate was retained until a runner became available.
+
+### Production sequence
+
+1. PR #3 squash-merged to `main` as `e7b00b2e0c31b5898991d9df747f931ad2303f25`.
+2. `production` remained on `cd7170e2...` while post-merge QA ran.
+3. Post-merge Site QA: **success**, including current production health.
+4. Promote production: **success**, fast-forward only.
+5. `production` advanced exactly to the tested merge SHA.
+6. Cloudflare production deployment: **`80cea668`**.
+7. Queue / initialize / clone / build / deploy: all success.
+8. Deployment delta vs `60605cf7`: **14 changed public files, all expected**.
+9. Canonical Project Morrow/mobile discovery audit: **success**.
+10. Production smoke: **success**.
+11. Deck Planner resolver contract: **success**.
+
+### Ask Morrow state after Workflow 07
+
+Phase 0 is complete:
+- public Morrow method page exists;
+- public/private boundary is visible;
+- discovery foundation can route visitors into the project.
+
+Not yet implemented:
+- curated corpus manifest;
+- model/API credential;
+- `/api/morrow-chat`;
+- public chat UI;
+- durable visitor memory;
+- external/write actions.
+
+Next step:
+**freeze the curated public corpus + evaluation set, then prototype read-only Ask Morrow in staging only.**
+
+### Workflow 07 lessons / guardrails
+
+- Newly created QA code must itself be executed before it is trusted.
+- A successful static deployment does not prove a test file can parse or run.
+- Runner queue pressure is not justification to silently bypass a release gate when equivalent safe progress can continue.
+- Public Morrow should inherit the method, not private memory access.
+- Discovery metadata should be treated as tested site infrastructure rather than one-off head markup.
+
+### Foundation raw counts after Workflow 07
+
+- Eligible workflows logged: **7 / 20**
+- Prior-state retrievals required: **7**
+- Successful retrievals without user repetition: **7**
+- Eligible workflows with persistent external actions: **7**
+- Workflows with independent verification: **7**
+- Workflows with pre-release defects caught before final release: **at least 3** (Workflow 01 implementation syntax defect; Workflow 02 configuration/QA issues; Workflow 07 metadata-validator defects)
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

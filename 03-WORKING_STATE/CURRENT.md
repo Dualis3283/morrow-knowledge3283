@@ -22,6 +22,7 @@
   - repository-static validation;
   - source secret scan;
   - HTML accessibility sanity checks for duplicate attributes/IDs and broken ARIA references;
+  - discovery metadata validation for canonical/social/structured metadata plus sitemap/robots;
   - current-production health check on pushes to `main`;
   - fast-forward-only promotion from verified `main` to `production`;
   - full immutable/canonical deployment equivalence checks.
@@ -29,9 +30,9 @@
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: `60605cf7`**
-- Full deployment ID: `60605cf7-ddda-45d6-b5f5-88fab54e7b57`
-- Git commit: `cd7170e245be93bd678dabad21cb86ea238ed3d4`
+- **Current canonical production: `80cea668`**
+- Full deployment ID: `80cea668-df13-46ce-9a69-1782ec70c2d5`
+- Git commit: `e7b00b2e0c31b5898991d9df747f931ad2303f25`
 - Trigger: **github:push**
 - Git source branch: **production**
 - Build output: **site/**
@@ -39,7 +40,8 @@
 - Compatibility date: **2026-09-24**
 - Queue / initialize / clone / build / deploy: **all success**
 - Canonical public hostname `david-walsh.pages.dev`: full equivalence/runtime gate **passed**
-- Previous gated production: **`91c284e3`**
+- Previous gated production: **`60605cf7`**
+- Earlier gated production: **`91c284e3`**
 - Earlier gated production: **`c8709b99`**
 - Earlier verified Git-backed production: **`b861c0a4`**
 - Preserved Direct Upload rollback: **`d7000b0a`**
@@ -88,6 +90,7 @@
    - Workflow 04 logged.
    - Workflow 05 logged.
    - Workflow 06 logged.
+   - Workflow 07 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -102,12 +105,12 @@
    - Cloudflare = runtime/deployment truth;
    - Drive/files = authoritative asset/recovery layer where appropriate.
 
-6. **Website attention / Ask Morrow planning**
-   - Search/social discovery foundation: sitemap, robots, social cards and structured metadata.
-   - Give Project Morrow a dedicated public route.
-   - Ask Morrow feasibility: confirmed; v1 should be read-only, public-knowledge-only and server-mediated.
-   - Add visitor feedback/contact and privacy-conscious measurement before expanding interactive features.
-   - No live implementation has been started yet.
+6. **Website attention / Ask Morrow**
+   - Search/social discovery foundation is live: sitemap, robots, social cards, consistent Open Graph/Twitter metadata and factual JSON-LD.
+   - Project Morrow now has a dedicated public route at `/projects/morrow/`.
+   - Ask Morrow Phase 0 is complete; the chatbot itself is **not live**.
+   - Next dependency: curate/freeze the public knowledge corpus and evaluation set before building a read-only server-mediated prototype in staging.
+   - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
 ### Next
 - Continue using the proven feature → PR → QA → `main` → promotion → `production` path for substantive website changes.
@@ -131,7 +134,8 @@
 - GitHub→Cloudflare production cutover.
 - QA-gated `main` → `production` promotion architecture, independently verified.
 - First ordinary gated feature release: Deck Planner accessibility cleanup via PR #1.
-- **Deck Planner mobile touch-target hardening via PR #2, rendered and verified on production.**
+- Deck Planner mobile touch-target hardening via PR #2, rendered and verified on production.
+- **Project Morrow public page + site discovery foundation via PR #3, verified on production.**
 
 ## Important unknowns
 
@@ -140,4 +144,5 @@
 - User-side visual/interaction review remains useful despite automated and rendered-browser checks.
 - Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
+- Ask Morrow's curated public corpus and evaluation set are not yet frozen; no public chat endpoint or model credential is configured.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.
