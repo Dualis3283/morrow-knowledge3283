@@ -316,3 +316,37 @@ Coverage:
 P0 privacy, prompt-injection, request/rate/dependency and credential cases are hard release gates.
 
 **Next phase:** Phase 1C — build a staging-only, read-only prototype against the frozen corpus and evaluation set. No public beta until the evaluation gate passes.
+
+
+## Phase 1C staging checkpoint — 1 October 2026
+
+The read-only prototype scaffold is implemented and verified in staging.
+
+Detailed evidence:
+`01-PROJECTS/ASK_MORROW_PHASE1C_STATUS.md`
+
+Website feature head:
+`aecf9b2256d043c6b098885263ef913ffcd3cbe2`
+
+Immutable staging preview:
+`eb675ee1`
+
+Verified:
+- frozen 24-chunk deterministic retrieval corpus;
+- public/private boundary;
+- exact 14-case P0 deterministic regression;
+- request validation / same-origin / rate controls;
+- no-retrieval fallback;
+- traceable source IDs;
+- stateless session design;
+- no private/write tools;
+- 18/18 repository unit tests + existing site QA;
+- real 390×844 and 320×568 mobile renders with no overflow and >=44px visible touch targets.
+
+Pending:
+- staging server-side OpenAI API key is not bound;
+- model-generated response evaluation has not run;
+- full keyboard-only interaction evaluation remains pending;
+- no PR / production exposure.
+
+**Next:** securely complete staging-only model credential setup, then execute the frozen evaluation suite. Do not loosen the evaluation to accommodate prototype behaviour.

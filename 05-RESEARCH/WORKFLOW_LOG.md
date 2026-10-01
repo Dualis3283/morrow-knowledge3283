@@ -889,3 +889,96 @@ Tests are frozen before implementation to reduce post-hoc test shaping.
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 11 — Ask Morrow staging prototype scaffold
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** staging implementation + deterministic retrieval/privacy/system validation
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — website feature branch + staging configuration/deployments; production unchanged |
+| Independent verification performed? | Yes — exact local QA, immutable staging runtime probes, Cloudflare build logs, rendered mobile audits |
+| Pre-release defects found? | Yes — false page-context retrieval, GET routing, duplicate handler build failure, missing mobile nav, undersized mobile header targets |
+| Defects caught before production? | Yes |
+| Post-release defect? | Not applicable — no public release |
+| Material rework after completion declared? | No |
+| Final outcome | Read-only Ask Morrow scaffold verified in staging; model-dependent evaluation intentionally pending server-side key |
+
+### Current staging
+
+- feature branch head: `aecf9b2256d043c6b098885263ef913ffcd3cbe2`;
+- immutable preview: **`eb675ee1`**;
+- Pages Functions active;
+- `ASK_MORROW_ENABLED=true` only in staging preview config;
+- `OPENAI_MODEL=gpt-6-luna`;
+- `OPENAI_API_KEY`: **not configured**;
+- production Pages project contains no Ask Morrow env vars.
+
+### Verified architecture / runtime
+
+The prototype uses the frozen public corpus only, deterministic retrieval/source tracing, deterministic privacy/injection interception, same-origin enforcement, bounded request/history sizes, anonymous 10/min rate control, no durable visitor identity and no private/write tools.
+
+No-key runtime passed:
+- health 200;
+- privacy boundary 200 / modelCalled false;
+- no-retrieval fallback 200 / modelCalled false;
+- grounded retrieval controlled 503 + approved trace while key absent;
+- cross-origin 403;
+- unsupported method 405;
+- malformed/empty request 400;
+- request 11+ rate-limited 429 with Retry-After 60.
+
+### Frozen P0 evidence
+
+All **14 / 14** frozen privacy + prompt-injection prompts are deterministically intercepted before model generation and are now stored as a permanent implementation fixture.
+
+### QA / rendered evidence
+
+- **18 / 18** unit tests pass;
+- static validation pass;
+- accessibility sanity pass;
+- metadata pass;
+- secret scan pass;
+- publication privacy pass;
+- 390×844 rendered mobile audit pass after remediation;
+- 320×568 rendered mobile audit pass after remediation;
+- minimum visible touch target: 44px;
+- no horizontal overflow / duplicate IDs.
+
+### Defect trail
+
+1. Generated-write transport syntax error — no Git mutation.
+2. Page-context-only false retrieval — fixed.
+3. Health GET routing defect — fixed.
+4. Duplicate `onRequest` export — Cloudflare build failure identified from logs and fixed.
+5. Missing mobile menu toggle — fixed.
+6. Sub-44px mobile header controls — fixed.
+
+### Remaining gate
+
+Trusted key setup has been initiated but no staging server secret is bound.
+
+Model-dependent frozen evaluation and full keyboard-only interaction review remain pending.
+
+No PR / production promotion is permitted until the frozen evaluation gate passes.
+
+### Foundation raw counts after Workflow 11
+
+- Eligible workflows logged: **11 / 20**
+- Prior-state retrievals required: **11**
+- Successful retrievals without user repetition: **11**
+- Eligible workflows with persistent external actions: **11**
+- Workflows with independent verification: **11**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

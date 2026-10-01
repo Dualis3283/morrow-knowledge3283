@@ -69,3 +69,7 @@ This repository is public. Sensitive personal history, private files, unpublishe
 See [Current Working State](03-WORKING_STATE/CURRENT.md) and [Task Register](03-WORKING_STATE/TASK_REGISTER.md).
 
 Last consolidation: **1 October 2026**.
+
+
+### Ask Morrow staging
+- `01-PROJECTS/ASK_MORROW_PHASE1C_STATUS.md` — current staging prototype evidence and remaining evaluation gate.
