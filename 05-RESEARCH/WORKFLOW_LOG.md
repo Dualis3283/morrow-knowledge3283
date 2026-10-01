@@ -982,3 +982,71 @@ No PR / production promotion is permitted until the frozen evaluation gate passe
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 12 — Ask Morrow secure model runtime and billing diagnosis
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** secret isolation + staging runtime adaptation + model-path diagnosis
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — Cloudflare env/runtime config + staging feature-branch diagnostics |
+| Independent verification performed? | Yes — Cloudflare project readback, isolated deployment readback, health probe, grounded model probe |
+| Pre-release defect/risk found? | Yes — API key existed in real production project as well as staging |
+| Defect/risk contained before production use? | Yes — real production copy removed and re-verified absent |
+| Post-release defect? | Not applicable — Ask Morrow not publicly released |
+| Material rework after completion declared? | No |
+| Final outcome | Secure staging key path verified; model API reached; evaluation blocked by billing_not_active |
+
+### Secret / environment evidence
+
+Initial readback showed OPENAI_API_KEY in both the isolated staging project and the real production project. The real production copy was removed immediately.
+
+Final verified real production state:
+- canonical deployment: `f030df30`;
+- production branch: `production`;
+- production env vars: none;
+- preview env vars: none.
+
+Isolated staging state:
+- staging project production branch temporarily set to `feature/ask-morrow-prototype`;
+- production env contains ASK_MORROW_ENABLED, OPENAI_MODEL=gpt-6-luna, and encrypted OPENAI_API_KEY;
+- current canonical staging deployment: `b962d551`;
+- Git commit: `b4af125710932030ba077aca210fa6ecefd9c613`;
+- deployment success; Pages Functions active.
+
+### Model-path diagnosis
+
+Health check: HTTP 200, modelConfigured true, read-only/stateless, 24 frozen corpus chunks.
+
+Grounded model probe: OpenAI Responses API returned HTTP 429 with upstream type/code `billing_not_active`.
+
+Interpretation: website/runtime/secret wiring is functioning. Remaining blocker is OpenAI API account/project billing activation.
+
+### Safety decision
+
+The raw key was never requested in chat after storage and was never returned by tooling. The frozen model-dependent evaluation was not run while billing was inactive.
+
+### Next
+
+User action required: activate API billing for the OpenAI organization/project backing the staging key. Then re-run one grounded probe, run the frozen evaluation, complete keyboard-only interaction review, score the gate, and only then consider public beta.
+
+### Foundation raw counts after Workflow 12
+
+- Eligible workflows logged: **12 / 20**
+- Prior-state retrievals required: **12**
+- Successful retrievals without user repetition: **12**
+- Eligible workflows with persistent external actions: **12**
+- Workflows with independent verification: **12**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

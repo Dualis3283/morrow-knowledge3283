@@ -94,6 +94,7 @@
    - Workflow 09 logged.
    - Workflow 10 logged.
    - Workflow 11 logged.
+   - Workflow 12 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -115,9 +116,11 @@
    - Publication Privacy Standard is now a hard corpus boundary.
    - Public corpus v1.0-eval is frozen and validated against pinned source commits.
    - Fixed Ask Morrow evaluation set v1.0 is frozen: 40 response cases + 8 system/UX cases.
-   - Phase 1C staging prototype scaffold is implemented and verified on feature branch `feature/ask-morrow-prototype` / staging `eb675ee1`.
-   - Retrieval/privacy/system layers are verified; the server-side model key is not configured.
-   - Next dependency: complete trusted staging-only API credential setup, then run the frozen model-dependent evaluation suite and keyboard interaction gate. No PR/public beta until it passes.
+   - Phase 1C staging prototype scaffold is implemented and verified on feature branch `feature/ask-morrow-prototype`.
+   - Staging model-runtime checkpoint: branch head `b4af125710932030ba077aca210fa6ecefd9c613`, isolated staging canonical `b962d551`.
+   - `OPENAI_API_KEY` is securely bound only to the separate `david-walsh-staging` project; the accidental copy in real `david-walsh` production was removed and re-verified absent.
+   - The staging model path reaches OpenAI, but the current API project returns HTTP 429 with `billing_not_active`; no model answer is generated.
+   - Next dependency: activate OpenAI API billing for the project/key, then run the frozen model-dependent evaluation suite and keyboard interaction gate. No PR/public beta until it passes.
    - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
 ### Next
@@ -153,6 +156,6 @@
 - User-side visual/interaction review remains useful despite automated and rendered-browser checks.
 - Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
-- Ask Morrow corpus v1.0-eval and evaluation set v1.0 are frozen. A staging-only read-only endpoint/UI now exists on the feature branch, but no OpenAI API key is bound and no production/public endpoint exists.
+- Ask Morrow corpus v1.0-eval and evaluation set v1.0 are frozen. A staging-only read-only endpoint/UI exists and now has a secure staging-only API key binding. Model evaluation is blocked specifically by OpenAI API `billing_not_active`; no production/public Ask Morrow endpoint exists.
 - Third-party search-engine/cache copies cannot be guaranteed deleted by Cloudflare cleanup; current searches found no indexed copies of the removed Ireland/PlayStation wording.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.

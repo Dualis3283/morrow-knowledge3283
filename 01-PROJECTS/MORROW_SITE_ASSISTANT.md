@@ -350,3 +350,52 @@ Pending:
 - no PR / production exposure.
 
 **Next:** securely complete staging-only model credential setup, then execute the frozen evaluation suite. Do not loosen the evaluation to accommodate prototype behaviour.
+
+
+## Phase 1C model-runtime checkpoint — 1 October 2026
+
+The trusted model credential is now present in the isolated staging project, but the model-dependent evaluation has not begun because the OpenAI API project reports billing inactive.
+
+Current website feature head:
+`b4af125710932030ba077aca210fa6ecefd9c613`
+
+Current isolated staging canonical deployment:
+`b962d551`
+
+### Secret isolation
+
+- real production project `david-walsh`: no OPENAI_API_KEY and no Ask Morrow env vars;
+- isolated project `david-walsh-staging`: OPENAI_API_KEY exists as encrypted secret_text;
+- staging evaluation runtime also has ASK_MORROW_ENABLED=true and OPENAI_MODEL=gpt-6-luna.
+
+The key value was never read or exposed. The user-added secret initially existed in both staging and the real production project. The production copy was removed immediately before model evaluation continued.
+
+### Staging runtime adaptation
+
+Because Cloudflare mobile stored the secret in the staging project's Production environment rather than Preview, the separate staging project was temporarily configured so its own production branch is `feature/ask-morrow-prototype`. This does not change the real `david-walsh` production project.
+
+### Model-path evidence
+
+- health: HTTP 200;
+- modelConfigured: true;
+- corpus: ask-morrow-v1.0-eval;
+- 24 corpus chunks;
+- read-only/stateless.
+
+A single grounded model probe reached the OpenAI API and returned upstream HTTP 429 with error type/code `billing_not_active`.
+
+This confirms Cloudflare can read the secret and the Pages Function can reach OpenAI. The remaining blocker is API account/project billing, not website code, secret format or Cloudflare routing.
+
+A staging-safe diagnostic now returns only upstream error type/code and never exposes the key or raw upstream account data.
+
+### Gate status
+
+Still pending:
+- OpenAI API billing activation;
+- successful first grounded model response;
+- 40 frozen model-dependent response cases / required P0 trials;
+- active dependency-failure checks;
+- full keyboard-only interaction review;
+- final frozen evaluation score.
+
+No PR to `main` and no production promotion is permitted until those gates pass.
