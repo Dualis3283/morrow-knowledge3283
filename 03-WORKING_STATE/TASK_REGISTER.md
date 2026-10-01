@@ -24,6 +24,10 @@ Consolidated from Notion pipeline status plus live external verification.
 **Status:** In progress / research  
 **Next:** maintain a proven-capability map; real reads/writes override connection badges.
 
+### Ask Morrow AI Workflow
+**Status:** In progress / staging-only; provider evaluation blocked at Cloudflare authentication restoration  
+**Next:** restore scoped Cloudflare API-token access and prove a real API read **without a code commit**; then (1) commit provider-boundary refactor, (2) commit Workers AI staging provider using `env.AI`, (3) commit evaluation telemetry, and run the frozen 48-case gate before any PR/public beta. OpenAI remains blocked by `billing_not_active` and is not required for the free proof-of-concept.
+
 ### Deck Planner Companion App
 **Status:** In progress / review  
 **Next:** phone review, Shorikai/Victor regression checks, accessibility QA, rate-limit/resolver monitoring.
@@ -43,8 +47,8 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** print representative proof from Print Master v2 at Actual Size.
 
 ### Project Morrow measurement foundation
-**Status:** Not started  
-**Next:** log next 20 eligible substantive workflows using the six metrics.
+**Status:** In progress  
+**Next:** continue until 20 eligible substantive workflows are logged using the six metrics.
 
 ### MTG Deck Development
 **Status:** In progress  

@@ -1,120 +1,120 @@
-# Ask Morrow — Phase 1C Staging Prototype Status
+# Ask Morrow — AI Workflow / Staging Checkpoint
 
 **Checkpoint:** 1 October 2026  
-**Status:** staging prototype infrastructure verified; model-dependent evaluation pending  
+**Status:** staging architecture preserved; provider evaluation paused at Cloudflare authentication restoration  
 **Production exposure:** none
 
-## Exact staging state
+## Confirmed current state
 
-- Feature branch: `feature/ask-morrow-prototype`
-- Current branch head: `aecf9b2256d043c6b098885263ef913ffcd3cbe2`
-- Immutable staging preview: **`eb675ee1`**
-- Pages Functions: active
-- Corpus: `ask-morrow-v1.0-eval`
-- Embedded retrieval chunks: **24**
-- Model selection: `gpt-6-luna`
-- `OPENAI_API_KEY`: **not configured**
-- Production Pages project Ask Morrow env vars: **none**
+- Ask Morrow remains a **staging-only** experiment.
+- Public/private separation remains mandatory: the assistant may use only the curated public-safe Morrow corpus.
+- Frozen corpus: `ask-morrow-v1.0-eval`.
+- Frozen evaluation set: **40 response cases + 8 system/UX cases**.
+- Deterministic privacy / prompt-injection boundary remains part of the design.
+- No private Notion, Gmail, files, personal history, credentials, or write-capable tools belong in the public runtime.
+- The OpenAI staging path was reached successfully after a staging-only key was bound, but the API project returned **HTTP 429 `billing_not_active`**. No production key/binding should exist.
+- Because this is a proof-of-concept intended to minimise recurring cost, **Cloudflare Workers AI is the next provider to evaluate** before enabling paid OpenAI API billing.
+- Provider abstraction remains the intended design so Workers AI and OpenAI are implementation choices rather than architectural lock-in.
 
-The staging prototype is intentionally unavailable as a production/public-beta feature.
+## Cloudflare access checkpoint
 
-## Implemented architecture
+Historical project work established a dedicated scoped API-token path that could return real Cloudflare HTTP 200 responses and manage Pages/deployments.
 
-1. bounded JSON request validation;
-2. same-origin request enforcement;
-3. ephemeral anonymous hashed-IP rate control;
-4. deterministic protected-source/privacy/prompt-injection boundary;
-5. deterministic retrieval from the frozen versioned public corpus only;
-6. model generation path using the Responses API only when a server-side key exists;
-7. `store:false` on model requests;
-8. source IDs + retrieval trace returned separately from generated text;
-9. bounded recent transcript supplied by the browser session only;
-10. no D1, KV, R2, vector database, private connectors or write tools.
+During this checkpoint, the currently exposed Composio Cloudflare connection reported itself as **ACTIVE**, but a real account API call failed with:
 
-## No-key runtime verification
+- **HTTP 400**
+- **Invalid request headers**
+- **Invalid format for `X-Auth-Key` header**
 
-- health: **200** — read-only, stateless, corpus identified, model not configured;
-- privacy request: **200 boundary** — no model call, source M-A01;
-- nonsense / no retrieval: **200 fallback** — no sources, no model call;
-- grounded query without key: **503 model_not_configured** with approved retrieval trace;
-- cross-origin POST: **403**;
-- unsupported method: **405**;
-- invalid JSON: **400**;
-- empty request: **400**;
-- rate control: requests 1–10 accepted; requests 11–13 returned **429** with `Retry-After: 60`.
+Therefore a connector badge is **not** evidence of usable Cloudflare authentication.
 
-## P0 boundary verification
+Do not continue Workers AI implementation through the rejected legacy `X-Auth-Key` path.
 
-The exact 14 frozen privacy / prompt-injection response cases from `ask-morrow-eval-v1.0` were executed against the deterministic boundary.
+### Authentication rule
 
-Result: **14 / 14 intercepted before retrieval/model generation.**
+Use the previously proven **scoped API-token / Cloudflare MCP path**.
 
-Permanent fixture:
-`tests/fixtures/ask-morrow-p0.json`
+Do not use:
+- raw credentials in chat;
+- browser/client-side secrets;
+- Git-tracked secrets;
+- legacy email + Global API Key authentication for this workflow.
 
-## Repository QA
+## Best next actions
 
-At current head:
-- unit tests: **18 / 18 pass**;
-- Deck Planner resolver regressions: pass;
-- repository static validation: pass;
-- HTML accessibility sanity: pass;
-- discovery metadata validation: pass;
-- source secret scan: pass;
-- publication privacy validation: pass.
+### Gate 0 — restore access; no code commit
 
-## Mobile / accessibility evidence
+1. Restore/reconnect the scoped Cloudflare API-token path.
+2. Prove it with a real account-level Cloudflare request returning success.
+3. Read back `david-walsh-staging`.
+4. Confirm the production project remains free of Ask Morrow provider secrets/bindings.
+5. Confirm the staging project is the only target for model experiments.
 
-Initial rendered staging checks found:
-1. hidden mobile navigation because the shared menu-toggle contract was omitted;
-2. mobile header controls below the 44px touch baseline.
+**This is an authentication repair, not a source-code change. Do not create a code commit merely to record credential churn.**
 
-Both were repaired.
+### Commit 1 — provider boundary
 
-Final rendered checks:
+After Gate 0 passes:
 
-### 390 × 844
-- no horizontal overflow;
-- one H1;
-- no duplicate IDs;
-- menu opens;
-- Project Morrow + Home visible;
-- minimum visible target: **44px**;
-- textarea programmatically labelled.
+- re-verify the actual head of `feature/ask-morrow-prototype`;
+- preserve the deterministic boundary/retrieval path;
+- introduce or normalise a small provider adapter interface;
+- keep provider-specific code behind that interface;
+- keep secrets and environment-specific identifiers out of source.
 
-### 320 × 568
-- no horizontal overflow;
-- one H1;
-- no duplicate IDs;
-- menu opens;
-- composer visible;
-- Project Morrow + Home visible;
-- minimum visible target: **44px**;
-- textarea programmatically labelled.
+Suggested commit intent:
 
-A full keyboard-only interaction walkthrough remains part of the later evaluation gate.
+`refactor(ask-morrow): isolate model provider boundary`
 
-## Defects caught during Phase 1C
+### Commit 2 — Workers AI staging provider
 
-1. Initial generated-write transport syntax failure; no repository mutation.
-2. Page-context boosting caused false retrieval for a nonsense query; fixed so page boost requires a real token match.
-3. Health GET routing was not handled as intended; fixed with explicit generic request routing.
-4. Sequential connector writes appended `onRequest` twice; Cloudflare build `e25953c5` failed with duplicate export and was repaired.
-5. Rendered mobile audit found inaccessible navigation; shared toggle / ARIA contract restored.
-6. Rendered audit found header/menu targets below 44px; prototype-only touch hardening added.
+Only after Commit 1 is clean:
 
-## Current blocker / next dependency
+- add a Workers AI provider implementation using the Cloudflare `AI` binding / `env.AI`;
+- perform the smallest possible staging inference first;
+- fail closed when the binding/model is unavailable;
+- retain the existing privacy/retrieval boundary;
+- do not alter production bindings.
 
-The trusted OpenAI API-key setup flow has been initiated, but **no server-side key is currently bound to Cloudflare staging**.
+Suggested commit intent:
 
-Do not place a raw API key in chat, Git, browser JavaScript or public configuration.
+`feat(ask-morrow): add staging Workers AI provider`
 
-Once a staging-only server key is securely configured:
-1. verify credential containment;
-2. execute the frozen model-dependent response cases and required P0 trials;
-3. exercise active model/dependency failure paths;
-4. complete keyboard-only interaction review;
-5. score the frozen evaluation gate;
-6. only then decide whether a limited public beta is eligible.
+### Commit 3 — evaluation telemetry
 
-**No PR to main and no production promotion should occur before the evaluation passes.**
+After a real inference succeeds:
+
+- record provider, model identifier, request outcome, latency and bounded usage metadata needed for cost/capacity comparison;
+- do **not** log private prompts, credentials, private source content, or unnecessary visitor identifiers;
+- keep instrumentation sufficient to compare free/low-cost proof-of-concept behaviour with a future paid provider.
+
+Suggested commit intent:
+
+`test(ask-morrow): instrument provider evaluation`
+
+## Evaluation gate
+
+Run the frozen **48-case** evaluation only after the staging model path works.
+
+Required before any PR/public beta decision:
+
+1. frozen response cases executed;
+2. P0 privacy/prompt-injection trials remain intercepted before unsafe model use;
+3. active provider/dependency failure paths exercised;
+4. keyboard-only interaction gate completed;
+5. latency/usage captured;
+6. failures and regressions recorded;
+7. production-secret/binding check repeated.
+
+**No PR to `main`, no production promotion, and no public Ask Morrow endpoint until the evaluation gate passes.**
+
+## Current unknowns
+
+- The current exact head of the private `Dualis3283/david-walsh-site` feature branch was not independently read back during this checkpoint because the present direct GitHub connection did not expose that private repository. Re-verify it before the first source commit.
+- Workers AI binding resolution (`env.AI`) has not yet been proven in the resumed session.
+- No successful Workers AI model inference has yet been recorded.
+- Comparative latency/cost/quality data does not yet exist.
+
+## Resume point
+
+**Restore scoped Cloudflare token access → prove HTTP success → inspect staging → minimal `env.AI` inference → provider-adapter commits → frozen evaluation → decision on public beta/provider economics.**
