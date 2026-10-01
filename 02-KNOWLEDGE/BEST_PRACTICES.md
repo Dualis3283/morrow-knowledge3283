@@ -12,6 +12,16 @@ This file distils reusable lessons from website deployment, Compleated Loyalty, 
 - When a state changes, record what it supersedes.
 - Keep a minimum resume record: project, date, current state, decisions, last confirmed artifacts/links, blockers, open questions, next action.
 
+## Authority and reconciliation
+
+- For a specific project's current operational state, use the **project-specific record first**.
+- Morrow Working State is a synthesized snapshot; it must be updated when a newer project record supersedes it.
+- Durable decisions belong in the Decision Log; connector capability belongs in the Connector & Integration Layer.
+- GitHub is a versioned public-safe mirror, not automatically the newest source merely because it has a commit timestamp.
+- Foundations and Archive preserve evidence and recovery context; their old next-actions are historical unless explicitly promoted.
+- At each major checkpoint ask: **Does this new state supersede another active next-action?**
+- Do not close the checkpoint until affected broader records are reconciled and, where practical, read back.
+
 ## Verification
 
 - Tool acceptance is not proof of external result.

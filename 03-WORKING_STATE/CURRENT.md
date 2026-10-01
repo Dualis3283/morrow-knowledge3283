@@ -53,6 +53,9 @@
 
 ### Notion
 - **Morrow — Project Pipeline** remains the operational task/status source.
+- **Pipeline Reconciliation v1** is active.
+- For a specific project's current state, the project-specific record outranks broader Working State summaries.
+- Working State must be reconciled when a newer project checkpoint supersedes one of its active next-actions.
 - Duplicate/superseded records are archived rather than deleted.
 - Project Morrow measurement foundation is active.
 

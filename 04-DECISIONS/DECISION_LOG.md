@@ -24,6 +24,20 @@ Durable decisions that materially affect future work.
 
 ---
 
+## 2026-10-01 — Pipeline Reconciliation v1 defines current-state authority
+
+**Decision:** resolve conflicting Morrow records in this order: project-specific record → Morrow Working State → Decision Log → Connector & Integration Layer → public-safe GitHub mirror → Foundations / Archive.
+
+**Why:** valid records can become stale at different speeds. Retrieval success is not enough if a broader record still carries an obsolete next-action.
+
+**Checkpoint rule:** whenever a project state changes materially, ask whether it supersedes another active next-action. Reconcile affected broader records before closing the checkpoint.
+
+**Constraint:** Foundations and Archive remain valuable evidence, but historical instructions do not regain operational authority merely because they remain readable.
+
+**Reversal criteria:** replace this hierarchy only when a tested automated source-of-truth system provides stronger conflict resolution and independent readback.
+
+---
+
 ## 2026-10-01 — Website V18 is current production
 
 **Decision:** V18 / Cloudflare deployment `d7000b0a` is the current production baseline.
