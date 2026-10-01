@@ -352,3 +352,72 @@ Guardrail:
 - Workflows requiring material rework after being presented complete: **0**
 
 These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 06 — Website attention audit & Ask Morrow feasibility
+
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Project Morrow  
+**Task type:** source audit + information architecture review + AI assistant architecture research + backlog definition
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — durable GitHub/Notion checkpoint only; no live-site modification |
+| Independent verification performed? | Yes — nine current page sources + current Cloudflare/GitHub state + current OpenAI API documentation |
+| Improvement opportunities found? | Yes — search/social metadata, Morrow destination, visitor feedback, analytics, project indexing, content consistency |
+| Live production changed? | No |
+| Post-release defect? | Not applicable |
+| Material rework after completion declared? | No |
+| Final outcome | Prioritized website backlog established; public Ask Morrow assistant confirmed feasible with a read-only/private-data-safe architecture |
+
+### Audit evidence
+
+Nine principal public pages were inspected.
+
+Confirmed:
+- 9/9 have titles, meta descriptions, canonical URLs and one H1;
+- audited images all define an alt attribute;
+- 0/9 include JSON-LD;
+- 0/9 define an Open Graph image;
+- most pages do not define Twitter-card metadata;
+- no robots/sitemap files exist in the current site source root;
+- no audited public page contains a form;
+- Cloudflare Web Analytics is not configured;
+- the home page explains Morrow but there is no dedicated Morrow route.
+
+### Ask Morrow feasibility conclusion
+
+A public-facing Morrow assistant is feasible with the current architecture.
+
+Recommended:
+- UI on a dedicated Morrow page plus optional site-wide entry point;
+- same-origin Cloudflare Pages Function;
+- server-side API credential;
+- OpenAI Responses API;
+- curated public-only Morrow/site knowledge;
+- read-only v1;
+- no private Notion/memory/Gmail/private-file access;
+- no website/GitHub/Cloudflare write tools;
+- explicit AI/public-knowledge disclosure;
+- fixed evaluation set before public beta.
+
+### Workflow 06 lesson
+
+A public AI assistant should preserve **method continuity without pretending to have private memory continuity**. The knowledge boundary is part of the product design, not an implementation footnote.
+
+### Foundation raw counts after Workflow 06
+
+- Eligible workflows logged: **6 / 20**
+- Prior-state retrievals required: **6**
+- Successful retrievals without user repetition: **6**
+- Workflows with independent verification: **6**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

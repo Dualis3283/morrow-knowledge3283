@@ -212,3 +212,116 @@ Next checks:
 - continue broader accessibility QA where it adds evidence;
 - capture exact dated Shorikai/Victor full lists before adding full-deck executable fixtures;
 - future backend/data design only when it solves a demonstrated problem.
+
+
+## Website attention audit — 1 October 2026
+
+With Deck Planner hardening at a checkpoint, the broader public site was audited across nine principal pages:
+- home;
+- about;
+- memoir;
+- poetry;
+- professional;
+- Compleated Loyalty;
+- Ascension;
+- Duality Unfolding;
+- Pearlescent Gaze.
+
+### Confirmed strengths
+
+- Every audited page has a page title, meta description, canonical URL and one H1.
+- All audited image elements have an `alt` attribute.
+- The home page already presents Project Morrow as a method: context, evidence and verification.
+- Navigation between creative disciplines is established and coherent.
+- The release pages link to listening platforms and related releases.
+- The professional page and project pages retain the same broad dark-editorial identity.
+
+### Priority attention areas
+
+#### 1. Search and social discovery foundation — high priority / low implementation risk
+
+Current source audit:
+- **0 / 9** audited pages contain JSON-LD structured data.
+- **0 / 9** audited pages define an Open Graph image.
+- Home, Professional and Compleated Loyalty do not currently define Open Graph title/description metadata.
+- Twitter-card metadata is absent on most audited pages.
+- No `robots.txt` or `sitemap.xml` exists in the current `site/` source root.
+
+Recommended next pass:
+- add sitemap and robots files;
+- add consistent Open Graph / social-card metadata;
+- add one reusable share image family;
+- add appropriate structured data for Person, MusicAlbum/MusicRecording, CreativeWork/Book and project pages where factual;
+- add automated metadata sanity checks to Site QA.
+
+#### 2. Project Morrow needs a first-class public destination — high priority
+
+Morrow is currently explained on the home page but does not have its own route.
+
+Recommended:
+- create a dedicated `/projects/morrow/` or `/morrow/` page;
+- explain the ethos, methodology, continuity model, evidence discipline and verification loop;
+- show public-safe examples of how the method changed actual projects;
+- distinguish Morrow from a generic AI persona.
+
+This page is also the natural home for a future **Ask Morrow** assistant.
+
+#### 3. Visitor next-actions / feedback — medium-high priority
+
+Across the nine audited pages:
+- there are no public forms;
+- no dedicated contact/feedback route exists;
+- there is no lightweight site-feedback mechanism.
+
+This is not inherently a defect, but the site now has enough substantive work that visitors should have a clear way to:
+- give project feedback;
+- contact David;
+- report a Deck Planner issue;
+- optionally share whether a Morrow answer was useful.
+
+A contact/feedback path should be privacy-minimal and should not expose a personal inbox address in client-side code unless explicitly intended.
+
+#### 4. Measurement — medium-high priority
+
+Cloudflare Web Analytics is not configured.
+
+Before adding more interactive systems, a privacy-conscious measurement baseline would help answer:
+- which sections visitors actually enter;
+- whether visitors reach project/release detail pages;
+- whether Deck Planner and a future Ask Morrow assistant are used;
+- whether social/search improvements change discovery.
+
+Do not invent performance or engagement claims before measurement exists.
+
+#### 5. Project navigation / growth — medium priority
+
+The home page has a Projects section, but there is no dedicated general projects index route.
+
+As the site grows, a project hub could prevent the home page becoming the only directory for:
+- Compleated Loyalty;
+- Deck Planner;
+- Magic Quick Reference;
+- Deck Evolution Planner;
+- Project Morrow;
+- future systems/creative work.
+
+#### 6. Release-page depth and consistency — medium priority
+
+Ascension has materially richer explanatory content than Duality Unfolding and Pearlescent Gaze.
+
+Do not add filler for SEO. Instead, where source material exists, consider:
+- brief creative context;
+- credits / release facts;
+- relationship to poetry or wider themes;
+- selected visual/process notes;
+- clearer routes into related work.
+
+#### 7. Media/performance follow-up — lower priority until measured
+
+Several existing public assets are in the ~400–650 KB range, including:
+- `cl-playmat.webp` ~656 KB;
+- `cl-commander-process.webp` ~521 KB;
+- `compleated-playmat.webp` ~493 KB;
+- `in-my-own-light.png` ~412 KB.
+
+These sizes alone do not prove a performance problem. Before changing assets, measure rendered dimensions, loading behaviour and real page performance. Prefer evidence over blanket recompression.

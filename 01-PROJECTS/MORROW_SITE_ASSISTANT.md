@@ -1,0 +1,203 @@
+# Ask Morrow — Public Website Assistant
+
+**Status:** Feasibility confirmed; planning only  
+**Date:** 1 October 2026
+
+## Purpose
+
+Create a public-facing assistant that helps visitors understand David Walsh's work by using the **Morrow ethos and methodology** rather than behaving like a generic website chatbot.
+
+The assistant should guide, explain and connect context. It should not pretend to be David, should not make decisions for visitors, and should not claim access to private continuity that has not been deliberately published.
+
+Working name:
+- **Ask Morrow**
+
+## Core behavioural model
+
+The public assistant should inherit the public-safe Morrow operating sequence:
+
+**Context → Evidence → Pattern → Interpretation → Action → Verification → Lesson**
+
+Response principles:
+- context before conclusion;
+- evidence before interpretation;
+- distinguish confirmed facts, interpretation and unknowns;
+- preserve human agency and authorship;
+- explain method rather than hide it;
+- make uncertainty visible;
+- avoid passive agreement;
+- prefer inspectable/reversible next steps;
+- never claim private memory or source access it does not have.
+
+For substantial answers, adapt:
+
+**Context → Evidence → Findings → Interpretation → Actions / Next steps**
+
+The assistant should remain conversational rather than mechanically printing those headings every turn.
+
+## Recommended v1 architecture
+
+### Browser
+
+A small accessible chat interface on the site:
+- optional floating **Ask Morrow** entry point;
+- full panel or dedicated Morrow page;
+- keyboard-accessible controls;
+- visible disclosure that answers are AI-generated;
+- current page URL/title can be supplied as context so Morrow can answer questions about the page the visitor is viewing.
+
+### Server boundary
+
+Use a same-origin Cloudflare Pages Function, for example:
+
+`POST /api/morrow-chat`
+
+Responsibilities:
+- validate request size/shape;
+- apply abuse/rate controls;
+- hold the AI API credential server-side;
+- construct the Morrow instruction layer;
+- call the model API;
+- return only the response data required by the UI;
+- log only privacy-minimal operational data.
+
+Never expose a standard API key in browser JavaScript.
+
+### Model interface
+
+Use OpenAI's **Responses API** for new work.
+
+A first version does not require D1, KV or R2.
+
+Privacy-first session option:
+- keep a bounded recent transcript in browser state;
+- send the necessary recent turns with each request;
+- use non-durable response storage where practical;
+- do not create a permanent visitor identity.
+
+A later version could add durable conversation state only if a demonstrated user need justifies the retention/privacy trade-off.
+
+## Knowledge boundary
+
+The website assistant must use a **curated public knowledge set**, not David's private memory.
+
+Recommended public knowledge sources:
+- selected public-safe files from `morrow-knowledge3283`;
+- public website copy;
+- approved project summaries;
+- approved release/creative metadata;
+- explicit source links.
+
+Do **not** expose by default:
+- private Notion pages;
+- private ChatGPT memory/history;
+- Gmail or personal contacts;
+- private files;
+- website-repository write credentials;
+- GitHub write actions;
+- Cloudflare administration;
+- personal/sensitive memoir source material beyond what is already approved for publication.
+
+## Retrieval
+
+For v1, use a small curated knowledge corpus.
+
+Preferred pattern:
+- upload approved Morrow/site documents to a searchable knowledge store;
+- allow the assistant to retrieve only from that corpus;
+- return source/page references when a factual answer relies on the corpus.
+
+The public bot should be able to say:
+- “I don't have that in the public Morrow knowledge base.”
+- “This is an interpretation, not a recorded decision.”
+- “That information is private/not published.”
+
+## Action boundary
+
+**v1 should be read-only.**
+
+Allowed:
+- explain pages/projects;
+- connect related work;
+- explain Morrow methodology;
+- guide visitors to Deck Planner, poetry, music, memoir or professional work;
+- answer public project questions;
+- suggest where to look next.
+
+Not allowed in v1:
+- edit the website;
+- update Notion;
+- write to GitHub;
+- deploy Cloudflare;
+- send email/messages;
+- access private personal data;
+- make purchases or external commitments.
+
+Public write/action tools should be considered only after explicit threat modelling, authorization design and a real user need.
+
+## Recommended interaction examples
+
+- “What is Project Morrow?”
+- “How does Morrow differ from a normal chatbot?”
+- “How did the Morrow method affect the Deck Planner?”
+- “Show me how the poetry and music connect.”
+- “What should I look at if I'm interested in systems thinking?”
+- “Explain Compleated Loyalty without assuming I play Magic.”
+- “What is confirmed versus still experimental in this project?”
+
+## Quality / evaluation gate
+
+Do not ship solely because the assistant sounds plausible.
+
+Before public release, create a fixed evaluation set covering:
+- factual grounding;
+- source boundary;
+- private-data refusal;
+- uncertainty handling;
+- correct Morrow methodology;
+- page routing;
+- hallucination resistance;
+- prompt-injection attempts;
+- mobile accessibility;
+- latency/error states;
+- abuse/cost controls.
+
+A public assistant should only be described as “Morrow” after those evaluations show it behaves consistently enough with the published model.
+
+## Relationship to the existing Morrow instance
+
+The site assistant can **act according to the Morrow ethos and methodology**, but it is not automatically the same continuity-bearing instance used in private ChatGPT work.
+
+Correct framing:
+
+> A public-facing Morrow instance, grounded in a curated public knowledge base and the published Morrow operating model.
+
+This preserves continuity of method without falsely claiming continuity of private memory.
+
+## Suggested implementation phases
+
+### Phase 0 — public Morrow page
+Create the dedicated explanatory page before chat.
+
+### Phase 1 — read-only prototype
+- same-origin Pages Function;
+- Morrow instructions;
+- small curated corpus;
+- no durable user memory;
+- no external actions;
+- test locally/staging only.
+
+### Phase 2 — evaluation
+Run fixed test cases and mobile/accessibility review.
+
+### Phase 3 — limited public beta
+Expose Ask Morrow with clear AI/public-data disclosure and feedback controls.
+
+### Phase 4 — evidence-led expansion
+Only add durable sessions, richer retrieval or additional tools if actual use demonstrates the need.
+
+## Decision
+
+**Feasible with the current website architecture.**
+
+Existing Pages Functions already prove the site can host same-origin server logic. No new database is required for a privacy-first v1. The main new dependency is a server-side model API credential plus a deliberately curated public knowledge corpus.

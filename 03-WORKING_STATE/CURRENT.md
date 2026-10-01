@@ -87,6 +87,7 @@
    - Workflow 03 logged.
    - Workflow 04 logged.
    - Workflow 05 logged.
+   - Workflow 06 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -100,6 +101,13 @@
    - Notion = operational pipeline;
    - Cloudflare = runtime/deployment truth;
    - Drive/files = authoritative asset/recovery layer where appropriate.
+
+6. **Website attention / Ask Morrow planning**
+   - Search/social discovery foundation: sitemap, robots, social cards and structured metadata.
+   - Give Project Morrow a dedicated public route.
+   - Ask Morrow feasibility: confirmed; v1 should be read-only, public-knowledge-only and server-mediated.
+   - Add visitor feedback/contact and privacy-conscious measurement before expanding interactive features.
+   - No live implementation has been started yet.
 
 ### Next
 - Continue using the proven feature → PR → QA → `main` → promotion → `production` path for substantive website changes.
