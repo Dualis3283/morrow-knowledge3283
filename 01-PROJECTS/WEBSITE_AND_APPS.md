@@ -6,9 +6,9 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`80cea668`**
-- Full deployment ID: `80cea668-df13-46ce-9a69-1782ec70c2d5`
-- Git commit: `e7b00b2e0c31b5898991d9df747f931ad2303f25`
+- Current canonical deployment: **`f030df30`**
+- Full deployment ID: `f030df30-895b-4cc3-affa-f7bc090d78ad`
+- Git commit: `2f8f3cfac166225849445779a059a05431eca8da`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
 - Cloudflare production branch: **production**
@@ -17,12 +17,11 @@
 - Pages Functions: **active**
 - Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
 
-Rollback references:
-- previous gated production: **`60605cf7`**
-- earlier gated production: **`91c284e3`**
-- earlier gated production: **`c8709b99`**
-- earlier verified Git-backed production: **`b861c0a4`**
-- Direct Upload V18: **`d7000b0a`**
+Privacy / recovery state:
+- pre-privacy Cloudflare deployment snapshots have been retired;
+- only canonical production `f030df30` and final clean staging `c52be4c5` remain publicly addressable;
+- private Git history is the recovery source for old states;
+- republishing an old state requires a new privacy review.
 
 ## Gated deployment model
 
@@ -257,7 +256,7 @@ For meaningful website/app changes:
 9. Verify immutable deployment when risk warrants it.
 10. Verify canonical public hostname.
 11. Record commit SHA ↔ Cloudflare deployment ID.
-12. Preserve rollback points and checkpoint Morrow/Notion.
+12. Preserve rollback points and checkpoint Morrow/Notion **unless the release removes material for privacy**. In that case, retire public historical snapshots containing the removed material and retain recovery history privately in Git.
 
 ## Deck Planner Companion App
 
@@ -410,3 +409,122 @@ Remaining attention from the audit:
 - eventual projects index as the catalogue grows;
 - evidence-led release-page enrichment;
 - performance measurement before media optimisation.
+
+
+## Publication privacy release — Workflow 08
+
+**PR #4 — Establish publication privacy boundary**
+
+- Final tested feature SHA: `00052f7343f10e88772892102c9baf6e759cfd6d`
+- Squash merge: `2f8f3cfac166225849445779a059a05431eca8da`
+- Canonical Cloudflare production: **`f030df30`**
+- Final clean staging preview: **`c52be4c5`**
+
+### Audit scope and findings
+
+The privacy audit covered:
+- all public site text/source;
+- visible biography/project/release prose;
+- direct contact/location patterns;
+- public identity/profile linkage;
+- image EXIF/GPS/Photoshop metadata;
+- PDF metadata;
+- search-engine exposure checks.
+
+No acute leak was found:
+- no public personal email or phone;
+- no home/work street address or Eircode;
+- no precise location;
+- no DOB/age;
+- no health/medical data;
+- no employer name;
+- no financial/account details;
+- no names or private details about non-public partners, relatives, friends or colleagues;
+- no GPS metadata.
+
+Privacy-hardening choices:
+- retained intentional public identity: David Walsh / dualis / Quasisapien and visible public portfolio links;
+- removed country-level “based in Ireland” wording where it was unnecessary;
+- removed PlayStation-account-origin wording;
+- removed machine-readable `sameAs` and `alternateName` cross-platform identity correlation;
+- preserved deliberately published poetry/memoir material because it does not identify private third parties.
+
+### Asset hygiene
+
+Losslessly stripped unnecessary metadata from:
+- `cover.jpg`;
+- `duality-unfolding.jpg`;
+- `pearlescent-gaze.jpg`.
+
+Canonical readback:
+- EXIF entries: **0** on all three;
+- GPS: **none**.
+
+Sanitised three public PDFs to deliberate **Title + Author** metadata only.
+
+Before/after PDF render comparison:
+- Compleated Loyalty deck design: **12 / 12 pixel-identical pages**;
+- Deck Evolution Planner: **18 / 18 pixel-identical pages**;
+- Magic Quick-Reference Guide: **1 / 1 pixel-identical page**.
+
+### Permanent release gate
+
+Added:
+- `docs/PUBLICATION_PRIVACY.md`;
+- `tests/privacy.mjs`;
+- **Publication privacy validation** to Site QA.
+
+The gate checks high-confidence direct-contact/location patterns, sensitive structured-data keys, image metadata and nonessential PDF metadata.
+
+The first broad phone-number detector produced false positives on harmless SVG/CSS/release-number data. It was narrowed before PR to high-confidence international and Irish mobile patterns. Final privacy test passed independently.
+
+### Controlled runner exception
+
+GitHub’s hosted runner remained queued without assignment during PR #4 even though no other repository job was active.
+
+A merge/release exception was used only after:
+- final staging deployment succeeded;
+- exact PR tree passed the complete independent QA suite;
+- PDF visual comparison passed;
+- staging binary metadata readback passed.
+
+After squash merge, Git confirmed the merged commit and tested feature head had the **same tree SHA**: `dfd6abf8f0ec322659deb601b192e2dc8e7be2a7`.
+
+`production` was then advanced with a **non-forced fast-forward** to the exact merge commit. This was a privacy-specific continuity exception, not a replacement for the normal automated gate.
+
+### Production verification
+
+Expected public deployment delta vs `80cea668`: **9 changed files / 9 expected**:
+- About HTML;
+- home HTML;
+- Ascension HTML;
+- 3 release JPEGs;
+- 3 downloadable PDFs.
+
+Canonical production verified:
+- removed Ireland/PlayStation wording absent;
+- Quasisapien and intended public YouTube/LinkedIn links retained;
+- JSON-LD `sameAs` / `alternateName` correlation absent;
+- all three images metadata-clean;
+- PDFs Title + Author only with unchanged page counts;
+- all 10 production smoke routes passed;
+- live Deck Planner resolver correctly resolved Matzalantli and Grand Entryway and left an invalid name in `notFound`.
+
+### Historical deployment retirement
+
+Cloudflare history initially contained:
+- **63** deployments in the production project;
+- **30** deployments in staging.
+
+Retained:
+- canonical privacy production `f030df30`;
+- final clean staging `c52be4c5`.
+
+Deleted successfully:
+- **62** older production-project deployments;
+- **29** older staging deployments;
+- **91 total historical public snapshots**.
+
+Representative old immutable URLs that previously returned the removed wording now return **404**.
+
+Search checks found no indexed results for the removed Ireland/PlayStation wording or direct contact details. Third-party caches outside Cloudflare cannot be guaranteed erased.

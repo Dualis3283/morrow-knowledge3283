@@ -561,3 +561,144 @@ Next step:
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 08 — Website publication privacy boundary
+
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Ask Morrow / Project Morrow  
+**Task type:** privacy audit + public/private classification + asset metadata sanitisation + QA engineering + deployment-history retirement
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes |
+| Independent verification performed? | Yes — source scan, semantic prose audit, binary metadata audit, PDF render comparison, staging readback, exact QA reproduction, merge-tree identity check, canonical runtime checks, historical URL retirement checks |
+| Privacy leak found? | No acute sensitive-data leak; several unnecessary identity/location-linkage surfaces and hidden metadata were hardened |
+| Pre-release defects found? | Yes — overbroad phone-number detector in the new privacy QA produced false positives |
+| Defect caught before release? | Yes |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Final outcome | Publication boundary enforced in source/QA, canonical site privacy-hardened, and 91 historical public deployment snapshots retired |
+
+### Audit findings
+
+No public:
+- email or phone number;
+- street address/Eircode;
+- precise location;
+- DOB/age;
+- health/medical data;
+- employer name;
+- financial/account data;
+- identifiable private third-party details;
+- GPS metadata.
+
+Intentional public identities retained:
+- David Walsh;
+- dualis;
+- Quasisapien;
+- visible public portfolio/release links.
+
+Removed/reduced:
+- unnecessary “based in Ireland” wording;
+- PlayStation account-origin linkage;
+- JSON-LD `sameAs` / `alternateName` cross-platform correlation;
+- unnecessary EXIF/Photoshop/comment metadata;
+- nonessential PDF metadata.
+
+### Asset verification
+
+Three release JPEGs were metadata-stripped without recompression.
+
+Three PDFs were rewritten to Title + Author only and rendered before/after:
+- 12/12 pages identical;
+- 18/18 pages identical;
+- 1/1 page identical.
+
+Final staging `c52be4c5` served:
+- 0 EXIF entries / no GPS on all three JPEGs;
+- Title + Author only on all three PDFs.
+
+### Privacy QA
+
+Added `tests/privacy.mjs` and made it part of Site QA.
+
+Initial broad phone detector incorrectly matched harmless number-like strings. It was replaced with high-confidence international and Irish mobile patterns.
+
+Final independent QA on `00052f7343f10e88772892102c9baf6e759cfd6d`:
+- 6 resolver tests — pass;
+- repository-static validation — pass;
+- accessibility sanity — pass;
+- discovery metadata validation — pass;
+- secret scan — pass;
+- publication privacy validation — pass.
+
+### Runner exception and release
+
+PR #4’s GitHub-hosted runner remained queued without a runner assignment despite no competing active repository job.
+
+Because the old production remained publicly addressable with content the user had explicitly chosen to remove, a controlled privacy exception was used after independent full QA and staging verification.
+
+PR #4 squash merge:
+- `2f8f3cfac166225849445779a059a05431eca8da`.
+
+The tested feature head and merge commit had identical tree SHA:
+- `dfd6abf8f0ec322659deb601b192e2dc8e7be2a7`.
+
+Production was advanced by fast-forward with `force=false`.
+
+Cloudflare production:
+- **`f030df30`** — all stages success, Pages Functions active.
+
+### Canonical verification
+
+- expected file delta: **9/9 intended public files**;
+- About/Ascension no longer expose removed Ireland/PlayStation wording;
+- public Quasisapien / visible portfolio links remain;
+- machine-readable sameAs/alternateName removed;
+- JPEG EXIF/GPS absent;
+- PDF metadata Title + Author only;
+- 10-route production smoke passed;
+- resolver contract passed with Matzalantli / Room multi-face cases and invalid-card notFound behavior.
+
+### Historical public snapshot retirement
+
+Before cleanup:
+- production Pages project: 63 deployments;
+- staging Pages project: 30 deployments.
+
+After cleanup:
+- retained production: `f030df30`;
+- retained staging: `c52be4c5`;
+- deleted **91 historical deployments** total.
+
+Representative old immutable URLs now return 404.
+
+Search checks found no indexed results for the removed wording or direct contact details. Third-party caches/search copies beyond controlled hosting cannot be guaranteed erased.
+
+### Workflow 08 lessons / guardrails
+
+- Private continuity is broader than publication permission.
+- Privacy removals can require deleting public rollback snapshots; Git is the controlled recovery source.
+- Automated PII detection should favour high-confidence signals over noisy regexes that create false security through false positives.
+- Binary metadata is part of the publication surface.
+- A public AI corpus must be explicitly curated; access to private information never implies publication permission.
+- A release-gate exception must preserve equivalent evidence and be recorded as an exception rather than silently redefining the normal process.
+
+### Foundation raw counts after Workflow 08
+
+- Eligible workflows logged: **8 / 20**
+- Prior-state retrievals required: **8**
+- Successful retrievals without user repetition: **8**
+- Eligible workflows with persistent external actions: **8**
+- Workflows with independent verification: **8**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

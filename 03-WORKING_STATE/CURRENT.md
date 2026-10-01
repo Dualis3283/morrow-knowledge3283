@@ -30,9 +30,9 @@
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: `80cea668`**
-- Full deployment ID: `80cea668-df13-46ce-9a69-1782ec70c2d5`
-- Git commit: `e7b00b2e0c31b5898991d9df747f931ad2303f25`
+- **Current canonical production: `f030df30`**
+- Full deployment ID: `f030df30-895b-4cc3-affa-f7bc090d78ad`
+- Git commit: `2f8f3cfac166225849445779a059a05431eca8da`
 - Trigger: **github:push**
 - Git source branch: **production**
 - Build output: **site/**
@@ -40,11 +40,9 @@
 - Compatibility date: **2026-09-24**
 - Queue / initialize / clone / build / deploy: **all success**
 - Canonical public hostname `david-walsh.pages.dev`: full equivalence/runtime gate **passed**
-- Previous gated production: **`60605cf7`**
-- Earlier gated production: **`91c284e3`**
-- Earlier gated production: **`c8709b99`**
-- Earlier verified Git-backed production: **`b861c0a4`**
-- Preserved Direct Upload rollback: **`d7000b0a`**
+- Public Cloudflare rollback deployments from before the privacy boundary have been **retired**.
+- Git history is now the recovery source for pre-privacy website states; those states must not be re-published without a new privacy review.
+- Final privacy-clean staging preview retained: **`c52be4c5`**.
 - Separate staging project: **david-walsh-staging**
 - Staging previews are enabled for ordinary non-production branches and PR preview comments are enabled.
 - Web Analytics is not configured.
@@ -70,7 +68,8 @@
    - Promotion refuses non-fast-forward changes.
    - Cloudflare production deploys only from `production`.
    - Significant changes should still receive preview/staging and post-deploy canonical verification.
-   - Preserve `d7000b0a` until several gated releases have proven stable.
+   - For ordinary releases, preserve useful rollback evidence.
+   - **Privacy exception:** if a release deliberately removes personal/private material, retire publicly addressable historical deployments containing the removed material and rely on private Git history for recovery.
 
 2. **Deck Planner Companion App**
    - V18 public frontend recovered into Git.
@@ -91,6 +90,7 @@
    - Workflow 05 logged.
    - Workflow 06 logged.
    - Workflow 07 logged.
+   - Workflow 08 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -109,6 +109,7 @@
    - Search/social discovery foundation is live: sitemap, robots, social cards, consistent Open Graph/Twitter metadata and factual JSON-LD.
    - Project Morrow now has a dedicated public route at `/projects/morrow/`.
    - Ask Morrow Phase 0 is complete; the chatbot itself is **not live**.
+   - Publication Privacy Standard is now a hard corpus boundary.
    - Next dependency: curate/freeze the public knowledge corpus and evaluation set before building a read-only server-mediated prototype in staging.
    - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
@@ -135,7 +136,8 @@
 - QA-gated `main` → `production` promotion architecture, independently verified.
 - First ordinary gated feature release: Deck Planner accessibility cleanup via PR #1.
 - Deck Planner mobile touch-target hardening via PR #2, rendered and verified on production.
-- **Project Morrow public page + site discovery foundation via PR #3, verified on production.**
+- Project Morrow public page + site discovery foundation via PR #3, verified on production.
+- **Publication privacy boundary via PR #4: source/content audit, metadata sanitisation, permanent privacy QA, and retirement of 91 historical public deployment snapshots.**
 
 ## Important unknowns
 
@@ -145,4 +147,5 @@
 - Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
 - Ask Morrow's curated public corpus and evaluation set are not yet frozen; no public chat endpoint or model credential is configured.
+- Third-party search-engine/cache copies cannot be guaranteed deleted by Cloudflare cleanup; current searches found no indexed copies of the removed Ireland/PlayStation wording.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.

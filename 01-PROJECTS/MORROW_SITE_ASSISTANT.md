@@ -239,3 +239,19 @@ Before any source enters the public corpus:
 - preserve an auditable corpus manifest showing source/version and approval status.
 
 **Default:** if the public corpus does not contain the answer, Ask Morrow should say so. It must not silently retrieve from private continuity.
+
+
+## Corpus privacy precondition — locked 1 October 2026
+
+Before Phase 1 implementation, every Ask Morrow corpus source must be recorded in a manifest with:
+- source/path;
+- version/date;
+- publication classification;
+- explicit inclusion reason;
+- public citation/routing target where applicable.
+
+The corpus inherits `00-CORE/PUBLICATION_PRIVACY.md`.
+
+Private-never-publish material is not eligible for retrieval even if available to the private Morrow instance or a connected source.
+
+The website's privacy-hardening release also removed unnecessary location/account-origin detail and machine-readable cross-platform correlation, so the public corpus should not reintroduce those details indirectly.
