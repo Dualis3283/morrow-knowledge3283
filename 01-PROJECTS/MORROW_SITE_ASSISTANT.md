@@ -226,3 +226,16 @@ Before implementing `/api/morrow-chat`, define an explicit **public Morrow corpu
 - behaviour when the corpus does not contain an answer.
 
 Then build a staging-only read-only prototype and evaluate it before any public beta.
+
+
+## Publication privacy gate
+
+The public assistant corpus is governed by `00-CORE/PUBLICATION_PRIVACY.md`.
+
+Before any source enters the public corpus:
+- classify it Public, Personal-but-approved, or Private-never-publish;
+- exclude private ChatGPT memory/history, private Notion/Gmail/files, private correspondence, health/family/financial/location/contact information and unapproved memoir/journal material;
+- require a new explicit approval for any exception;
+- preserve an auditable corpus manifest showing source/version and approval status.
+
+**Default:** if the public corpus does not contain the answer, Ask Morrow should say so. It must not silently retrieve from private continuity.
