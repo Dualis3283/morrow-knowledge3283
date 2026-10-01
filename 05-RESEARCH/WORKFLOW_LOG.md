@@ -142,3 +142,80 @@ Observed sequence:
 - Workflows requiring material rework after being presented complete: **0**
 
 These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 04 — First ordinary gated feature release: Deck Planner accessibility cleanup
+
+**Date:** 1 October 2026  
+**Project:** David Walsh Website / Deck Planner Companion App  
+**Task type:** feature-branch implementation + staging preview + pull request + gated production promotion + post-release verification
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes |
+| Independent verification performed? | Yes — source audit, branch QA, staging deploy, PR QA, post-merge QA, production hash comparison, live HTML inspection, smoke test, resolver probe |
+| Defect/improvement found? | Yes — 9 duplicated `aria-label` attributes in Deck Planner markup |
+| Defect caught before release? | Existing live markup issue identified before the new release; fix validated before promotion |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Final outcome | Accessibility markup fixed in production and an automated guardrail added to prevent recurrence |
+
+### Baseline finding
+
+A direct source audit found:
+- **9** tags with duplicated `aria-label` attributes;
+- **0** duplicate IDs.
+
+The existing gold Deck Planner heading was already correct and was intentionally left unchanged.
+
+### Gated release sequence
+
+1. Created `feature/deck-planner-a11y-cleanup` from tested `main`.
+2. Removed the 9 repeated `aria-label` attributes.
+3. Added `tests/html-a11y.mjs` covering:
+   - duplicate attributes;
+   - duplicate IDs;
+   - broken `aria-labelledby` references;
+   - broken `aria-describedby` references.
+4. Added the accessibility check to Site QA.
+5. Feature-branch Site QA: **success**.
+6. Cloudflare staging deployment `98043673`: **success**, Pages Functions active.
+7. Opened PR #1 into `main`.
+8. PR-triggered Site QA: **success**.
+9. Squash-merged PR to `main` as `0f4f9527d5bde91778e1a3693eff9f8928a729c4`.
+10. `production` remained unchanged until post-merge Site QA completed.
+11. Post-merge Site QA: **success**, including the new accessibility check.
+12. Automatic Promote production workflow: **success**.
+13. `production` fast-forwarded exactly to the tested main SHA.
+14. Cloudflare production deployment **`91c284e3`**: all deployment stages success.
+15. Static deployment comparison against `c8709b99`: **exactly one file changed** — Deck Planner HTML.
+16. Direct live HTML inspection: duplicate `aria-label` pairs = **0**; gold Deck Planner heading still present.
+17. Canonical production smoke test: **success**.
+18. Canonical resolver contract probe: **success**.
+19. Merged feature branch was automatically deleted.
+
+### Workflow 04 lessons / guardrails
+
+- The branch/PR/promotion architecture works in normal feature delivery, not only infrastructure tests.
+- Source-level accessibility defects can be converted into inexpensive permanent QA checks.
+- For intentional releases, byte-for-byte comparison to the historical V18 baseline is no longer the right universal gate; compare **expected deployment delta** instead.
+- Static deployment-file hash comparison is a strong collateral-change check for narrowly scoped updates.
+- Post-deploy verification should test the changed behavior directly as well as unrelated critical runtime contracts.
+
+### Foundation raw counts after Workflow 04
+
+- Eligible workflows logged: **4 / 20**
+- Prior-state retrievals required: **4**
+- Successful retrievals without user repetition: **4**
+- Eligible workflows with persistent external actions: **4**
+- Workflows with independent verification: **4**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These are raw counts only. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

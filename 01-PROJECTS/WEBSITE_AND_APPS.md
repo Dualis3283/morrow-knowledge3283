@@ -6,9 +6,9 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`c8709b99`**
-- Full deployment ID: `c8709b99-1b39-46f5-ae87-2edc7ca7de57`
-- Git commit: `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
+- Current canonical deployment: **`91c284e3`**
+- Full deployment ID: `91c284e3-064f-4284-83f1-2c2618b97d74`
+- Git commit: `0f4f9527d5bde91778e1a3693eff9f8928a729c4`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
 - Cloudflare production branch: **production**
@@ -18,7 +18,8 @@
 - Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
 
 Rollback references:
-- prior verified Git-backed production: **`b861c0a4`**
+- previous gated production: **`c8709b99`**
+- earlier verified Git-backed production: **`b861c0a4`**
 - Direct Upload V18: **`d7000b0a`**
 
 ## Gated deployment model
@@ -36,6 +37,7 @@ Cloudflare production is no longer driven directly by `main`.
 - Site QA validates:
   - Deck Planner resolver regressions;
   - repository-static route/assets structure;
+  - HTML accessibility sanity checks;
   - source secret scan;
   - current production health for push events.
 - **Promote production** runs only when:
@@ -96,6 +98,32 @@ Sequence observed:
    - resolver contract parity;
    - secret scan.
 
+## First ordinary gated feature release
+
+**PR #1 — Clean Deck Planner accessibility markup**
+
+- Feature branch: `feature/deck-planner-a11y-cleanup`
+- Feature commit: `4e6b58a2e45e0d7a65a1928b0ac475fdc74ece64`
+- Staging deployment: `98043673`
+- PR-triggered Site QA: success
+- Squash merge to `main`: `0f4f9527d5bde91778e1a3693eff9f8928a729c4`
+- Post-merge Site QA: success
+- Automatic fast-forward promotion: success
+- Production deployment: **`91c284e3`**
+- Cloudflare queue / initialize / clone / build / deploy: all success
+- Collateral-drift check: **exactly one static file changed** — `/projects/deck-planner/index.html`
+- Live Deck Planner HTML: duplicated `aria-label` pairs = **0**
+- Gold `Deck Planner` heading preserved.
+- Post-deploy route smoke: success
+- Post-deploy resolver contract probe: success
+- Merged feature branch auto-deleted.
+
+The release removed **9 duplicated `aria-label` attributes** and added an automated HTML accessibility sanity check covering:
+- duplicate attributes;
+- duplicate IDs;
+- missing targets referenced by `aria-labelledby`;
+- missing targets referenced by `aria-describedby`.
+
 ## Deployment protocol
 
 For meaningful website/app changes:
@@ -123,10 +151,12 @@ Current state:
 - Pages Function source: `functions/api/resolve-deck.js`;
 - V18 resolver contract reproduced;
 - Matzalantli/multi-face and Room aliases covered by automated regression tests;
+- HTML accessibility sanity checks are automated;
+- nine duplicate form-field `aria-label` attributes have been removed from production;
 - Scryfall fallback and 75-card collection batching are tested.
 
 Next checks:
 - phone review;
-- accessibility QA;
+- broader accessibility QA / phone review;
 - add full-deck fixtures when they add value;
 - future backend/data design only when it solves a demonstrated problem.

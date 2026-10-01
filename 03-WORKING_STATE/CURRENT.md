@@ -21,6 +21,7 @@
   - resolver unit regressions;
   - repository-static validation;
   - source secret scan;
+  - HTML accessibility sanity checks for duplicate attributes/IDs and broken ARIA references;
   - current-production health check on pushes to `main`;
   - fast-forward-only promotion from verified `main` to `production`;
   - full immutable/canonical deployment equivalence checks.
@@ -28,9 +29,9 @@
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: `c8709b99`**
-- Full deployment ID: `c8709b99-1b39-46f5-ae87-2edc7ca7de57`
-- Git commit: `7af90a462b63ba1a02e2ba3f94e6dba0d19bdde1`
+- **Current canonical production: `91c284e3`**
+- Full deployment ID: `91c284e3-064f-4284-83f1-2c2618b97d74`
+- Git commit: `0f4f9527d5bde91778e1a3693eff9f8928a729c4`
 - Trigger: **github:push**
 - Git source branch: **production**
 - Build output: **site/**
@@ -38,7 +39,8 @@
 - Compatibility date: **2026-09-24**
 - Queue / initialize / clone / build / deploy: **all success**
 - Canonical public hostname `david-walsh.pages.dev`: full equivalence/runtime gate **passed**
-- Previous verified Git-backed production: **`b861c0a4`**
+- Previous gated production: **`c8709b99`**
+- Earlier verified Git-backed production: **`b861c0a4`**
 - Preserved Direct Upload rollback: **`d7000b0a`**
 - Separate staging project: **david-walsh-staging**
 - Staging previews are enabled for ordinary non-production branches and PR preview comments are enabled.
@@ -71,13 +73,16 @@
    - V18 public frontend recovered into Git.
    - `/api/resolve-deck` Pages Function reconstructed from the V18 contract.
    - Shorikai/Matzalantli and Victor Room multi-face regression tests are automated and passing.
-   - Continue phone review, accessibility QA, and broader full-deck regression fixtures when useful.
+   - Nine duplicate `aria-label` attributes removed from Deck Planner production markup.
+   - Automated HTML accessibility sanity test now prevents duplicate attributes/IDs and broken `aria-labelledby` / `aria-describedby` references.
+   - Continue phone review, broader accessibility QA, and full-deck regression fixtures when useful.
    - Future D1/KV work remains optional until a demonstrated need justifies it.
 
 3. **Project Morrow measurement foundation**
    - Workflow 01 logged.
    - Workflow 02 logged.
    - Workflow 03 logged.
+   - Workflow 04 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -93,7 +98,7 @@
    - Drive/files = authoritative asset/recovery layer where appropriate.
 
 ### Next
-- Use the gated branch path for the next substantive website change and verify it in normal operation.
+- Continue using the proven feature → PR → QA → `main` → promotion → `production` path for substantive website changes.
 - Optional future improvement: GitHub Pro could add native branch protection on this private repo; do not make the repo public solely for that feature.
 - Compleated Loyalty physical print proof from Print Master v2.
 - Continue MTG collection/deck knowledge.
@@ -112,7 +117,8 @@
 - Reconstructed Deck Planner Pages resolver + multi-face regression tests.
 - Isolated Git→Cloudflare staging proof.
 - GitHub→Cloudflare production cutover.
-- **QA-gated `main` → `production` promotion architecture, independently verified.**
+- QA-gated `main` → `production` promotion architecture, independently verified.
+- **First ordinary gated feature release: Deck Planner accessibility cleanup via PR #1.**
 
 ## Important unknowns
 
