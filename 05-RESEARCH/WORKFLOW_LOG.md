@@ -1284,3 +1284,83 @@ If that passes, the frozen public-beta gate can be scored complete.
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 15 — Pipeline Reconciliation v1
+
+**Date:** 1 October 2026  
+**Project:** Project Morrow pipeline  
+**Task type:** cross-record state audit + authority-model implementation + Notion/GitHub reconciliation
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — six Notion records + GitHub knowledge mirror |
+| Independent verification performed? | Yes — Notion readback + GitHub file readback |
+| Defect found? | Yes — stale cross-record next-actions |
+| Root-cause category | Verification gap |
+| Defect caught before downstream release? | Yes |
+| Post-release defect? | No |
+| Material rework after completion declared? | No |
+| Final outcome | Pipeline Reconciliation v1 established and mirrored across operational and durable records |
+
+### Finding
+
+Morrow continuity retrieval was working, but several valid records had updated at different speeds. Examples included broader Ask Morrow records still describing Cloudflare authentication/provider setup after the dedicated project record had already advanced to successful Workers AI runtime and a final keyboard-only gate.
+
+The issue was therefore **state drift**, not missing information.
+
+### Authority hierarchy established
+
+1. Project-specific record.
+2. Morrow Working State.
+3. Decision Log.
+4. Connector & Integration Layer.
+5. GitHub public-safe mirror.
+6. Foundations / Archive.
+
+### Permanent supersession guardrail
+
+At every major checkpoint ask:
+
+**Does this new state supersede another active next-action?**
+
+If yes, reconcile affected broader records before the checkpoint is complete.
+
+### Changes
+
+Notion reconciled:
+- Morrow Knowledge Architecture;
+- Morrow Working State;
+- Morrow Knowledge Repository;
+- Morrow Connector & Integration Layer;
+- Morrow Foundations;
+- Morrow Decision Log.
+
+GitHub mirror:
+- commit `20065cac789877888729c939ab75f9c869b6c3c7`;
+- new `02-KNOWLEDGE/PIPELINE_RECONCILIATION.md`;
+- Current Working State, Decision Log, Best Practices and README updated.
+
+### Verification
+
+Independent readback confirmed:
+- all six Notion reconciliation markers;
+- GitHub reconciliation file and quality gate.
+
+### Foundation raw counts after Workflow 15
+
+- Eligible workflows logged: **15 / 20**
+- Prior-state retrievals required: **15**
+- Successful retrievals without user repetition: **15**
+- Eligible workflows with persistent external actions: **15**
+- Workflows with independent verification: **15**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.
