@@ -1050,3 +1050,140 @@ User action required: activate API billing for the OpenAI organization/project b
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 13 — Ask Morrow Workers AI proof of concept
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** free-provider migration + frozen evaluation + cost measurement + staging binding
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — website branch, Cloudflare staging provider/bindings |
+| Independent verification performed? | Yes — direct Workers AI probes, frozen evaluation, regression tests, Cloudflare project/deployment readback, user authenticated staging response |
+| Pre-release defects found? | Yes — routing omissions, verbosity/truncation, memoir navigation-only breach, AI binding environment mismatch, stale OpenAI config |
+| Defects caught before production? | Yes |
+| Post-release defect? | Not applicable — Ask Morrow remains staging only |
+| Material rework after completion declared? | No |
+| Final outcome | Workers AI/Gemma proof of concept meets frozen response gate; remaining system/UX gate still pending |
+
+### Provider decision
+
+Cloudflare Workers AI became the active proof-of-concept backend because the goal is a low-cost/free testing ground with measurable hard limits.
+
+Model:
+`@cf/google/gemma-4-26b-a4b-it`
+
+No external model API key is required.
+
+### Measured cost evidence
+
+Tiny probe:
+- thinking enabled: 1.418 neurons / ~1.2s / no visible answer under a tiny budget;
+- thinking disabled: 0.518 neurons / ~0.67s / correct visible answer.
+
+Realistic Project Morrow request with two relevant chunks:
+- **12.98–15.34 neurons**;
+- ~937–948 input tokens;
+- 160–250 output tokens during tuning;
+- ~3.3–4.7s.
+
+At that request size, 10,000 neurons/day corresponds to roughly **650–770 similar requests/day**.
+
+These are measured samples, not an average-use guarantee.
+
+### Frozen baseline
+
+First non-P0 Gemma run:
+- 26 cases;
+- **12/26 full pass**;
+- 13 partial;
+- 1 fail.
+
+The true failure was memoir handling: incidental public homepage context allowed a memoir summary despite the manifest declaring memoir navigation-only.
+
+Other defects clustered around missing canonical routes and overly long/truncated answers.
+
+The baseline remains preserved as evidence.
+
+### Remediation
+
+Added deterministic zero-inference policy/routing for:
+- memoir;
+- poetry;
+- public-vs-retrieval distinction;
+- unavailable facts;
+- Ask Morrow live status;
+- route lookup;
+- common Morrow/Deck Planner FAQs.
+
+Tightened model behavior:
+- thinking disabled;
+- concise answer target;
+- required ordered-method completeness;
+- explicit smallest-useful-change wording;
+- canonical route attachment.
+
+### Release-candidate response evaluation
+
+Non-P0 primary:
+- **26/26 full pass**;
+- 16 deterministic / zero-inference;
+- 10 Gemma synthesis.
+
+P0 hard gate:
+- 14 frozen privacy/injection cases;
+- 3 trials each;
+- **42/42 pass**;
+- model calls: 0.
+
+Repository regression state reached:
+- **23/23 unit tests pass**;
+- static/accessibility/metadata/secret/privacy QA pass.
+
+### Staging binding/remediation
+
+The user-added `AI` binding initially landed in the staging project's Production environment.
+
+Readback allowed the exact non-secret binding to be mirrored into Preview.
+
+Final clean staging:
+- branch head: `efbe212fb6a2eef8def7086c6d33f1bc011def84`;
+- preview: **`e77f0489`**;
+- Preview vars: `ASK_MORROW_ENABLED`, `ASK_MORROW_PROVIDER=cloudflare`, `ASK_MORROW_CF_MODEL`;
+- Preview AI binding: `AI`;
+- staging Production vars/bindings: none;
+- staging Production deployments: disabled;
+- real production: unchanged `f030df30`, no Ask Morrow vars/bindings.
+
+### User-side runtime evidence
+
+Authenticated staging successfully returned the deterministic “What is Project Morrow?” FAQ.
+
+Visible intro copy was simplified at the user's request; the sentence listing private memory/files/Notion/Gmail/admin access was removed from UI copy only. Server-side privacy boundaries were unchanged.
+
+### Remaining gate
+
+Still required before public beta:
+- one authenticated model-bound website request through `env.AI.run()`;
+- keyboard-only walkthrough;
+- remaining system/UX checklist readback.
+
+### Foundation raw counts after Workflow 13
+
+- Eligible workflows logged: **13 / 20**
+- Prior-state retrievals required: **13**
+- Successful retrievals without user repetition: **13**
+- Eligible workflows with persistent external actions: **13**
+- Workflows with independent verification: **13**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

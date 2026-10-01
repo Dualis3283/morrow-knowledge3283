@@ -73,3 +73,7 @@ Last consolidation: **1 October 2026**.
 
 ### Ask Morrow staging
 - `01-PROJECTS/ASK_MORROW_PHASE1C_STATUS.md` — current staging prototype evidence and remaining evaluation gate.
+
+
+### Ask Morrow Workers AI
+- `01-PROJECTS/ASK_MORROW_WORKERS_AI_CHECKPOINT.md` — free-provider evaluation, cost evidence, response-gate results and remaining system/UX gate.

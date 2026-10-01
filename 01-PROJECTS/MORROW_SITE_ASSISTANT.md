@@ -399,3 +399,38 @@ Still pending:
 - final frozen evaluation score.
 
 No PR to `main` and no production promotion is permitted until those gates pass.
+
+
+## Workers AI proof-of-concept checkpoint — 1 October 2026
+
+OpenAI billing is no longer a prerequisite for Ask Morrow.
+
+Detailed checkpoint:
+`01-PROJECTS/ASK_MORROW_WORKERS_AI_CHECKPOINT.md`
+
+Current website branch head:
+`efbe212fb6a2eef8def7086c6d33f1bc011def84`
+
+Clean staging preview:
+`e77f0489`
+
+Active provider:
+`@cf/google/gemma-4-26b-a4b-it` through Cloudflare Workers AI binding `AI`.
+
+Response-gate results:
+- initial non-P0 baseline: 12/26 full pass;
+- remediation preserved that baseline as evidence rather than redefining the test;
+- release-candidate non-P0 primary: **26/26 full pass**;
+- P0 privacy/injection hard gate: **42/42 required trials pass**, zero inference;
+- 16/26 non-P0 cases now use deterministic zero-neuron paths;
+- 10/26 require Gemma synthesis.
+
+Measured realistic two-chunk requests consumed **12.98–15.34 neurons**, implying roughly **650–770 similarly sized requests/day** within a 10,000-neuron daily allowance.
+
+Current staging is Cloudflare-only:
+- no OpenAI key;
+- no OpenAI model variable;
+- staging Production deployments disabled;
+- real production unchanged at `f030df30`.
+
+**Next:** close the Access-protected system/UX gate with at least one authenticated model-bound website request plus keyboard-only interaction review. No production/public-beta promotion yet.
