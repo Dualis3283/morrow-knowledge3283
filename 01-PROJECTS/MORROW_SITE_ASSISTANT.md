@@ -276,3 +276,23 @@ Version anchors:
 The v1 corpus intentionally excludes private continuity, operational state, archives, measurement logs, source registries, intimate memoir/poetry body text and external-profile crawling.
 
 **Next phase:** define the fixed evaluation set against this frozen corpus before implementing any chat endpoint.
+
+
+## Corpus v1.0-eval validation
+
+Phase 1A validation completed 1 October 2026.
+
+Machine-readable index:
+`06-SOURCES/ASK_MORROW_CORPUS_V1.json`
+
+Validation record:
+`05-RESEARCH/ASK_MORROW_CORPUS_VALIDATION.md`
+
+Results:
+- 18 / 18 pinned paths resolved at the frozen commits;
+- 7 included Morrow files;
+- 9 included website pages;
+- 2 navigation-only creative pages;
+- 0 direct privacy signals across the 11 checked website pages for the hardened contact/location/correlation patterns.
+
+**Phase 1A is complete. Next: Phase 1B — fixed evaluation set.**

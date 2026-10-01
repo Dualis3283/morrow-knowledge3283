@@ -702,3 +702,105 @@ Search checks found no indexed results for the removed wording or direct contact
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.
+
+
+---
+
+## Workflow 09 — Ask Morrow corpus v1 freeze
+
+**Date:** 1 October 2026  
+**Project:** Ask Morrow / Project Morrow  
+**Task type:** public-corpus curation + privacy classification + source version freeze + source validation
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes |
+| External write/action? | Yes — Morrow repo / Notion only; no live website/chat changes |
+| Independent verification performed? | Yes — exact pinned source resolution + direct privacy-signal scan |
+| Pre-release defect? | None observed |
+| Post-release defect? | Not applicable; no public assistant deployed |
+| Material rework after completion declared? | No |
+| Final outcome | Ask Morrow public corpus v1.0-eval frozen, machine-indexed and validated under the Publication Privacy Standard |
+
+### Freeze
+
+Pinned source versions:
+- Morrow knowledge commit: `9b416f8b19b6ce77adf8ca46bd915330271f3209`;
+- website commit: `2f8f3cfac166225849445779a059a05431eca8da`;
+- canonical privacy-hardened deployment reference: `f030df30`.
+
+Approved retrieval:
+- **7** Morrow knowledge files;
+- **9** website pages.
+
+Navigation-only:
+- memoir;
+- poetry;
+- public PDFs;
+- external public profiles/platforms.
+
+### Deliberate exclusions
+
+v1 excludes:
+- private ChatGPT continuity;
+- private Notion/Gmail/files;
+- unapproved memoir/journal source;
+- non-public third-party information;
+- working state;
+- decision log;
+- research/workflow logs;
+- source registry;
+- archive;
+- deployment operations history;
+- mixed/stale project register;
+- assistant implementation-planning file;
+- raw Git/admin sources.
+
+### Validation
+
+Resolved at pinned commits:
+- 7 / 7 included Morrow files;
+- 9 / 9 included website pages;
+- 2 / 2 navigation-only creative pages;
+- **18 / 18 total paths**.
+
+Website privacy-signal check across all 11 reviewed pages:
+- email: 0;
+- mailto: 0;
+- tel: 0;
+- Eircode-like: 0;
+- “based in Ireland”: 0;
+- PlayStation-account-origin wording: 0;
+- JSON-LD `sameAs`: 0.
+
+Memoir/poetry remain navigation-only as a minimisation choice, not because the published pages failed the scan.
+
+### Durable outputs
+
+- `01-PROJECTS/ASK_MORROW_CORPUS_MANIFEST.md`;
+- `06-SOURCES/ASK_MORROW_PUBLIC_ROUTE_CATALOG.md`;
+- `06-SOURCES/ASK_MORROW_CORPUS_V1.json`;
+- `05-RESEARCH/ASK_MORROW_CORPUS_VALIDATION.md`.
+
+### Workflow 09 lessons / guardrails
+
+- “Public” and “useful retrieval context” are different decisions.
+- Freeze exact source versions before evaluating model behaviour.
+- Corpus minimisation reduces both privacy and stale-context risk.
+- Personal-but-approved creative material can remain publicly accessible without becoming general chatbot context.
+- Machine-readable source manifests reduce later interpretation drift.
+
+### Foundation raw counts after Workflow 09
+
+- Eligible workflows logged: **9 / 20**
+- Prior-state retrievals required: **9**
+- Successful retrievals without user repetition: **9**
+- Eligible workflows with persistent external actions: **9**
+- Workflows with independent verification: **9**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do **not** publish improvement percentages until the 20-workflow foundation is complete and Metric Definition v1 is frozen.

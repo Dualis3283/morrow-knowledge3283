@@ -1,0 +1,189 @@
+{
+  "corpus_id": "ask-morrow-v1.0-eval",
+  "status": "frozen_for_evaluation",
+  "freeze_date": "2026-10-01",
+  "authority": {
+    "publication_privacy": "00-CORE/PUBLICATION_PRIVACY.md",
+    "fallback": "I don't have that information in the public Morrow knowledge base."
+  },
+  "source_versions": {
+    "morrow_repository": "Dualis3283/morrow-knowledge3283",
+    "morrow_commit": "9b416f8b19b6ce77adf8ca46bd915330271f3209",
+    "website_repository": "Dualis3283/david-walsh-site",
+    "website_commit": "2f8f3cfac166225849445779a059a05431eca8da",
+    "canonical_website_deployment": "f030df30"
+  },
+  "included": {
+    "morrow": [
+      {
+        "id": "M-A01",
+        "path": "00-CORE/PUBLICATION_PRIVACY.md",
+        "blob_sha": "f29eea07d5177f5af50b65f5164b0c3efdf79e48",
+        "classification": "public_policy"
+      },
+      {
+        "id": "M-A02",
+        "path": "00-CORE/MORROW_ETHOS.md",
+        "blob_sha": "1e782b33a2ad35803e3788ee0866680f687540fe",
+        "classification": "public"
+      },
+      {
+        "id": "M-A03",
+        "path": "00-CORE/OPERATING_MODEL.md",
+        "blob_sha": "81b7199b24907ad5d014a5b943dcddd984c8b9de",
+        "classification": "public"
+      },
+      {
+        "id": "M-A04",
+        "path": "00-CORE/CONSISTENCY_PROTOCOL.md",
+        "blob_sha": "02784ba19b7d414c52e06928a40ed0934f1dbfc2",
+        "classification": "public"
+      },
+      {
+        "id": "M-A05",
+        "path": "00-CORE/VISUAL_SYSTEM.md",
+        "blob_sha": "b63448bf5c4a077841885fc632d7e56730ac9ccc",
+        "classification": "public"
+      },
+      {
+        "id": "M-A06",
+        "path": "02-KNOWLEDGE/BEST_PRACTICES.md",
+        "blob_sha": "8296f42af3264401b1a1190525906159adc685ec",
+        "classification": "public"
+      },
+      {
+        "id": "M-A07",
+        "path": "01-PROJECTS/COMPLEATED_LOYALTY.md",
+        "blob_sha": "b3569c0eac03b66c55e92799e952b79ba06f6850",
+        "classification": "public"
+      }
+    ],
+    "website": [
+      {
+        "id": "W-B01",
+        "path": "site/index.html",
+        "route": "/",
+        "blob_sha": "afec33e674e5f7a8a7a6b4d6833a5c90c90b2e00",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B02",
+        "path": "site/about/index.html",
+        "route": "/about/",
+        "blob_sha": "c4880d3d45760116a5b848680ca39ccbb7c41488",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B03",
+        "path": "site/professional/index.html",
+        "route": "/professional/",
+        "blob_sha": "a5a1c5fec78917f39d77ada4c69921d5292c2667",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B04",
+        "path": "site/projects/morrow/index.html",
+        "route": "/projects/morrow/",
+        "blob_sha": "416dd70d2774b3f71ea7b231c1c39587ee94b1ce",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B05",
+        "path": "site/projects/deck-planner/index.html",
+        "route": "/projects/deck-planner/",
+        "blob_sha": "91d7b8be51e02e5cc16de56eb4ab68cbe563498f",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B06",
+        "path": "site/projects/compleated-loyalty/index.html",
+        "route": "/projects/compleated-loyalty/",
+        "blob_sha": "54af4bc91ad3fb1379bb15fc5fc4132708f0dc79",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B07",
+        "path": "site/releases/ascension/index.html",
+        "route": "/releases/ascension/",
+        "blob_sha": "86f10c5948a7f1173fe6b9a47ccecaf3b49e5c61",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B08",
+        "path": "site/releases/duality-unfolding/index.html",
+        "route": "/releases/duality-unfolding/",
+        "blob_sha": "6450652c4716bbcc5794bcdcd8eba78562482038",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      },
+      {
+        "id": "W-B09",
+        "path": "site/releases/pearlescent-gaze/index.html",
+        "route": "/releases/pearlescent-gaze/",
+        "blob_sha": "a39af689ab94fa929da6f4f435018f26352f73ea",
+        "classification": "public",
+        "mode": "visible_text_and_approved_metadata"
+      }
+    ]
+  },
+  "navigation_only": [
+    {
+      "id": "N-C01",
+      "path": "site/memoir/index.html",
+      "route": "/memoir/",
+      "blob_sha": "5643100bfd959605703b278bcc3732cfc29f9e3e",
+      "classification": "personal_but_approved"
+    },
+    {
+      "id": "N-C02",
+      "path": "site/poetry/index.html",
+      "route": "/poetry/",
+      "blob_sha": "9e4b3f6f187c32f5e1ada0e2c401446d76609b34",
+      "classification": "personal_but_approved"
+    },
+    {
+      "id": "N-C03",
+      "source_class": "public_downloadable_pdfs",
+      "classification": "public"
+    },
+    {
+      "id": "N-C04",
+      "source_class": "external_public_profiles",
+      "classification": "public_external"
+    }
+  ],
+  "excluded": [
+    "private_chatgpt_memory_or_history",
+    "private_notion",
+    "gmail_or_private_correspondence",
+    "personal_files_or_connected_private_sources",
+    "unapproved_memoir_or_journal_sources",
+    "health_family_relationship_financial_contact_or_precise_location_context",
+    "non_public_third_party_details",
+    "03-WORKING_STATE/*",
+    "04-DECISIONS/DECISION_LOG.md",
+    "05-RESEARCH/*",
+    "06-SOURCES/SOURCE_REGISTRY.md",
+    "07-ARCHIVE/*",
+    "01-PROJECTS/WEBSITE_AND_APPS.md",
+    "01-PROJECTS/PROJECT_REGISTER.md",
+    "01-PROJECTS/MORROW_SITE_ASSISTANT.md",
+    "raw_git_history_issues_or_admin_sources"
+  ],
+  "update_requirements": [
+    "privacy_classification",
+    "inclusion_purpose",
+    "source_version",
+    "semantic_privacy_review",
+    "stale_or_conflict_review",
+    "manifest_revision",
+    "evaluation_rerun"
+  ]
+}

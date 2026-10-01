@@ -91,6 +91,7 @@
    - Workflow 06 logged.
    - Workflow 07 logged.
    - Workflow 08 logged.
+   - Workflow 09 logged.
    - Continue until 20 eligible substantive workflows are captured.
 
 4. **Deck Evolution Planner**
@@ -110,7 +111,8 @@
    - Project Morrow now has a dedicated public route at `/projects/morrow/`.
    - Ask Morrow Phase 0 is complete; the chatbot itself is **not live**.
    - Publication Privacy Standard is now a hard corpus boundary.
-   - Next dependency: curate/freeze the public knowledge corpus and evaluation set before building a read-only server-mediated prototype in staging.
+   - Public corpus v1.0-eval is frozen and validated against pinned source commits.
+   - Next dependency: define the fixed grounding/privacy/methodology evaluation set before building a read-only server-mediated prototype in staging.
    - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
 ### Next
@@ -146,6 +148,6 @@
 - User-side visual/interaction review remains useful despite automated and rendered-browser checks.
 - Exact current full Shorikai and Victor deck-list inputs are not retained in durable sources; executable full-deck fixtures require those literal dated lists.
 - R2/D1/KV architecture should remain optional until demonstrated needs justify it.
-- Ask Morrow's curated public corpus and evaluation set are not yet frozen; no public chat endpoint or model credential is configured.
+- Ask Morrow corpus v1.0-eval is frozen; the fixed evaluation set is not yet defined, and no public chat endpoint or model credential is configured.
 - Third-party search-engine/cache copies cannot be guaranteed deleted by Cloudflare cleanup; current searches found no indexed copies of the removed Ireland/PlayStation wording.
 - Morrow performance percentages are not publishable until the 20-workflow foundation baseline is complete.
