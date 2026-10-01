@@ -255,3 +255,24 @@ The corpus inherits `00-CORE/PUBLICATION_PRIVACY.md`.
 Private-never-publish material is not eligible for retrieval even if available to the private Morrow instance or a connected source.
 
 The website's privacy-hardening release also removed unnecessary location/account-origin detail and machine-readable cross-platform correlation, so the public corpus should not reintroduce those details indirectly.
+
+
+## Corpus v1.0-eval freeze — 1 October 2026
+
+Phase 1A is complete.
+
+The initial public retrieval boundary is frozen in:
+
+`01-PROJECTS/ASK_MORROW_CORPUS_MANIFEST.md`
+
+with the supporting navigation map:
+
+`06-SOURCES/ASK_MORROW_PUBLIC_ROUTE_CATALOG.md`
+
+Version anchors:
+- Morrow knowledge: `9b416f8b19b6ce77adf8ca46bd915330271f3209`
+- Website: `2f8f3cfac166225849445779a059a05431eca8da`
+
+The v1 corpus intentionally excludes private continuity, operational state, archives, measurement logs, source registries, intimate memoir/poetry body text and external-profile crawling.
+
+**Next phase:** define the fixed evaluation set against this frozen corpus before implementing any chat endpoint.
