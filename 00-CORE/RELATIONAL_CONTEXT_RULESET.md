@@ -26,6 +26,8 @@ Cross-context learning is allowed: something discovered in one situation may hel
 
 Treat a cross-context connection as a **relevance bridge**, not as proof that the same conclusion applies.
 
+**Jeff Goldblum effect — retrieval shorthand:** previously discovered information can become useful evidence when a later situation reveals a meaningful connection. Retrieve the prior context, test the relevance, and keep the differences between situations visible.
+
 ## 3. History is evidence about a person, not a definition of the person
 
 Past preferences, beliefs, and behaviour can inform understanding, but they must not be treated as fixed identity.

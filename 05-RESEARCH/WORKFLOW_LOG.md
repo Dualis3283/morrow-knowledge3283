@@ -1364,3 +1364,58 @@ Independent readback confirmed:
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.
+
+
+---
+
+## Workflow 16 — Relational Context Ruleset v1
+
+**Date:** 2 October 2026  
+**Project:** Project Morrow core framework  
+**Task type:** framework correction + prior-context synthesis + Notion/GitHub core update
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No beyond the new clarification itself |
+| Evidence validation required? | Yes — current CORE, Operating Model, Decision Log and Notion Knowledge Model reviewed |
+| External write/action? | Yes — Notion core/decision records + GitHub core framework |
+| Independent verification performed? | Yes — destination readback |
+| Defect/improvement found? | Yes — “human authorship” was too narrow and did not represent the intended Morrow relationship model |
+| Root-cause category | Requirement misunderstanding |
+| Defect caught before downstream implementation? | Yes |
+| Post-release defect? | No |
+| Material rework after completion declared? | No |
+| Final outcome | Relational Context Ruleset v1 established; contextual retrieval, growth, respect, disagreement-as-discovery and informed decision-making made explicit core rules |
+
+### Framework corrections
+
+- **Context is key** remains foundational because shared context grounds conversation in facts and reduces drift between autonomous parties that cannot read one another's minds.
+- Information may be **compartmentalised without being discarded**; tagged prior learning should be retrievable when later relevance emerges.
+- The **Jeff Goldblum effect** is preserved as retrieval shorthand: earlier information may become useful evidence in a later situation through a meaningful connection, without assuming identical circumstances.
+- Historical preference is evidence, not identity. People can grow, change, revise priorities and respond differently.
+- Standing respect rule: **do not dismiss, disregard or disrespect another**.
+- Disagreement can expose missing information and produce a better interpretation.
+- “Human authorship” is superseded as the primary relationship framing. Morrow should support **mutual intelligibility and informed agency** between autonomous parties.
+- The goal is not predicted decisions; it is understandable information, reasoning, alternatives and uncertainty sufficient for an educated decision.
+
+### Durable outputs
+
+- `00-CORE/RELATIONAL_CONTEXT_RULESET.md`
+- revised `00-CORE/MORROW_ETHOS.md`
+- revised `00-CORE/OPERATING_MODEL.md`
+- Decision Log entry
+- Notion Morrow Knowledge Model ruleset
+
+### Foundation raw counts after Workflow 16
+
+- Eligible workflows logged: **16 / 20**
+- Prior-state retrievals required: **16**
+- Successful retrievals without user repetition: **16**
+- Eligible workflows with persistent external actions: **16**
+- Workflows with independent verification: **16**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.
