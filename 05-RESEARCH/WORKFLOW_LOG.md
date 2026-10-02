@@ -1525,3 +1525,61 @@ These remain raw counts. Do not publish improvement percentages until Workflow 2
 - Workflows requiring material rework after being presented complete: **0**
 
 Two eligible substantive workflows remain before Metric Definition v1 freeze.
+
+
+---
+
+## Workflow 19 — Website editorial refresh + public Morrow update
+
+**Date:** 2 October 2026  
+**Project:** David Walsh Website / Project Morrow public presentation  
+**Task type:** editorial housekeeping + framework publication + gated production release
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes — current website source, current Morrow rules, Context Bridge, Git/Cloudflare state |
+| External write/action? | Yes — private website repo, Notion records, Cloudflare production |
+| Independent verification performed? | Yes — PR QA, staging deployment, main QA, promotion readback, Cloudflare check and rendered canonical browser verification |
+| Pre-release defect/issue found? | Yes — two literal source-target formatting mismatches caught by pre-commit assertions |
+| Defect caught before production? | Yes — before any Git mutation |
+| Post-release defect? | No observed defect |
+| Material rework after completion declared? | No |
+| Root-cause category | Implementation/source-format mismatch |
+| Final outcome | Concise site-wide editorial refresh and current Morrow/Context Bridge public model deployed and independently verified |
+
+### Scope and outcome
+
+- Preserved the existing dark editorial / warm-gold visual system.
+- Reduced repetitive explanatory copy across Home, About, Professional, Compleated Loyalty and Ascension.
+- Updated Project Morrow from the older AI-assistant/human-authorship framing to the current relational model.
+- Published the tagline: **Morrow helps understanding compound without allowing history to become a cage.**
+- Added public Context Bridge explanation and the standing distinction **retrieved ≠ relevant ≠ current ≠ decision-authoritative**.
+- Kept Ask Morrow accurately labelled staging / not public beta.
+- Updated sitemap last-modified metadata for revised pages.
+
+### Release evidence
+
+- Feature commit: `2da71bfa390e6dd661e18de18766c7e2f823efab`.
+- PR #5 QA: **success**.
+- Cloudflare staging: **success**.
+- Merge / production source SHA: `8395d33f1a09982fa46e0971cef02b7a06158aa5`.
+- Main Site QA: **success**.
+- Promote production: **success**.
+- `main` = `production` = `8395d33`.
+- Cloudflare production: `60f0fead-a86a-4bf8-afcc-bd1aca3ded37`.
+- Rendered canonical Home / Morrow / Professional verification: **pass**.
+
+### Foundation raw counts after Workflow 19
+
+- Eligible workflows logged: **19 / 20**
+- Prior-state retrievals required: **19**
+- Successful retrievals without user repetition: **19**
+- Eligible workflows with persistent external actions: **19**
+- Workflows with independent verification: **19**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+One eligible substantive workflow remains before Metric Definition v1 freeze and the first baseline calculation.

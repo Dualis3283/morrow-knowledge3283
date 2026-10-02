@@ -1,6 +1,6 @@
 # Current Working State
 
-**Checkpoint date:** 1 October 2026
+**Checkpoint date:** 2 October 2026
 
 ## Confirmed current infrastructure
 
@@ -30,9 +30,9 @@
 ### Cloudflare
 - Cloudflare MCP connection: operational.
 - Production Pages project: **david-walsh**
-- **Current canonical production: `f030df30`**
-- Full deployment ID: `f030df30-895b-4cc3-affa-f7bc090d78ad`
-- Git commit: `2f8f3cfac166225849445779a059a05431eca8da`
+- **Current canonical production: `60f0fead`**
+- Full deployment ID: `60f0fead-a86a-4bf8-afcc-bd1aca3ded37`
+- Git commit: `8395d33f1a09982fa46e0971cef02b7a06158aa5`
 - Trigger: **github:push**
 - Git source branch: **production**
 - Build output: **site/**
@@ -86,21 +86,8 @@
    - Future D1/KV work remains optional until a demonstrated need justifies it.
 
 3. **Project Morrow measurement foundation**
-   - Workflow 01 logged.
-   - Workflow 02 logged.
-   - Workflow 03 logged.
-   - Workflow 04 logged.
-   - Workflow 05 logged.
-   - Workflow 06 logged.
-   - Workflow 07 logged.
-   - Workflow 08 logged.
-   - Workflow 09 logged.
-   - Workflow 10 logged.
-   - Workflow 11 logged.
-   - Workflow 12 logged.
-   - Workflow 13 logged.
-   - Workflow 14 logged.
-   - Continue until 20 eligible substantive workflows are captured.
+   - Workflows **01–19** are logged.
+   - One eligible substantive workflow remains before Metric Definition v1 freeze and first baseline calculation.
 
 4. **Deck Evolution Planner**
    - review 18-page v0.7 core book;
@@ -116,7 +103,7 @@
 
 6. **Website attention / Ask Morrow**
    - Search/social discovery foundation is live: sitemap, robots, social cards, consistent Open Graph/Twitter metadata and factual JSON-LD.
-   - Project Morrow now has a dedicated public route at `/projects/morrow/`.
+   - Project Morrow has a dedicated public route at `/projects/morrow/`, refreshed on 2 October to the current Relational Context / Context Bridge model.
    - Ask Morrow Phase 0 is complete; the chatbot itself is **not live**.
    - Publication Privacy Standard is now a hard corpus boundary.
    - Public corpus v1.0-eval is frozen and validated against pinned source commits.
@@ -130,7 +117,8 @@
    - User authenticated runtime successfully returned both the deterministic Project Morrow FAQ and a model-bound evidence-vs-interpretation answer.
    - Current-source P0 system cases S01-S06 pass, including request bounds, rate control, model failure, empty retrieval and credential-safe response behavior.
    - UI now displays actual `metrics.neurons`, and message CSS includes `overflow-wrap:anywhere` for pathological long tokens.
-   - Keyboard source mechanics pass, but the frozen public-beta standard still requires one true keyboard-only interaction trial. No PR/public beta until that final P1 trial passes.
+   - Keyboard source mechanics pass, but the frozen public-beta standard still requires one true keyboard-only interaction trial. No Ask Morrow public-beta promotion until that final P1 trial passes.
+   - Public Project Morrow copy now states the Context Bridge rule: **retrieved ≠ relevant ≠ current ≠ decision-authoritative**.
    - Visitor feedback/contact and privacy-conscious measurement remain useful before wider interactive expansion.
 
 ### Next
@@ -158,6 +146,7 @@
 - Deck Planner mobile touch-target hardening via PR #2, rendered and verified on production.
 - Project Morrow public page + site discovery foundation via PR #3, verified on production.
 - **Publication privacy boundary via PR #4: source/content audit, metadata sanitisation, permanent privacy QA, and retirement of 91 historical public deployment snapshots.**
+- **Website editorial refresh via PR #5: current Morrow framework + Context Bridge published, repetitive cross-site copy reduced, production commit `8395d33`, Cloudflare deployment `60f0fead`, rendered canonical readback passed.**
 
 ## Important unknowns
 

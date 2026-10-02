@@ -6,22 +6,22 @@
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`f030df30`**
-- Full deployment ID: `f030df30-895b-4cc3-affa-f7bc090d78ad`
-- Git commit: `2f8f3cfac166225849445779a059a05431eca8da`
+- Current canonical deployment: **`60f0fead`**
+- Full deployment ID: `60f0fead-a86a-4bf8-afcc-bd1aca3ded37`
+- Git commit: `8395d33f1a09982fa46e0971cef02b7a06158aa5`
 - Deployment trigger: **github:push**
 - Source repository: **Dualis3283/david-walsh-site**
 - Cloudflare production branch: **production**
 - Integration branch: **main**
 - Static output: **site/**
 - Pages Functions: **active**
-- Verified directly from Cloudflare and GitHub Actions on **1 October 2026**
+- Verified from GitHub Actions, Cloudflare and rendered canonical browser readback on **2 October 2026**
 
 Privacy / recovery state:
-- pre-privacy Cloudflare deployment snapshots have been retired;
-- only canonical production `f030df30` and final clean staging `c52be4c5` remain publicly addressable;
+- pre-privacy Cloudflare deployment snapshots remain retired;
+- current post-privacy production and staging previews are built from sanitised source;
 - private Git history is the recovery source for old states;
-- republishing an old state requires a new privacy review.
+- republishing an old pre-privacy state requires a new privacy review.
 
 ## Gated deployment model
 
@@ -239,6 +239,68 @@ The first version of the new metadata validator contained a JavaScript quoting/s
 The final validator was simplified, run through `node --check`, executed successfully across all 11 targeted pages, then independently passed the formal PR and post-merge GitHub Actions gates.
 
 **Lesson:** run newly authored QA code itself before treating the existence of the test as evidence. A broken guardrail is not a guardrail.
+
+
+## Fourth ordinary gated feature release
+
+**PR #5 — Refresh site copy and Project Morrow**
+
+- Feature branch: `feature/site-editorial-refresh-2026-10-02`
+- Feature commit: `2da71bfa390e6dd661e18de18766c7e2f823efab`
+- Cloudflare staging deployment: `b6caa577-6868-480c-8c53-2f227b217286`
+- PR-triggered Site QA: **success**
+- Merge to `main`: `8395d33f1a09982fa46e0971cef02b7a06158aa5`
+- Post-merge Site QA: **success**
+- Promote-production workflow: **success**
+- `main` and `production` read back at the same tested SHA
+- Production deployment: **`60f0fead-a86a-4bf8-afcc-bd1aca3ded37`**
+- Cloudflare deployment: **success**
+- Rendered canonical verification: **Home / Project Morrow / Professional pass**
+
+### Editorial scope
+
+This was deliberately not a visual redesign.
+
+Updated:
+- Home;
+- About;
+- Professional;
+- Project Morrow;
+- Compleated Loyalty;
+- Ascension;
+- sitemap last-modified metadata.
+
+The pass reduced repeated cross-site language around identity, systems, process and “the same house”. The homepage now establishes the wider connective idea while individual pages are allowed to speak primarily for their own subject.
+
+### Project Morrow public update
+
+The live Morrow page now reflects the current framework:
+- primary tagline: **Morrow helps understanding compound without allowing history to become a cage.**
+- Morrow described as a continuity, reasoning and knowledge framework for sustained collaboration between autonomous parties;
+- operating loop includes **Alternatives** before action;
+- public Context Bridge section;
+- visible rule: **Retrieved ≠ relevant ≠ current ≠ decision-authoritative.**
+- relational principles include history-as-evidence, irreplaceable perspective, disagreement-as-discovery and mutual intelligibility;
+- Ask Morrow correctly remains **staging / not public beta**.
+
+### Pre-release catches
+
+Two literal HTML replacement assertions failed during local/pre-commit preparation because the source used different line-break markup than the planned patch expected.
+
+Both were caught **before any Git write**. The patch was retargeted to the actual source; no broken revision was committed or deployed.
+
+### Live verification
+
+A rendered browser walked the canonical production pages and confirmed:
+- Home Morrow tagline;
+- Home Professional heading;
+- Morrow main heading;
+- Context Bridge section;
+- `Retrieved ≠ relevant ≠ current ≠ decision-authoritative.`;
+- Ask Morrow staging / not-public-beta status;
+- Professional main heading.
+
+No post-release defect was observed.
 
 
 ## Deployment protocol
