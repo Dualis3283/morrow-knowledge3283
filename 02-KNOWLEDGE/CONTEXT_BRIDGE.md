@@ -136,3 +136,35 @@ Track:
 - **Pipeline Reconciliation** — which record is current when records conflict.
 - **Consistency Protocol** — how much verification a consequential claim/action requires.
 - **Source & Research Archive** — provenance and source pointers that make retrieval inspectable.
+
+
+## Pilot 01 result — 2 October 2026
+
+Five bridge cases were tested against existing durable records.
+
+| Test | Outcome | Lesson |
+|---|---|---|
+| Exact-source preservation from Deck Planner → Context Bridge evaluation | **Accepted** | Reproducible learning needs recoverable source/input, not only paraphrased conclusions. |
+| “One identity / many forms” historical website preference | **Downgraded / not current** | Explicit later removal supersedes the old design preference; retain it only as design history. |
+| GitHub branch-protection fallback → Notion/Context Bridge mechanics | **Direct analogy rejected** | Only the abstract safety-boundary principle transfers; implementation mechanics do not. |
+| Compleated Loyalty digital approval vs physical proof → contextual applicability | **Accepted** | Validation at one layer does not prove the next layer; retrieved ≠ relevant ≠ current ≠ authoritative. |
+| Recent disagreement over continuity/determinism framing | **Accepted** | Disagreement exposed a definition mismatch and produced a better relational model. |
+
+Pilot totals:
+- useful bridges accepted: **3**;
+- stale/historical assumption downgraded: **1**;
+- direct false analogy rejected: **1**;
+- forced analogies accepted: **0**;
+- user repetition required: **0**.
+
+### Pilot refinement
+
+Add explicit Context Bridge outcomes:
+- **Retrieved** — candidate surfaced for inspection.
+- **Accepted** — materially relevant and sufficiently current/applicable.
+- **Downgraded** — relevant history but weak/currently superseded decision weight.
+- **Rejected** — analogy/context does not meaningfully apply.
+
+Also distinguish **direct analogy** from **abstract principle transfer**. A direct analogy may be rejected while a higher-level lesson remains valid.
+
+Metadata should be added **on use**, not through mass archive tagging.

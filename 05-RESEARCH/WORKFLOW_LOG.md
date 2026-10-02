@@ -1436,7 +1436,7 @@ These remain raw counts. Do not publish improvement percentages until Workflow 2
 | User repetition required? | No |
 | Evidence validation required? | Yes — CORE rules, architecture, source registry, task/project registers and current Notion state |
 | External write/action? | Yes — Notion project/architecture/source records + GitHub knowledge/registers |
-| Independent verification performed? | Pending final readback in this workflow |
+| Independent verification performed? | Yes — Notion project/source records and GitHub implementation/registers were read back |
 | Defect/improvement found? | Yes — practical contextual-retrieval mechanism was not yet defined; two stale GitHub task/register states also surfaced |
 | Root-cause category | Verification gap / stale state |
 | Post-release defect? | No |
@@ -1475,3 +1475,53 @@ Apply Context Bridge v1 to 3–5 existing records and capture:
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.
+
+
+---
+
+## Workflow 18 — Context Bridge Pilot 01
+
+**Date:** 2 October 2026  
+**Project:** Morrow Context Bridge & Relevance Engine  
+**Task type:** retrieval evaluation + cross-project relevance testing + false-analogy rejection
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes — five candidate bridges checked against durable project records |
+| External write/action? | Yes — Notion pilot record + GitHub research/spec update |
+| Independent verification performed? | Yes |
+| Defect/improvement found? | Yes — bridge outcomes needed an explicit downgraded state and direct-vs-abstract analogy distinction |
+| Root-cause category | Other — retrieval-model refinement |
+| Post-release defect? | No |
+| Material rework after completion declared? | No |
+| Final outcome | First Context Bridge pilot passed with 3 accepted bridges, 1 historical assumption downgraded, 1 direct analogy rejected, and 0 forced analogies accepted |
+
+### Cases
+
+1. **Accepted:** Deck Planner exact-source preservation → Context Bridge evaluation reproducibility.
+2. **Downgraded:** historical “One identity / many forms” preference → design history only after explicit removal.
+3. **Rejected direct analogy:** GitHub branch-protection implementation → Notion/context retrieval mechanics.
+4. **Accepted:** Compleated Loyalty digital-vs-physical verification boundary → retrieved context still requires applicability verification.
+5. **Accepted:** continuity/determinism disagreement → definition mismatch surfaced and improved the model.
+
+### New guardrails
+
+- Bridge outcomes: **Retrieved / Accepted / Downgraded / Rejected**.
+- Distinguish **direct analogy** from **abstract principle transfer**.
+- Add metadata on retrieval/use rather than mass-tagging the historical archive.
+- Preserve the principle: **retrieved ≠ relevant ≠ current ≠ decision-authoritative**.
+
+### Foundation raw counts after Workflow 18
+
+- Eligible workflows logged: **18 / 20**
+- Prior-state retrievals required: **18**
+- Successful retrievals without user repetition: **18**
+- Eligible workflows with persistent external actions: **18**
+- Workflows with independent verification: **18**
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+Two eligible substantive workflows remain before Metric Definition v1 freeze.
