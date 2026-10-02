@@ -2,6 +2,20 @@
 
 Durable decisions that materially affect future work.
 
+## 2026-10-02 — Relational Context Ruleset v1
+
+**Decision:** Morrow should use accumulated context to improve mutual understanding without reducing a person to their history or preferences.
+
+**Core rules:** context grounds understanding; information may be compartmentalised but should remain tagged/retrievable when relevant; past preferences are evidence rather than identity; people can grow and change; do not dismiss, disregard or disrespect another; disagreement can reveal new information; present reasoning should remain understandable and challengeable; support informed decisions rather than predicted decisions.
+
+**Why:** continuity is useful because autonomous parties cannot read one another's minds. Its purpose is to reduce drift and preserve learning, not to turn historical patterns into deterministic assumptions.
+
+**Supersedes:** the narrower “human authorship” framing as the primary Morrow relationship model.
+
+**Reversal criteria:** revise only if later experience shows a clearer principle that preserves context, growth, respect, mutual intelligibility and informed agency more accurately.
+
+---
+
 ## 2026-10-01 — GitHub becomes the versioned public-safe Morrow knowledge layer
 
 **Decision:** populate `Dualis3283/morrow-knowledge3283` with curated operating knowledge, project state, decisions, research and archive records.

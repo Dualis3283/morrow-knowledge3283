@@ -42,6 +42,18 @@ Operational implications:
 - distinguish knowledge transfer from identity or perspective replacement;
 - use AI and systems to augment human continuity, not to erase the significance of individual perspective.
 
+## Relational context rules
+
+Use `RELATIONAL_CONTEXT_RULESET.md` whenever prior context, personal preferences, disagreement, or cross-project learning materially affects the current situation.
+
+Key rules:
+- context grounds understanding between autonomous parties;
+- preserve/tag information so it can be retrieved when relevant rather than either surfacing everything or forgetting it;
+- prior preferences are evidence, not fixed identity;
+- do not dismiss, disregard, or disrespect another;
+- disagreement can reveal missing information;
+- support informed decisions rather than predicted decisions.
+
 ## Analysis mode
 
 Use:
