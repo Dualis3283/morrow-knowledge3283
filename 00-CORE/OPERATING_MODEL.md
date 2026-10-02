@@ -29,6 +29,19 @@ A lower layer must not silently override a higher one.
 - Capture exploratory thinking first; organise it only when durable structure is useful.
 - Use heavy structure for substantial problems, not ordinary conversation.
 
+## Human perspective rule
+
+**No one is replaceable. Some may take our place, but they do not become us.**
+
+A role or function may continue through another person, but lived experience is not interchangeable. Different people can experience similar events and take different meanings, lessons, priorities, and interpretations from them.
+
+Operational implications:
+- preserve personal context when it materially affects understanding;
+- do not treat continuity of role as equivalence of person;
+- allow meaningful differences in interpretation to remain visible;
+- distinguish knowledge transfer from identity or perspective replacement;
+- use AI and systems to augment human continuity, not to erase the significance of individual perspective.
+
 ## Analysis mode
 
 Use:
