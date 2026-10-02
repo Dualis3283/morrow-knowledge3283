@@ -1419,3 +1419,59 @@ These remain raw counts. Do not publish improvement percentages until Workflow 2
 - Workflows requiring material rework after being presented complete: **0**
 
 These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.
+
+
+---
+
+## Workflow 17 — Context Bridge & Relevance Engine v1
+
+**Date:** 2 October 2026  
+**Project:** Project Morrow knowledge architecture  
+**Task type:** practical framework implementation + cross-record reconciliation + durable retrieval design
+
+| Field | Result |
+|---|---|
+| Prior context required? | Yes |
+| Context retrieved successfully? | Yes |
+| User repetition required? | No |
+| Evidence validation required? | Yes — CORE rules, architecture, source registry, task/project registers and current Notion state |
+| External write/action? | Yes — Notion project/architecture/source records + GitHub knowledge/registers |
+| Independent verification performed? | Pending final readback in this workflow |
+| Defect/improvement found? | Yes — practical contextual-retrieval mechanism was not yet defined; two stale GitHub task/register states also surfaced |
+| Root-cause category | Verification gap / stale state |
+| Post-release defect? | No |
+| Material rework after completion declared? | No |
+| Final outcome | Context Bridge v1 established as the inspectable retrieval layer between stored context and present reasoning |
+
+### Implementation
+
+- Created dedicated **Morrow Context Bridge & Relevance Engine** project in Notion.
+- Defined record metadata: type, scope, subject, recorded date, last-confirmed date, confidence, source, cross-project relevance, supersession and retrieval boundary.
+- Defined relevance, freshness, change, scope and difference checks.
+- Defined the Jeff Goldblum effect as an operational relevance bridge rather than automatic analogy.
+- Added personal-context guardrail: historical preference remains historical unless freshly confirmed.
+- Added disagreement diagnostic.
+- Activated Source & Research Archive as the provenance support layer.
+- Reconciled stale GitHub registers:
+  - Ask Morrow now correctly points to the remaining keyboard-only P1 gate.
+  - Viv Vision Stax / Control is recorded as retired/archived rather than active.
+
+### Next pilot
+
+Apply Context Bridge v1 to 3–5 existing records and capture:
+- one valid cross-project bridge;
+- one changed-preference/freshness case;
+- one rejected false analogy;
+- one useful failure-pattern transfer.
+
+### Foundation raw counts after Workflow 17
+
+- Eligible workflows logged: **17 / 20**
+- Prior-state retrievals required: **17**
+- Successful retrievals without user repetition: **17**
+- Eligible workflows with persistent external actions: **17**
+- Workflows with independent verification: **17** after final readback
+- Post-release defects observed in logged workflows: **0**
+- Workflows requiring material rework after being presented complete: **0**
+
+These remain raw counts. Do not publish improvement percentages until Workflow 20 and Metric Definition v1 freeze.

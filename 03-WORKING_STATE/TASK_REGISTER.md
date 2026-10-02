@@ -13,8 +13,12 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** update only when recurring corrections, failure classes, or successful workflows materially change future handling.
 
 ### Morrow Knowledge Architecture
-**Status:** In progress / planning  
-**Next:** define canonical flow among chat, Notion pipeline, GitHub knowledge, files/Drive, decisions, and archive.
+**Status:** In progress / active  
+**Next:** pilot Context Bridge v1 on 3–5 existing durable records and record accepted/rejected relevance connections.
+
+### Morrow Context Bridge & Relevance Engine
+**Status:** In progress / active  
+**Next:** test one cross-project Jeff Goldblum-effect bridge, one changed-preference case, and one false analogy that should be rejected.
 
 ### Morrow Knowledge Infrastructure
 **Status:** In progress / active  
@@ -25,8 +29,8 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** maintain a proven-capability map; real reads/writes override connection badges.
 
 ### Ask Morrow AI Workflow
-**Status:** In progress / staging-only; provider evaluation blocked at Cloudflare authentication restoration  
-**Next:** restore scoped Cloudflare API-token access and prove a real API read **without a code commit**; then (1) commit provider-boundary refactor, (2) commit Workers AI staging provider using `env.AI`, (3) commit evaluation telemetry, and run the frozen 48-case gate before any PR/public beta. OpenAI remains blocked by `billing_not_active` and is not required for the free proof-of-concept.
+**Status:** In progress / staging-only; Workers AI runtime and P0 gate pass  
+**Next:** complete one genuine keyboard-only staging walkthrough. Do not describe or promote Ask Morrow as public beta until that P1 gate passes.
 
 ### Deck Planner Companion App
 **Status:** In progress / review  
@@ -36,10 +40,6 @@ Consolidated from Notion pipeline status plus live external verification.
 **Status:** In progress / review  
 **Next:** final v0.7 review; promote only after sign-off.
 
-### Viv Vision Stax / Control
-**Status:** In progress / active  
-**Next:** continue collection-constrained evaluation for a genuine stax/control shell.
-
 ## NEXT
 
 ### Compleated Loyalty physical proof
@@ -47,8 +47,8 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** print representative proof from Print Master v2 at Actual Size.
 
 ### Project Morrow measurement foundation
-**Status:** In progress  
-**Next:** continue until 20 eligible substantive workflows are logged using the six metrics.
+**Status:** In progress — 17/20  
+**Next:** log the next 3 eligible substantive workflows, then review ambiguities and freeze Metric Definition v1.
 
 ### MTG Deck Development
 **Status:** In progress  
@@ -79,8 +79,8 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** use approved hierarchy as default where suitable; update only after explicit cross-project decisions.
 
 ### Morrow Source & Research Archive
-**Status:** Not started  
-**Next:** define source-capture/provenance standard.
+**Status:** In progress / active  
+**Next:** align provenance fields with Context Bridge: source pointer, recorded date, last-confirmed date, confidence, scope, cross-project relevance and supersession.
 
 ## LATER
 
@@ -114,3 +114,4 @@ Consolidated from Notion pipeline status plus live external verification.
 - 23 Sep mixed chat backup — recovery archive, not an active task.
 - FitzChivalry character study — complete reference.
 - Project Morrow historical baseline checkpoint — complete.
+- Viv Vision Stax / Control — retired from active tracking; historical context only.

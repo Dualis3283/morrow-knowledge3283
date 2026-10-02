@@ -22,6 +22,7 @@ MORROW
 │   └── COMPLEATED_LOYALTY.md
 ├── 02-KNOWLEDGE
 │   ├── BEST_PRACTICES.md
+│   ├── CONTEXT_BRIDGE.md
 │   └── PIPELINE_RECONCILIATION.md
 ├── 03-WORKING_STATE
 │   ├── CURRENT.md
@@ -70,7 +71,7 @@ This repository is public. Sensitive personal history, private files, unpublishe
 
 See [Current Working State](03-WORKING_STATE/CURRENT.md) and [Task Register](03-WORKING_STATE/TASK_REGISTER.md).
 
-Last consolidation: **1 October 2026**.
+Last consolidation: **2 October 2026**.
 
 
 ### Ask Morrow staging

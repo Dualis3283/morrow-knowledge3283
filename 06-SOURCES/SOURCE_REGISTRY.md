@@ -29,6 +29,10 @@ This registry points to authoritative or high-value source locations. It does no
   Six metrics / 20-workflow baseline definition.  
   https://app.notion.com/p/3eb65a6a40638163b3bae39ea0f7a1e3
 
+- **Morrow Context Bridge & Relevance Engine**  
+  Operational contextual-retrieval project and pilot record.  
+  https://app.notion.com/p/3ed65a6a406381a4baf0ed5ef35b75be
+
 ### Project pages
 - **David Walsh Website**  
   https://app.notion.com/p/3e565a6a406381b89fa3d0f983a866ca
@@ -59,5 +63,7 @@ This registry points to authoritative or high-value source locations. It does no
 
 - Live external readback can supersede stale “current” prose in older notes.
 - Historical source records remain valuable even when their next action is obsolete.
+- Retrieval does not confer current authority: check freshness, scope, supersession and material differences before applying prior context.
+- Personal-preference records should carry a recorded/last-confirmed date when their current validity matters.
 - Private/sensitive source material should be referenced from controlled systems, not copied here.
 - Dynamic external state must be rechecked at execution time.

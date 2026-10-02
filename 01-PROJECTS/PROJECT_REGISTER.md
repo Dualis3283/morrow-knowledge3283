@@ -9,15 +9,16 @@ Consolidated from the Morrow Notion pipeline on **1 October 2026**. This is a pu
 | Morrow Knowledge Model | **Active** | Living operating baseline for response quality, verification, recommendations, and continuity. |
 | Morrow Knowledge Repository | **Active** | GitHub write + readback now proven; repository is being populated with curated knowledge. |
 | Morrow Working State | **Active** | Operational snapshot; some older embedded website checkpoints are historical. |
-| Morrow Knowledge Architecture | **Planning / in progress** | Defines flow among conversations, working state, decisions, projects, and sources. |
+| Morrow Knowledge Architecture | **Active / in progress** | Defines flow among conversations, working state, decisions, projects, and sources; Context Bridge v1 is now the active retrieval-layer pilot. |
+| Morrow Context Bridge & Relevance Engine | **Active / in progress** | Operationalises contextual retrieval: relevance, freshness, change, scope and difference checks before prior context influences current reasoning. |
 | Morrow Knowledge Infrastructure | **Active** | Notion, GitHub, Cloudflare, Drive and other infrastructure are being validated and connected. |
 | Morrow Connector & Integration Layer | **Research / in progress** | Connector capabilities should be proven by real reads/writes, not connection badges. |
 | Morrow Visual System | **Active** | Website-derived cross-project typography and restrained warm-gold/dark editorial baseline. |
 | Morrow Decision Log | **Started in GitHub** | Notion ticket said “Not started”; this consolidation creates an operational decision log. |
-| Morrow Source & Research Archive | **Not started** | Needs a durable policy for external research and provenance. |
+| Morrow Source & Research Archive | **Active / in progress** | Aligning source/provenance capture with Context Bridge metadata and freshness/supersession checks. |
 | Morrow Creative Framework | **Not started** | Long-term relationship among Morrow, Dualis, and the creative corpus. |
 | Project Morrow historical baseline | **Complete** | H0 / Transition / M0 baseline established. |
-| Project Morrow measurement foundation | **Not started** | Next 20 eligible workflows should be logged using six defined metrics. |
+| Project Morrow measurement foundation | **Active — 17/20** | Three more eligible workflows remain before Metric Definition v1 freeze. |
 | Morrow Project Pipeline page | **Superseded utility record** | The actual Notion database is the canonical pipeline; separate project-page record is redundant. |
 | Foundations recovery snapshot | **Historical / partially superseded** | Valuable baseline; repo-write uncertainty inside it has now been resolved. |
 
@@ -42,7 +43,7 @@ Consolidated from the Morrow Notion pipeline on **1 October 2026**. This is a pu
 | Print-production archive — 30 Sep | **Historical archive** | Useful evidence; its old “build fresh Jace token” next action is superseded because Jace token was later approved. |
 | MTG Deck Development | **Active** | Collection-first Commander development. |
 | MTG Collection Knowledge Base | **Planning / in progress** | Turn collection findings into durable validated card/deck knowledge. |
-| Viv Vision Stax / Control | **Active** | Continue collection-constrained evaluation for a genuine stax/control shell. |
+| Viv Vision Stax / Control | **Retired / archived** | Removed from active tracking by user request; preserve only as historical context unless explicitly reopened. |
 | MTG Eight-Deck Story | **Not started** | Later narrative project using titles/essence/realm rather than commander names. |
 
 ## Dualis / creative work
