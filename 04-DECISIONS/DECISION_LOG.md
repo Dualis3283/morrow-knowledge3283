@@ -106,3 +106,10 @@ Durable decisions that materially affect future work.
 - The 19 coded workflows do not constitute a frozen twenty-case chronological sample. Defect and write/conclusion denominators remain ambiguous: no improvement percentages.
 - Adopt the reproducible read-only ledger audit, reconcile stale source/register pointers, and hold new-phase scope until the owner directs it.
 - Reversal criteria: validate chronological sequence, coding and per-event denominators before deliberately freezing Metric Definition v1. Evidence: 07-ARCHIVE/PHASE6_CONSOLIDATION_STOPGAP_2026-10-12.md.
+
+## Photo-driven component QA rule — 12 October 2026
+- Evidence: document-wide responsive tests had passed, yet laptop photographs exposed a word broken mid-word, clipped MORROW branding and unreadable World Wave labels. First live readback also caught a 43px mobile-specific target override.
+- Standing guardrail: compare actual unbreakable text dimensions with their rendered container, especially in overflow-hidden and responsive/expanded components; verify focus state and mobile 44px touch dimensions after applying the entire CSS cascade.
+- Preserve originals: verify lazy image loading before replacing authentic album art; keep semantic labels even when the display uses arrow controls.
+- Verified release: site SHA ad8da03385379ba99e2d896808100a13a4512554, full QA/promotion/provider checks and live geometry readback.
+- Scope: technical quality follow-up, not a reopened public testing phase or completion of the 20-workflow measurement foundation. Source: 07-ARCHIVE/WEBSITE_LAYOUT_PHOTO_CHECKPOINT_2026-10-12.md.

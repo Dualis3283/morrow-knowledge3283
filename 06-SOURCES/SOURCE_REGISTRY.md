@@ -76,3 +76,9 @@ This registry points to authoritative or high-value source locations. It does no
 - Public-safe asset catalogue: `06-SOURCES/ASSET_CATALOG_PHASE6_2026-10-12.json`.
 - Selected Google Drive backups are located by authenticated metadata search; no claim of a full Drive inventory or an independently tested restore drill.
 - Current Notion pipeline status is authoritative for operational work, but may lag events; latest source records must be reconciled with project-specific evidence.
+
+### Website photo remediation evidence (12 October 2026)
+- Dated site production baseline: ad8da03385379ba99e2d896808100a13a4512554 (main and production matched; QA, smoke, promotion, Cloudflare staging/production checks passed). Older deployment SHAs are dated historical evidence, not present authority.
+- Public-safe Morrow checkpoint: 07-ARCHIVE/WEBSITE_LAYOUT_PHOTO_CHECKPOINT_2026-10-12.md.
+- Source-specific report remains private under Dualis3283/david-walsh-site, docs/PHOTO_LAYOUT_REMEDIATION_2026-10-12.md. Do not copy private site source or the user's photos to this public knowledge repository.
+- Project-specific Notion record: https://app.notion.com/p/3e565a6a406381b89fa3d0f983a866ca .

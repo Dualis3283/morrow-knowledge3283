@@ -5,6 +5,9 @@
 ## Latest authority — Phase 6 stopgap
 Authoritative new checkpoint: 07-ARCHIVE/PHASE6_CONSOLIDATION_STOPGAP_2026-10-12.md. Nineteen workflows are coded; Metric Definition v1 is NOT frozen; Phase 4 owner-closed, Phase 5 skipped, next phase scope not authorised. The following older project notes are historical unless refreshed from project-specific sources.
 
+### Verified website QA follow-up — 12 October 2026
+The owner's physical laptop photos revealed clipped hero typography, clipped MORROW lettering, and cramped World Wave labels despite prior source checks. Verified follow-up production SHA: ad8da03385379ba99e2d896808100a13a4512554 with successful QA, smoke, promotion, Cloudflare deployment checks and live responsive readback. Evidence/lesson: 07-ARCHIVE/WEBSITE_LAYOUT_PHOTO_CHECKPOINT_2026-10-12.md. Phase 6 stopgap remains unchanged; Phase 5 remains skipped; metric baseline remains 19/20 and unfrozen.
+
 ### Prior checkpoint
 **Earlier checkpoint date:** 2 October 2026
 

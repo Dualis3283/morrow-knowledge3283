@@ -108,6 +108,8 @@ Consolidated from Notion pipeline status plus live external verification.
 
 ## CLOSED / ARCHIVED
 
+- Website photo-driven responsive correction — completed 12 October 2026, final tested production SHA ad8da033, evidence archived in 07-ARCHIVE/WEBSITE_LAYOUT_PHOTO_CHECKPOINT_2026-10-12.md. The website project itself remains active in Notion.
+
 - Magic Quick-Reference Guide — complete.
 - Deck Planner Flow Validation v0.4 — complete; superseded as active baseline by later flow-locked work.
 - Compleated Loyalty redesign tickets — closure consolidated under canonical final archive.
