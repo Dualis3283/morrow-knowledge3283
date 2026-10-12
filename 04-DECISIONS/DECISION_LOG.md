@@ -100,3 +100,9 @@ Durable decisions that materially affect future work.
 - Existing work should be evaluated as evidence before defining new products.
 - Public promotion does not require total disclosure of private personal history.
 - Accepted voice/themes/baselines should be preserved unless a new brief changes them.
+
+## 12 October 2026 — Phase 6 consolidation stopgap
+- Preserve the existing verified website and security gates; Phase 5 remains intentionally skipped, not finished. No new public telemetry or model release was authorised.
+- The 19 coded workflows do not constitute a frozen twenty-case chronological sample. Defect and write/conclusion denominators remain ambiguous: no improvement percentages.
+- Adopt the reproducible read-only ledger audit, reconcile stale source/register pointers, and hold new-phase scope until the owner directs it.
+- Reversal criteria: validate chronological sequence, coding and per-event denominators before deliberately freezing Metric Definition v1. Evidence: 07-ARCHIVE/PHASE6_CONSOLIDATION_STOPGAP_2026-10-12.md.

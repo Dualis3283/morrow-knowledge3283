@@ -14,15 +14,15 @@ Consolidated from Notion pipeline status plus live external verification.
 
 ### Morrow Knowledge Architecture
 **Status:** In progress / active  
-**Next:** pilot Context Bridge v1 on 3–5 existing durable records and record accepted/rejected relevance connections.
+**Next:** pilot completed on 2 October (five candidate bridges). Use the findings for normal contextual retrieval; expand evaluation only when a new decision requires it.
 
 ### Morrow Context Bridge & Relevance Engine
 **Status:** In progress / active  
-**Next:** test one cross-project Jeff Goldblum-effect bridge, one changed-preference case, and one false analogy that should be rejected.
+**Next:** reuse the completed five-case Context Bridge pilot; record accepted, downgraded and rejected connections on demand rather than mass-tagging the archive.
 
 ### Morrow Knowledge Infrastructure
 **Status:** In progress / active  
-**Next:** formalise roles of Notion, GitHub, Cloudflare, Drive and optional services.
+**Next:** verify current authority and readback across Notion (operational), GitHub (versioned knowledge and code), Cloudflare (deployed runtime), and Drive (selected backups).
 
 ### Morrow Connector & Integration Layer
 **Status:** In progress / research  
@@ -47,8 +47,8 @@ Consolidated from Notion pipeline status plus live external verification.
 **Next:** print representative proof from Print Master v2 at Actual Size.
 
 ### Project Morrow measurement foundation
-**Status:** In progress — 17/20  
-**Next:** log the next 3 eligible substantive workflows, then review ambiguities and freeze Metric Definition v1.
+**Status:** In progress — 19/20 coded workflows (last dated 2 October 2026); chronological sampling gap and schema issues remain.  
+**Next:** identify and code the first still-eligible unlogged workflow after 2 October, rather than picking a convenient recent task; reconcile per-action verification and per-conclusion traceability denominators before freezing Metric Definition v1. Run the offline workflow ledger audit for current raw counts; do not publish improvement percentages.
 
 ### MTG Deck Development
 **Status:** In progress  

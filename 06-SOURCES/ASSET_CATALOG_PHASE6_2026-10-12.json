@@ -1,0 +1,145 @@
+{
+  "schema": "morrow-asset-inventory-v1",
+  "recorded_date": "2026-10-12",
+  "sources": [
+    {
+      "id": "notion_pipeline",
+      "name": "Notion — Morrow Project Pipeline",
+      "authority": "operational",
+      "visibility": "private workspace",
+      "record_count": 38,
+      "breakdown": {
+        "Morrow": 17,
+        "MTG": 12,
+        "Dualis": 4,
+        "BG3": 3,
+        "Other": 2
+      },
+      "as_of": "2026-10-12 query",
+      "provenance": "https://app.notion.com/p/08c8001b0d644a5ebaf4266a80d6996b",
+      "allowed_analytics": [
+        "status distribution",
+        "stale next-action audit",
+        "decision supersession"
+      ],
+      "limitation": "Records are heterogeneous and last edits may lag deployments"
+    },
+    {
+      "id": "knowledge_repo",
+      "name": "GitHub morrow-knowledge3283",
+      "authority": "durable public-safe knowledge",
+      "visibility": "public",
+      "file_count": 36,
+      "markdown_files": 33,
+      "json_files": 2,
+      "total_blob_bytes": 300489,
+      "as_of": "2026-10-12 main tree",
+      "provenance": "https://github.com/Dualis3283/morrow-knowledge3283",
+      "allowed_analytics": [
+        "coded workflow events",
+        "retrieval provenance",
+        "versioned corrections"
+      ],
+      "limitation": "No private source material should be mirrored"
+    },
+    {
+      "id": "workflow_ledger",
+      "name": "Morrow workflow ledger",
+      "authority": "measurement input",
+      "visibility": "public-safe",
+      "coded_workflows": 19,
+      "target_workflows": 20,
+      "last_coded_date": "2026-10-02",
+      "provenance": "05-RESEARCH/WORKFLOW_LOG.md",
+      "allowed_analytics": [
+        "raw event counts",
+        "schema coverage",
+        "candidate reliability indicators"
+      ],
+      "limitation": "Not a complete chronological sample; rate definitions not frozen"
+    },
+    {
+      "id": "ask_morrow_eval",
+      "name": "Ask Morrow frozen evaluation set",
+      "authority": "fixed test cases",
+      "visibility": "public-safe",
+      "total_cases": 48,
+      "response_cases": 40,
+      "system_cases": 8,
+      "frozen": "2026-10-01",
+      "provenance": "05-RESEARCH/ASK_MORROW_EVAL_V1.json",
+      "allowed_analytics": [
+        "per-case release gate",
+        "privacy boundaries",
+        "regression categories"
+      ],
+      "limitation": "Fixed evaluation cases are not visitor research or field usage"
+    },
+    {
+      "id": "site_repo",
+      "name": "GitHub david-walsh-site",
+      "authority": "website source and QA",
+      "visibility": "private",
+      "file_count": 359,
+      "automated_test_files": 8,
+      "workflow_yaml_files": 7,
+      "as_of": "2026-10-12 main tree",
+      "provenance": "https://github.com/Dualis3283/david-walsh-site",
+      "allowed_analytics": [
+        "CI health",
+        "release success and rework",
+        "asset and route integrity"
+      ],
+      "limitation": "Private repository; source/CI data must not be published wholesale"
+    },
+    {
+      "id": "price_history",
+      "name": "Context Observatory card-price history",
+      "authority": "dated price observations",
+      "visibility": "public site static data",
+      "provider": "MTGJSON AllPrices",
+      "source_date": "2026-10-11",
+      "printing_count": 107007,
+      "shard_count": 256,
+      "compressed_shard_bytes": 31688733,
+      "window_days": 30,
+      "provenance": "https://david-walsh.pages.dev/data/card-history/manifest.json",
+      "allowed_analytics": [
+        "same-printing same-provider trends",
+        "data freshness",
+        "price coverage",
+        "ownership-aware remaining budget"
+      ],
+      "limitation": "Not demand/causation/forecasting; separate currencies and scopes"
+    },
+    {
+      "id": "drive_backups",
+      "name": "Selected Google Drive archival items",
+      "authority": "historical secondary copies",
+      "visibility": "restricted Google Drive",
+      "matched_morrow_named_files_or_folders": 7,
+      "as_of": "2026-10-12 keyword search across two connected accounts",
+      "provenance": "authenticated Google Drive metadata search for Morrow",
+      "allowed_analytics": [
+        "backup presence and version pointers"
+      ],
+      "limitation": "Keyword-matched results are not a complete inventory or verified recovery drill"
+    },
+    {
+      "id": "phase6_open_pr",
+      "name": "Ask Morrow pricing-conversation pull request",
+      "authority": "unmerged functional proposal",
+      "visibility": "private site repo",
+      "pr_number": 8,
+      "provenance": "https://github.com/Dualis3283/david-walsh-site/pull/8",
+      "allowed_analytics": [
+        "gate check",
+        "test-case breakdown",
+        "readiness conditions"
+      ],
+      "limitation": "PR body is a developer claim until independent gate and required staging accessibility trial are read back"
+    }
+  ],
+  "privacy": "public-safe inventory: descriptive metadata and links only, no secrets, detailed personal history, tokens, emails or raw private source",
+  "overall_warning": "Counts are assets of different grains and populations; do not sum them into one total or infer user engagement."
+}

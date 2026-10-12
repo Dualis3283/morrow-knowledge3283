@@ -1,0 +1,60 @@
+{
+  "count": 19,
+  "defect_field_variants": [
+    "Defect caught before downstream implementation?",
+    "Defect caught before downstream release?",
+    "Defect caught before final release?",
+    "Defect caught before new release?",
+    "Defect caught before production?",
+    "Defect caught before release?",
+    "Defect found?",
+    "Defect/improvement found?",
+    "Defect/risk contained before production use?",
+    "Defects caught before merge?",
+    "Defects caught before production?",
+    "Defects found before release?",
+    "Defects/configuration issues found?",
+    "Post-release defect?",
+    "Pre-release defect/issue found?",
+    "Pre-release defect/risk found?",
+    "Pre-release defect?",
+    "Pre-release defects found?"
+  ],
+  "foundation_sample_complete": false,
+  "last_coded_date": "2 October 2026",
+  "last_coded_workflow": "Website editorial refresh + public Morrow update",
+  "ledger_path": "05-RESEARCH/WORKFLOW_LOG.md",
+  "mandatory_field_coverage": 19,
+  "metric_definition_v1_frozen": false,
+  "missing_required": [],
+  "numbers_contiguous": true,
+  "observed_raw_field_counts": {
+    "context_required_yes": 19,
+    "context_retrieved_yes": 19,
+    "evidence_validation_yes": 19,
+    "external_action_yes": 19,
+    "independent_verification_yes": 19,
+    "material_rework_no": 19,
+    "post_release_defect_no": 5,
+    "post_release_defect_not_applicable": 7,
+    "post_release_defect_not_observed": 7,
+    "user_repetition_no": 19
+  },
+  "readiness_issues": [
+    "Twenty-workflow foundation is not complete",
+    "Defect field names vary; event-level defect discovery/catch denominators cannot safely be inferred",
+    "Independent verification is logged per workflow, not per eligible write/action",
+    "Evidence traceability is not coded per eligible conclusion"
+  ],
+  "schema": "morrow-workflow-audit-v1",
+  "scope_note": "Counts describe the coded, selected workflows, not all work since 2 October; do not infer Morrow caused improvement.",
+  "six_core_metric_rates": {
+    "continuity_retrieval_success": null,
+    "evidence_traceability_per_conclusion": null,
+    "material_rework_rate": null,
+    "pre_release_defect_catch_rate": null,
+    "repeated_context_burden_rate": null,
+    "verification_coverage_per_action": null
+  },
+  "task_register_count": 19
+}

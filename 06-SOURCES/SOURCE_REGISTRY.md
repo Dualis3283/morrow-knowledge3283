@@ -57,7 +57,9 @@ This registry points to authoritative or high-value source locations. It does no
 ### Cloudflare
 - Live site: https://david-walsh.pages.dev/
 - Pages project: `david-walsh`
-- Current verified production at consolidation: **V18 / d7000b0a**
+- Historical V18 Direct Upload rollback: **d7000b0a** (not current production).
+- Verified Git-backed website production at the 12 October phase-status checkpoint: **c11bafaa1a46c36e91aaed218d328ab64909556a** on `production`. Recheck the actual branch and canonical Pages endpoint for every new release; this is a dated pointer, not a permanent live-state claim.
+- Website source/QA repository is private: **Dualis3283/david-walsh-site**. Preserve privacy; never mirror its private code or logs to this public knowledge repository.
 
 ## Source rules
 
@@ -67,3 +69,10 @@ This registry points to authoritative or high-value source locations. It does no
 - Personal-preference records should carry a recorded/last-confirmed date when their current validity matters.
 - Private/sensitive source material should be referenced from controlled systems, not copied here.
 - Dynamic external state must be rechecked at execution time.
+
+### Phase 6 analysis sources (2026-10-12)
+- Versioned Morrow workflow ledger and measurement definition: `05-RESEARCH/WORKFLOW_LOG.md` and `05-RESEARCH/MEASUREMENT_FOUNDATION.md`.
+- Reproducible read-only measurement parser: `05-RESEARCH/workflow_ledger_audit.py`; rates remain unavailable until the baseline is complete and definitions are frozen.
+- Public-safe asset catalogue: `06-SOURCES/ASSET_CATALOG_PHASE6_2026-10-12.json`.
+- Selected Google Drive backups are located by authenticated metadata search; no claim of a full Drive inventory or an independently tested restore drill.
+- Current Notion pipeline status is authoritative for operational work, but may lag events; latest source records must be reconciled with project-specific evidence.

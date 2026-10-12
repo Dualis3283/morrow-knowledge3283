@@ -1,0 +1,29 @@
+name: Morrow workflow ledger consistency
+on:
+  push:
+    branches: [main]
+    paths:
+      - '05-RESEARCH/WORKFLOW_LOG.md'
+      - '05-RESEARCH/workflow_ledger_audit.py'
+      - '05-RESEARCH/test_workflow_ledger_audit.py'
+      - '03-WORKING_STATE/TASK_REGISTER.md'
+      - '.github/workflows/knowledge-audit.yml'
+  pull_request:
+    paths:
+      - '05-RESEARCH/WORKFLOW_LOG.md'
+      - '05-RESEARCH/workflow_ledger_audit.py'
+      - '05-RESEARCH/test_workflow_ledger_audit.py'
+      - '03-WORKING_STATE/TASK_REGISTER.md'
+      - '.github/workflows/knowledge-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only reproducible ledger audit
+        run: python3 05-RESEARCH/workflow_ledger_audit.py --json
+      - name: Ledger consistency tests
+        run: python3 -m unittest discover -s 05-RESEARCH -p 'test_workflow_ledger_audit.py'
