@@ -3,7 +3,7 @@
 **Status:** Working draft v0.1 · 14 October 2026. **Not ratified or certified.**
 **Authority:** [Owner-approved P0 decision](STRATEGIC_DIRECTION_2026-10-14.md). **Maintainer:** Project Morrow.
 **Goal:** an open, model-independent, interoperable, independently testable methodology suitable for voluntary worldwide AI adoption.
-**Licensing:** Not yet decided. Public repo visibility alone does not grant permissions to reuse; publish an explicit licence before claiming an open standard.
+**Licensing:** This repository currently includes a GNU GPL-3.0 LICENSE file (verified 14 October 2026). Review and explicitly document how it applies to the methodology text versus future implementation code; do not silently relicense existing material. Formal open-standard governance and reuse terms remain to be decided.
 
 ## 1. Scope and non-goals
 Applies to AI assistants, agents and human–AI workflows performing substantive analysis, decisions, actions or continuity across tasks/platforms. The method is a **process contract** independent of model, vendor, prompt format, hosting, and persistent memory. It may be used statelessly or locally. Routine low-risk answers do not need a seven-section report.
