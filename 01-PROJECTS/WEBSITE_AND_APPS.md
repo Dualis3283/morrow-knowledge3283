@@ -1,12 +1,21 @@
 # Website and Apps
 
-## Current verified production state
+## Verified release — 13 October 2026
+
+Website source: `1b8a3c8f204540e0dbd440ff610c0ba8c9be2674`, merged through PR #9. Production deployment: `14e1b1c2-d909-4d2f-952f-70db0b5cea56`. Site QA, production health and fast-forward promotion succeeded. Chromium CI exercised eight representative routes at 390px and 1440px and retained 16 screenshots; history keyboard/no-script checks passed. The final shortened header passed another complete CI run. Live canonical browser readback confirmed the new page, five-item navigation and six-stage keyboard-operated history.
+
+The staging deployment was successful but protected by Cloudflare Access. Pre-release visual inspection used the exact commit’s CI screenshots. Direct HTTP readback from the workspace returned 403; independent canonical browser readback succeeded. Optional narration reported the expected unavailable-voice fallback in this browser; audible narration is not verified here. Actual-device owner review and enlarged-text testing are not claimed.
+
+Evidence: [PR #9](https://github.com/Dualis3283/david-walsh-site/pull/9), [final PR QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/38429038217), [main QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/38429252258), [live history](https://david-walsh.pages.dev/projects/morrow/#history). Recovery source before this change: `ea3a3fc8eda6e0f0e3c0ae848fd27c42b9f502fd` (use a reviewed revert through the gate).
+
+
+## Historical verified production checkpoint — 2 October 2026
 
 **David Walsh Website / Cloudflare Pages**
 
 - Project: `david-walsh`
 - Public domain: `david-walsh.pages.dev`
-- Current canonical deployment: **`60f0fead`**
+- Canonical deployment at that checkpoint: **`60f0fead`**
 - Full deployment ID: `60f0fead-a86a-4bf8-afcc-bd1aca3ded37`
 - Git commit: `8395d33f1a09982fa46e0971cef02b7a06158aa5`
 - Deployment trigger: **github:push**

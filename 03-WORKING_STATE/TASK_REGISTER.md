@@ -4,6 +4,10 @@ Consolidated from Notion pipeline status plus live external verification.
 
 ## NOW
 
+### Website recurrence controls
+**Status:** Implemented in the 13 October review; follow-up on the next relevant correction.  
+**Next:** apply 00-CORE/RELEASE_REVIEW_PROTOCOL.md; a second occurrence must explain the failed control and revise its check before closure. Keep owner evaluation distinct from automated verification. See 05-RESEARCH/MORROW_RETROSPECTIVE_2026-10-13.md.
+
 ### Morrow Knowledge Repository
 **Status:** In progress / active  
 **Next:** keep converting durable Notion knowledge into curated GitHub records with provenance and readback.

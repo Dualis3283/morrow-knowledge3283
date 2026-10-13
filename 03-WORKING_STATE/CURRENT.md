@@ -1,8 +1,14 @@
 # Current Working State
 
-**Checkpoint date:** 12 October 2026
+**Checkpoint date:** 13 October 2026
 
-## Latest authority — Phase 6 stopgap
+## Website review authority — 13 October 2026
+
+The owner authorised a conversation-informed retrospective, code housekeeping, visual flow refinement and an expandable website evolution history. See 05-RESEARCH/MORROW_RETROSPECTIVE_2026-10-13.md and 00-CORE/RELEASE_REVIEW_PROTOCOL.md. This is a specific website/procedure mandate, not a reopening of Phase 5 or permission to freeze the incomplete measurement baseline.
+
+Verified website release: `1b8a3c8f204540e0dbd440ff610c0ba8c9be2674`; Cloudflare `14e1b1c2`. Source QA, rendered phone/laptop checks, promotion and canonical browser history readback passed. Scope/limitations and next recurrence trigger are in the retrospective. The website remains an active project; this implementation is complete, not owner-reviewed.
+
+## Latest measurement authority — Phase 6 stopgap
 Authoritative new checkpoint: 07-ARCHIVE/PHASE6_CONSOLIDATION_STOPGAP_2026-10-12.md. Nineteen workflows are coded; Metric Definition v1 is NOT frozen; Phase 4 owner-closed, Phase 5 skipped, next phase scope not authorised. The following older project notes are historical unless refreshed from project-specific sources.
 
 ### Verified website QA follow-up — 12 October 2026
