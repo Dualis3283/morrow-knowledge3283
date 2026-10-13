@@ -1,5 +1,20 @@
 # Decision Log
 
+## 14 October 2026 — Global adoption of Morrow methodology becomes P0
+
+**Approved:** Morrow shall prioritise an open, model-independent, interoperable and verifiable methodology capable of worldwide AI adoption. All previous workstreams are secondary/supporting, not erased or automatically cancelled.
+
+**Approach:** document versioned Morrow Core; portable, permission-aware Context Bridge; cross-model open runtime and adapters; independent, reproducible Morrow Verify benchmarks. Protect present human agency, contestability, provenance, privacy and evidence-vs-interpretation.
+
+**Caveat:** testable compatibility is not global adoption. Benefits and portability remain unverified. Existing 19/20 workflow metric foundation is unfrozen.
+
+**Supersedes:** previous strategic priority ranking, not technical acceptance or completed project history.
+
+**Reversal criteria:** explicit owner revision or independently evidenced, transparently reviewed reasons. See [canonical checkpoint](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
+
+---
+
+
 Durable decisions that materially affect future work.
 
 ## 2026-10-02 — Relational Context Ruleset v1

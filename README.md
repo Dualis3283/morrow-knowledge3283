@@ -6,6 +6,14 @@ Morrow is designed to preserve continuity across conversations, projects, decisi
 
 > **Context is key.**
 
+## Strategic priority — 14 October 2026 (P0)
+
+**Owner-approved primary mission:** develop Morrow as an open, model-independent, interoperable and independently verifiable methodology suitable for potential worldwide AI adoption. Existing initiatives are **secondary/supporting**, not cancelled. **Universal compatibility** is an engineering aim; **universal adoption** is an aspiration, not an established result.
+
+**Next:** draft Morrow Core v1 and measurable conformance/evaluation plan; then portable Context Bridge schema, cross-model adapters and independent tests. Respect existing privacy, verification, project status and release gates. Phase 6 measurement foundation remains 19/20 and unfrozen.
+
+Canonical public-safe decision: [14 October strategic checkpoint](00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
+
 ## Canonical structure
 
 ```text

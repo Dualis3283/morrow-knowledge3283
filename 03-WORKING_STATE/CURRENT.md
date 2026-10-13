@@ -1,5 +1,14 @@
 # Current Working State
 
+## Strategic authority — 14 October 2026 (P0)
+
+**Current owner-approved primary mission:** design and validate Morrow as an open, interoperable, model-independent methodology for potential worldwide AI adoption. All other Morrow project initiatives are secondary/supporting. Nothing is implicitly cancelled.
+
+**Immediate next action:** draft Core v1 scope/non-goals/conformance; prepare portable Context Bridge schema and evaluations, then run cross-model tests. Universal adoption is aspirational, not yet verified. Prior project-specific QA, privacy, staging and release gates remain in effect. The 19/20 Phase 6 sample is still unfrozen.
+
+**Dated source:** [Strategic direction checkpoint](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md). This entry takes priority over historic "Now" lists below; historical implementation records remain evidence.
+
+
 ## Editorial reduction released — 13 October 2026
 
 Latest verified website source: `eed455ad2c4057c93118a746dab0b9ef8593ca4b`, [PR #10](https://github.com/Dualis3283/david-walsh-site/pull/10), Cloudflare production `652d2833-c246-4f33-8333-485391000aa1`.
