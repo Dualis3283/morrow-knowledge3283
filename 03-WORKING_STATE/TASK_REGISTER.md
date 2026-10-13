@@ -4,6 +4,10 @@ Consolidated from Notion pipeline status plus live external verification.
 
 ## NOW
 
+### Ascension preview metadata recovery
+**Status:** Open after the 13 October editorial review. The existing album.json is absent; previews were already unavailable before PR #10.  
+**Next:** recover a verified track list, durations and approved preview URLs; add the metadata through normal source/release gates and verify playable audio. Until then retain the explicit unavailable-preview message and streaming links. Do not invent metadata or mark audio restored from deployment success alone.
+
 ### Website recurrence controls
 **Status:** Implemented in the 13 October review; follow-up on the next relevant correction.  
 **Next:** apply 00-CORE/RELEASE_REVIEW_PROTOCOL.md; a second occurrence must explain the failed control and revise its check before closure. Keep owner evaluation distinct from automated verification. See 05-RESEARCH/MORROW_RETROSPECTIVE_2026-10-13.md.

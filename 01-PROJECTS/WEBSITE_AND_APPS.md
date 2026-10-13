@@ -1,5 +1,17 @@
 # Website and Apps
 
+## Editorial reduction released — 13 October 2026
+
+Latest verified website source: `eed455ad2c4057c93118a746dab0b9ef8593ca4b`, [PR #10](https://github.com/Dualis3283/david-walsh-site/pull/10), Cloudflare production `652d2833-c246-4f33-8333-485391000aa1`.
+
+Reduced repeated homepage introductions, consolidated About's archive into one optional disclosure, focused Ascension on listening, shortened Morrow continuity framing and moved exports to the end of the history. Professional indicators/equalizer and source limitations remain; Compleated Loyalty and Deck Planner framing is shorter. Orphaned styles were removed. Original poetry, memoir and six-stage history data are unchanged.
+
+PR and main Site QA, health and fast-forward promotion passed. Rendered 390px/1440px review covered representative pages; keyboard/no-script history and keyboard About archive checks passed. Live canonical readback confirmed the compact homepage, expandable About archive, six-stage Morrow history with exports and working professional evidence controls. This is implementation verification, not owner visual approval.
+
+The review found an existing missing Ascension track-data file. The page now states previews are unavailable and keeps streaming links instead of silently claiming previews exist. Restoring previews remains an explicit follow-up requiring verified track metadata and approved audio URLs. No data was invented. CI simulates missing metadata to retain this fallback check after restoration.
+
+[Versioned editorial decisions](https://github.com/Dualis3283/david-walsh-site/blob/eed455ad2c4057c93118a746dab0b9ef8593ca4b/docs/EDITORIAL_REDUCTION_2026-10-13.md). Rule for subsequent copy: explain at the primary destination, link briefly elsewhere, retain evidence and uncertainty with each claim. Ask Morrow remains staging-only; the 19/20 unfrozen measurement baseline and skipped Phase 5 are unchanged. Prior website checkpoints below are historical where superseded.
+
 ## Verified release — 13 October 2026
 
 Website source: `1b8a3c8f204540e0dbd440ff610c0ba8c9be2674`, merged through PR #9. Production deployment: `14e1b1c2-d909-4d2f-952f-70db0b5cea56`. Site QA, production health and fast-forward promotion succeeded. Chromium CI exercised eight representative routes at 390px and 1440px and retained 16 screenshots; history keyboard/no-script checks passed. The final shortened header passed another complete CI run. Live canonical browser readback confirmed the new page, five-item navigation and six-stage keyboard-operated history.
