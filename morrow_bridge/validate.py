@@ -4,6 +4,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
+from rfc3339_validator import validate_rfc3339
+
+FORMAT_CHECKER = FormatChecker()
+
+@FORMAT_CHECKER.checks("date-time")
+def check_datetime(value):
+    return not isinstance(value, str) or validate_rfc3339(value.upper())
 
 SCHEMA = Path(__file__).resolve().parents[1] / '02-KNOWLEDGE' / 'bridge-record-v0.1.schema.json'
 
@@ -16,7 +23,7 @@ def load_schema():
 
 def validate_record(record):
     """Return list of human-readable errors; never silently coerce invalid data."""
-    validator = Draft202012Validator(load_schema(), format_checker=FormatChecker())
+    validator = Draft202012Validator(load_schema(), format_checker=FORMAT_CHECKER)
     errors = [f"schema {'.'.join(map(str, e.path)) or '$'}: {e.message}" for e in validator.iter_errors(record)]
     if errors:
         return sorted(errors)
@@ -86,3 +93,4 @@ if __name__ == '__main__':
             print('FAIL:', issue)
         raise SystemExit(1)
     print('PASS: structurally and locally semantically valid; NOT verified true or authorized for export')
+
