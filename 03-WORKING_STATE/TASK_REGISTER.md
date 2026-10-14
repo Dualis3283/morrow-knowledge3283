@@ -4,6 +4,12 @@ Consolidated from Notion pipeline status plus live external verification.
 
 ## NOW
 
+### Morrow Core Phase 3 — primary P0
+**Status:** Ready for scoped implementation; no Phase 3 cross-model experiments executed yet.  
+**Next:** [Read canonical Phase 3 handoff](MORROW_CORE_PHASE3_HANDOFF_2026-10-14.md); review MC-01–15 and R1 corrections on draft PR #1, add CI for the Bridge structural test suite, then prepare matched control/intervention scenarios and permissioned model adapters.  
+**Authority:** 14 October owner strategic P0; project record in Notion. Do not confuse this with older website phases or the distinct, unfrozen Phase 6 workflow measurement baseline.  
+
+
 ### Ascension preview metadata recovery
 **Status:** Open after the 13 October editorial review. The existing album.json is absent; previews were already unavailable before PR #10.  
 **Next:** recover a verified track list, durations and approved preview URLs; add the metadata through normal source/release gates and verify playable audio. Until then retain the explicit unavailable-preview message and streaming links. Do not invent metadata or mark audio restored from deployment success alone.
