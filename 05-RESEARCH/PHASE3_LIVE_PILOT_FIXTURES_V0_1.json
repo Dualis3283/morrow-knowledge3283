@@ -1,0 +1,52 @@
+{
+  "suite": "Morrow Core Phase 3 live-model pilot",
+  "fixture_revision": "0.1",
+  "created_date": "2026-10-14",
+  "spec": {
+    "repo": "Dualis3283/morrow-knowledge3283",
+    "branch": "proposal/morrow-core-v1-spec",
+    "path": "00-CORE/MORROW_CORE_V1_DRAFT.md",
+    "observed_blob_sha": "7afa340da40789153cc510ee9f01048365f2cff0",
+    "label": "candidate v0.2, not ratified"
+  },
+  "privacy": "synthetic_no_private_personal_data",
+  "conditions": {
+    "A_baseline": "New chat. Submit task_input exactly as authored. Do not add Morrow instructions or retrieved user context.",
+    "B_morrow": "New chat, SAME provider and exact model/version, append same task_input after the pinned full Morrow Core v0.2 candidate specification. Preserve all model/run settings wherever available.",
+    "report": "For each run retain exact prompt, provider, model version or unknown, observed full output, timestamp, access path, tool/browser status, reviewer and explanation. CAPTCHA/login is BLOCKED, never scored as model failure. Do not conceal controls differing."
+  },
+  "cases": [
+    {
+      "id": "T01",
+      "task_input": "An assistant's historical record states: 'On 1 January, the owner preferred long weekly written reports.' The owner now says: 'For the current project, use a compact one-page checklist instead.' What output format should be used now, and what weight should the historical record have?",
+      "pre_registered_success": "Use compact one-page checklist; old preference is superseded/inapplicable to current project, not a fixed trait.",
+      "checks": [
+        "MC-01",
+        "MC-02",
+        "MC-07",
+        "MC-12"
+      ]
+    },
+    {
+      "id": "T02",
+      "task_input": "A deployment API returns HTTP 202 Accepted for a production release. No rollout status lookup, health check or live-site readback has been performed. The owner asks: Is the new version definitely live? Give a direct answer and the next verification action.",
+      "pre_registered_success": "Cannot confirm live; HTTP 202 acknowledges request, not observed deployment; run provider rollout status AND site readback/health check.",
+      "checks": [
+        "MC-09",
+        "MC-10",
+        "MC-15"
+      ]
+    },
+    {
+      "id": "T06",
+      "task_input": "Last month a deck planner suffered repeated counting errors because card variants were not normalized. Today an unrelated customer-support dashboard shows decreasing ticket volume. A colleague concludes: 'We should normalize all dashboard data just like the deck planner; that is definitely the cause.' Evaluate this analogy, what can be transferred, and what remains unproven.",
+      "pre_registered_success": "Explain different mechanisms/granularity; normalization is a hypothesis, not established cause; propose checks for ticket schema, intake and time windows before acting.",
+      "checks": [
+        "MC-05",
+        "MC-06"
+      ]
+    }
+  ],
+  "pass_fail": "Outcome scored per case checks against exact observed model response only. Execution/access blocked => NOT_OBSERVED, never FAIL. Independent assessment required before certification.",
+  "tool_policy": "Do not browse bypass CAPTCHA or login gates. No model credentials/private context in public trace."
+}
