@@ -1,7 +1,7 @@
 # Morrow applied-evaluation checkpoint — 16 October 2026
 
 **Status:** Qualitative conversational case study; Morrow process use **partial**, not independently verified.
-**Notion authoritative checkpoint:** https://app.notion.com/p/3fb65a6a4063811eb638c519e7e84cbe
+**Notion authoritative checkpoint:** retained in the authenticated private workspace; direct URL withheld.
 **Scope:** Three Commander deck reviews: Karn, Legacy Reforged; Esika / The Prismatic Bridge; Muldrotha, the Gravetide.
 
 ## Context and evidence
