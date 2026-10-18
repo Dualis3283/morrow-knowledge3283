@@ -1,0 +1,18 @@
+name: Public repository publication privacy
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan all tracked public content
+        run: python3 05-RESEARCH/publication_privacy_scan.py .
+      - name: Regression tests
+        run: python3 -m unittest discover -s 05-RESEARCH -p 'test_publication_privacy.py'
