@@ -7,9 +7,9 @@
 ## First-read links (do not rely on GitHub search alone)
 
 - **Canonical strategic goal on `main`:** [14 October 2026 decision](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
-- **Current Morrow Core project in Notion:** https://app.notion.com/p/3f865a6a406381b89455e68ce61b4ba6
-- **Morrow Working State in Notion:** https://app.notion.com/p/3e465a6a406381e2ac4ceb104f889056
-- **Morrow Decision Log in Notion:** https://app.notion.com/p/3e465a6a4063812c8825d00488846f68
+- **Current Morrow Core project in Notion:** private Notion record (find by document title in authenticated workspace)
+- **Morrow Working State in Notion:** private Notion record (find by document title in authenticated workspace)
+- **Morrow Decision Log in Notion:** private Notion record (find by document title in authenticated workspace)
 - **Implementation source is still in the unmerged draft pull request:** https://github.com/Dualis3283/morrow-knowledge3283/pull/1
 - **Working branch:** `proposal/morrow-core-v1-spec`; **target `main`**, currently unmerged.
 - **Candidate Core spec v0.1:** [00-CORE/MORROW_CORE_V1_DRAFT.md](https://github.com/Dualis3283/morrow-knowledge3283/blob/proposal/morrow-core-v1-spec/00-CORE/MORROW_CORE_V1_DRAFT.md).
@@ -46,7 +46,7 @@ Produce a **repeatable task-level evaluation framework**, then test whether dist
 
 ## Cross-conversation recovery instruction
 If another chat is told "Resume Morrow Core Phase 3":
-1. Read this file on GitHub **`main`**; check the Notion Morrow Core project and Working State by their exact links.
+1. Read this file on GitHub **`main`**; check the Notion Morrow Core project and Working State by title using authenticated workspace search.
 2. Fetch **draft PR #1 and its proposal branch**, not just the default branch or search index.
 3. Report that the P0 goal is owner-approved, the Bridge prototype is verified only by synthetic tests, and Phase 3 cross-model testing is not yet performed.
 4. Continue at the first unmet phase gate; update canonical sources with readback after any real change.

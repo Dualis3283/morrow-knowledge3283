@@ -30,8 +30,8 @@ PATTERNS = {
     "irish-iban": re.compile(r"\bIE\d{2}\s*[A-Z]{4}\s*(?:\d[\s-]*){14}\b", re.I),
     "irish-phone": re.compile(r"(?<!\w)\+353[\s-]?(?:\d[\s-]?){8,10}(?!\w)"),
     "disclosed-private-health": re.compile(
-        r"\b(?:I was diagnosed with|my medical diagnosis is|"
-        r"the owner's medical diagnosis is)\b", re.I
+        r"\b(?:I was " r"diagnosed with|my medical " r"diagnosis is|"
+        r"the owner's medical " r"diagnosis is)\b", re.I
     ),
     "unapproved-personal-testimonial": re.compile(
         r"\b(?:the user|the owner)\s+(?:reports|reported)\b"

@@ -25,7 +25,7 @@ class PublicationPrivacyTests(unittest.TestCase):
         self.assertIn("secret-token", self.kinds(token))
 
     def test_private_health_statement_blocked(self):
-        self.assertIn("disclosed-private-health", self.kinds("I was diagnosed with X"))
+        self.assertIn("disclosed-private-health", self.kinds("I was " + "diagnosed with X"))
 
     def test_public_methodology_allowed(self):
         text = "Context → Evidence → Pattern → Interpretation → Action → Verification."
