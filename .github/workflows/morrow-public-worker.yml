@@ -1,0 +1,31 @@
+name: Morrow public Worker candidate
+on:
+  pull_request:
+    paths:
+      - "cloudflare/morrow-public/**"
+      - ".github/workflows/morrow-public-worker.yml"
+  push:
+    paths:
+      - "cloudflare/morrow-public/**"
+      - ".github/workflows/morrow-public-worker.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-worker-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read-only protocol and security tests
+        run: node --test cloudflare/morrow-public/test/*.test.mjs
+      - name: Deployment safety configuration lint
+        run: |
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const c=JSON.parse(fs.readFileSync('cloudflare/morrow-public/wrangler.json','utf8'));
+            if(c.workers_dev!==false || c.name!=='morrow-public-candidate' || c.main!=='src/index.mjs') process.exit(1);
+            console.log('Configuration valid; public workers.dev disabled; no deployment performed');
+          "
