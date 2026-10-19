@@ -48,6 +48,7 @@ Do not place in the public website, public repo, public chatbot corpus or public
 - names/details of non-public partners, relatives, friends, colleagues or other private people;
 - private ChatGPT memory/history;
 - private Notion, Gmail or personal-file content;
+- direct links or opaque IDs for private workspace pages, documents, attachments, or internal records (even if their content is not copied);
 - unapproved memoir, journal or autobiographical source material.
 
 ## Ask Morrow boundary
@@ -64,6 +65,14 @@ It may not infer that private continuity is publishable merely because the priva
 
 If information is outside the public corpus or classification is uncertain, public Morrow should say that the information is not available in its public knowledge base rather than search private sources or guess.
 
+## Required public-release checks
+
+- Replace private workspace deep links with descriptive source titles and authenticated lookup guidance.
+- Separate privately reported experience from public research hypotheses unless publication was explicitly approved.
+- Run a repository-wide static privacy scan on every pull request and push; failed checks block publication in the documented process.
+- Apply a human semantic review for contextual identifiers, indirect re-identification, work-sensitive details and unapproved testimonial material. Scanning alone cannot certify legal compliance.
+- Confirm access permissions at the source (including Notion, Drive, links and attachments); removing a link from GitHub does not revoke third-party access.
+
 ## Asset hygiene
 
 - Public raster assets should not retain unnecessary EXIF/XMP/Photoshop/comment metadata.
@@ -73,7 +82,7 @@ If information is outside the public corpus or classification is uncertain, publ
 
 ## Historical copies
 
-When privacy-relevant material is removed from the canonical website, publicly addressable historical deployment snapshots should be retired where the hosting platform permits it. Private Git history may remain as the controlled recovery source.
+When privacy-relevant material is removed from the canonical website, publicly addressable historical deployment snapshots should be retired where the hosting platform permits it. A public repository's Git history, pull requests, caches and forks can preserve removed content. Do not treat updating the default branch as historical erasure. If a genuinely sensitive disclosure is identified, assess actual exposure, revoke public sharing, rotate any compromised credentials, and follow an explicitly approved Git history remediation plan. Never force-push public history solely to remove descriptive non-secret source links.
 
 ## Operating rule
 

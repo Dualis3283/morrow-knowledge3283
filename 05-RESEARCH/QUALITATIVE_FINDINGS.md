@@ -1,78 +1,32 @@
-# Project Morrow Qualitative Findings
+# Project Morrow — Qualitative Measurement Design
+
+**Publication scope:** public research framework only. Private participant observations and correspondence are not replicated here.
 
 ## Purpose
 
-Capture user-reported outcomes that matter to Morrow but are not responsibly reducible to the six core workflow metrics.
+Identify human-facing outcomes worth evaluating without presenting unapproved personal testimony as a public case study. This stream is supplementary; it does not increment the 20-workflow foundation sample or justify quantitative improvement claims.
 
-This stream is **supplementary evidence**. It does not increment the 20-workflow foundation sample and should not be converted into percentages or an "accuracy" score.
+## Candidate measures
 
-## Recording rules
+1. **Continuity retrieval:** whether a prior decision and its source can be recovered accurately.
+2. **Repeated-context burden:** how often a person must restate information already established.
+3. **Confidence in current state:** whether verified project status can be independently reconstructed.
+4. **Cognitive friction:** the effort required to restart or continue meaningful work.
+5. **Idea-to-action continuity:** whether proposals retain traceability through checkpoints and verification.
 
-For each qualitative observation:
-- record the date and context;
-- separate the user's reported experience from Morrow's interpretation;
-- record plausible confounders;
-- connect the observation to existing measurable workflow signals where useful;
-- keep the summary public-safe under the Publication Privacy Standard;
-- do not change core metric definitions mid-window solely to make the observation measurable.
+These are **evaluation dimensions**, not observed outcome claims or validated effect sizes.
 
----
+## Evaluation safeguards
 
-## Q01 — Reduced cognitive friction and stronger continuity
+- Gather explicit permission before publishing participant quotations or identifiable experience.
+- Store original self-reports and source conversations only in access-controlled records.
+- Record dates, sample method, measurement definitions, confounders and evidence provenance privately.
+- Report aggregated or genuinely anonymised outcomes only after checking re-identification risk.
+- Preserve counterevidence and acknowledge model/platform changes as alternative explanations.
+- Keep the six existing core metrics unchanged until the foundation window and definitions are frozen.
 
-**Date:** 1 October 2026  
-**Foundation state:** 8 / 20 eligible substantive workflows logged.
+## Working hypothesis — NOT VERIFIED
 
-### User-reported experience
+Reliable context retrieval and better state tracking **may** reduce repetition and make work easier to resume. Whether that improves outcomes requires an appropriately designed study, retained evidence and independent verification.
 
-After regular use of the Morrow operating measures, the user reports:
-
-- noticeably easier retrieval of previously established information;
-- clearer tracking of project progress and current state;
-- fewer situations where settled context has to be explained repeatedly;
-- authentication and rate-limit interruptions still occur, but are experienced as bounded stability safeguards rather than events that destroy continuity;
-- lower cognitive effort associated with reconstructing prior work;
-- less fatigue from repeatedly re-establishing context before productive work can continue;
-- thought experiments and early project ideas are more likely to retain enough momentum to reach practical application.
-
-### Interpretation — hypothesis, not a proven causal claim
-
-The observation suggests Morrow may be improving three human-facing dimensions:
-
-1. **Continuity** — prior state is easier to recover and continue from.
-2. **Trust in state** — the user has more confidence that decisions, checkpoints and current status will remain recoverable.
-3. **Cognitive friction** — less working effort is spent reconstructing context, leaving more effort available for analysis, creation and implementation.
-
-A possible higher-level pattern is:
-
-**idea → retrieve context → verify state → continue → build → checkpoint**
-
-instead of:
-
-**idea → reconstruct context → repeat decisions → re-establish confidence → fatigue → stall**
-
-This remains a working interpretation.
-
-### Confounders and limits
-
-- This is an early self-report, not a controlled comparison.
-- No pre-Morrow cognitive-friction scale was recorded.
-- Platform, model and tooling improvements may contribute independently of Morrow.
-- The user specifically notes improvement even in separate-account use, which means the perceived change should not be attributed solely to Morrow's private continuity layer.
-- Recency and project mix may affect perception.
-- The 20-workflow quantitative baseline is not yet complete.
-
-### Measurement implication
-
-Do **not** alter the six core metrics during the current foundation window.
-
-After Workflow 20:
-- compare this qualitative finding with repeated-context burden, continuity retrieval success, rework and verification data;
-- decide whether a low-frequency user-reported cognitive-friction measure deserves inclusion in Metric Definition v1 or a later version;
-- preserve the distinction between objective workflow events and subjective experience.
-
-### Current evidential status
-
-**Meaningful qualitative signal; causality not established.**
-
-The importance of the observation is practical rather than promotional: if continuity reduces the cognitive cost of restarting work, Morrow may help more ideas survive long enough to become finished projects.
+**Status:** Candidate research direction. No causal effect or participant-level testimonial is claimed in this public document.

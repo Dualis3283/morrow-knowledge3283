@@ -10,7 +10,7 @@ Morrow is designed to preserve continuity across conversations, projects, decisi
 
 **Owner-approved primary mission:** develop Morrow as an open, model-independent, interoperable and independently verifiable methodology suitable for potential worldwide AI adoption. Existing initiatives are **secondary/supporting**, not cancelled. **Universal compatibility** is an engineering aim; **universal adoption** is an aspiration, not an established result.
 
-**Next:** draft Morrow Core v1 and measurable conformance/evaluation plan; then portable Context Bridge schema, cross-model adapters and independent tests. Respect existing privacy, verification, project status and release gates. Phase 6 measurement foundation remains 19/20 and unfrozen.
+**Current status:** Core v1 draft and a portable Bridge v0.1 prototype are saved on [draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1), **not on `main` and not ratified**. The 14 synthetic Bridge tests passed after readback of the proposal branch; this is not AI-model evaluation. **Next:** [Morrow Core Phase 3 handoff](03-WORKING_STATE/MORROW_CORE_PHASE3_HANDOFF_2026-10-14.md) for review, CI and controlled cross-model testing. Preserve privacy/release gates; the distinct legacy Phase 6 workflow sample remains 19/20 and unfrozen.
 
 Canonical public-safe decision: [14 October strategic checkpoint](00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
 

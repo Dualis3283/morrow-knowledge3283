@@ -1,7 +1,7 @@
 # Morrow checkpoint — Website photo-driven layout remediation
 Date: 12 October 2026
 Status: implemented, regression-tested, independently read back in production.
-Authoritative project record: https://app.notion.com/p/3e565a6a406381b89fa3d0f983a866ca
+Authoritative project record: authenticated Notion project record (URL intentionally withheld).
 
 ## Context
 After Phase 6, the owner provided five photographs of the laptop website. Visible mid-word splits, clipped lettering and overlapping waveform labels were observed despite earlier source-only and document-wide responsive tests. This is a follow-up to accepted site work, not a new development phase or a completed 20th metric workflow.
