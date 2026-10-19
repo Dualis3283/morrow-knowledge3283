@@ -1,5 +1,41 @@
 # Decision Log
 
+## ADR-001 — Independent context layer and model-agnostic interchange (19 October 2026)
+
+**Decision authority:** Owner-directed architectural principle, consistent with the owner-approved 14 October P0 strategy.  
+**Status:** **Accepted architectural direction; implementation and cross-model conformance not yet verified.**  
+**Responsible party:** Project Morrow maintainer. No unverified "Project Core Team" or additional approvers are inferred.
+
+### Context and problem
+
+If valuable context exists only as vendor-specific conversation memory or opaque model state, changing models can interrupt continuity and complicate correction, provenance and revocation. A portable, privacy-respecting representation is necessary to *test* interoperability, but no model portability or universal integration is presumed successful.
+
+### Accepted direction and boundaries
+
+1. Keep the **Morrow Core methodology and candidate interchange schema vendor-neutral**; use adapters for provider-specific APIs rather than encoding a provider requirement as the canonical data contract.
+2. Treat the **public GitHub repository as a curated, versioned, public-safe knowledge layer**, **not** the master store for private context. Notion remains the currently designated operational task authority; any future private/local store requires separately authorised design and testing.
+3. Require provenance, freshness, supersession, minimisation, consent/access boundaries and separable readback evidence in portable records. An imported record's self-declared permissions are not sufficient authorisation.
+4. Distinguish saved/uploaded/synced/verified states and planned/attempted/accepted/active/independently verified/user confirmed states in their **actual measured scope**. Schema validity alone must not upgrade them.
+5. Preserve present user agency and applicable platform restrictions; a prior context record must never dictate a person's current decisions.
+
+### Alternatives and trade-offs
+
+- **Provider-only memory:** less integration work but introduces portability dependence; not selected as the sole canonical layer.
+- **Public central context store:** easier sharing but incompatible with Morrow's default private-source boundary; rejected for private material.
+- **Portable contract plus adapters and segregated private stores:** selected as the working architectural direction; adds governance, version migration, authenticated permission and interoperability-testing requirements.
+
+### Acceptance evidence and remaining unknowns
+
+- **Accepted as direction:** direct owner instruction plus [14 October P0 strategic decision](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
+- **Observed implementation:** public repository structure and two protected CI checks; synthetic Bridge validators and destination readback on [draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1).
+- **NOT OBSERVED:** cross-model behavioural equivalence, deployed encrypted private storage, verified remote synchronisation, independently authenticated end-user consent, standards adoption and user sign-off on a released Core version.
+
+### Review, supersession and reversal criteria
+
+Reconsider when the owner changes requirements, a relevant open standard becomes mature and applicable, comparative testing demonstrates a better design, or security/privacy defects require revision. A new external standard alone does **not** automatically replace a reviewed architecture. Preserve an explicit decision trail and conformance evidence; do not silently relabel a candidate implementation as a ratified Core specification.
+
+---
+
 ## 19 October 2026 — Candidate implementation criteria for model-independent verification
 
 **Standing authority:** The 14 October owner-approved P0 objective establishes an open, model-independent Morrow methodology. This entry translates that objective into candidate operational acceptance checks; **it does not ratify Core v1 or certify any model**.

@@ -1,10 +1,14 @@
 # Current Working State
 
+## Repository operational baseline — 19 October 2026
+
+**Scoped status:** GitHub CI **active and independently verified**; no local encrypted/private store, real inter-model migration, or final user-confirmed Morrow Core release has been observed. See [Task Register TASK-001–TASK-004](TASK_REGISTER.md) and [ADR-001](../04-DECISIONS/DECISION_LOG.md). Notion remains the operational task authority; this GitHub record is a dated public-safe mirror, not proof of a Notion sync. A CI PASS measures the test named, not independent certification of the methodology.
+
 ## Strategic authority — 14 October 2026 (P0)
 
 **Current owner-approved primary mission:** design and validate Morrow as an open, interoperable, model-independent methodology for potential worldwide AI adoption. All other Morrow project initiatives are secondary/supporting. Nothing is implicitly cancelled.
 
-**Current Morrow Core state:** Core v1 draft and Bridge record v0.1 prototype reside on [draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1), not merged into main. **14/14 synthetic validator tests passed** using the committed artifacts; no AI cross-model conformance tested. **Next action:** start the clearly scoped, not-yet-executed [Morrow Core Phase 3: evaluation and interoperability handoff](MORROW_CORE_PHASE3_HANDOFF_2026-10-14.md), beginning with specification R1 corrections and CI; then prepare matched multi-model comparisons. Older Phase 6 measurement is a separate 19/20 unfrozen baseline. Global adoption remains aspirational; prior privacy, safety, QA and release gates remain in effect.
+**Current Morrow Core state (readback 19 October 2026):** The Core v1 draft and Bridge v0.1 prototype remain on [draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1), not merged or ratified. **24/24 synthetic Bridge/readback tests passed** in the draft CI and a staged destination digest/schema readback passed; this is not a real cross-model transfer. The public repository's `main` now runs protected `privacy` and `verify-layer` CI, both verified successful. **Next action:** define a reproducible cross-compatibility matrix, controlled matched scenarios and consented model-runtime routes, then perform live trials; **no cross-model conformance evidence is yet observed**. Older Phase 6 measurement remains a separate 19/20 unfrozen baseline. Global adoption remains aspirational; prior privacy, safety and release gates remain in force.
 
 **Dated source:** [Strategic direction checkpoint](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md). This entry takes priority over historic "Now" lists below; historical implementation records remain evidence.
 
