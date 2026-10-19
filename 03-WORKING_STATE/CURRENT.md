@@ -1,5 +1,9 @@
 # Current Working State
 
+## Cloudflare global adoption integration — 19 October 2026
+
+**Source implementation:** [PR #6](https://github.com/Dualis3283/morrow-knowledge3283/pull/6) added a stateless, public-safe Publisher and read-only experimental JSON-RPC/MCP adapter. GitHub Worker security/endpoint tests **15/15 passed** with repository privacy and safety CI. **Not a live release:** Cloudflare connections rejected authenticated reads (HTTP 400); no deployment, domain publication, model inference or independent MCP client conformance test occurred. The existing unrelated Workers Builds failure remains open. See [candidate handoff](../cloudflare/morrow-public/README.md), [Task Register TASK-007–010](TASK_REGISTER.md).
+
 ## Full pipeline reconciliation checkpoint — 19 October 2026
 
 **Verified:** Public GitHub `main` at `bd2119e` passes the privacy, verify-layer and ledger jobs. PRs #2–#4 merged; draft PR #1 remains unmerged with 24/24 synthetic Bridge tests and a staged readback pass. Core, Phase 3, Knowledge Architecture, Working State and Decision Log records in the authenticated Notion pipeline were updated where needed and re-read after the changes.
