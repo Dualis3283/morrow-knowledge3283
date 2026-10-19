@@ -14,6 +14,12 @@ Morrow is designed to preserve continuity across conversations, projects, decisi
 
 Canonical public-safe decision: [14 October strategic checkpoint](00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
 
+## Global adoption Cloudflare candidate — 19 October 2026
+
+The [Morrow public Worker candidate](cloudflare/morrow-public/README.md) implements a **public-safe read-only Publisher and experimental model-integration endpoint**. Source code merged via [PR #6](https://github.com/Dualis3283/morrow-knowledge3283/pull/6) at [commit 1431b6d](https://github.com/Dualis3283/morrow-knowledge3283/commit/1431b6d42e9e9f5cca9738082cf7d407091a4a55). GitHub tests passed **15/15**, together with privacy and repository safety checks. Its Worker is **not deployed**: Cloudflare account read/authentication returned HTTP 400, and its deployment configuration has no public hostname or route. No Core v1 release, live MCP conformance, private data export, AI inference, analytics collection or automated outreach was performed.
+
+Next: repair Cloudflare connection using the normal account authorisation flow (never paste secrets into public files); select a protected staging target; deploy only after environment review; independently test the live endpoints and obtain release approval. Verify, Observer and Outreach remain separate planned services, not completed deployments.
+
 ## Canonical structure
 
 ```text
