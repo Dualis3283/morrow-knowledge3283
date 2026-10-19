@@ -1,5 +1,18 @@
 # Decision Log
 
+## 19 October 2026 — Candidate implementation criteria for model-independent verification
+
+**Standing authority:** The 14 October owner-approved P0 objective establishes an open, model-independent Morrow methodology. This entry translates that objective into candidate operational acceptance checks; **it does not ratify Core v1 or certify any model**.
+
+**Candidate criteria:** (1) observable Context → Evidence → Pattern → Interpretation → Action → Verification → Lesson without collecting hidden reasoning; (2) verifiable evidence and provenance distinct from inferences; (3) context relevance, freshness, supersession and current human agency; (4) consent- and destination-specific privacy controls without automatic publication of imported records; (5) distinguish planned, attempted, accepted, active, independently verified and user confirmed, with documented separate evidence; (6) treat prepared, saved, uploaded, synced and verified as distinct persistence observations; (7) negative tests, independent readback, and honest NOT OBSERVED for absent cross-model or remote evidence.
+
+**Implementation approach:** enforce repository layout, public privacy scanning, synthetic state-manifest syntax tests and available Bridge unit tests in GitHub Actions. Candidate checkpoint metadata is *not* authenticated provenance, and a green CI workflow proves only the named checks ran against the identified revision. Human semantic privacy review and external-system verification remain necessary.
+
+**Reversal criteria:** update these candidate checks on a recorded defect, demonstrated model incompatibility, privacy concern, or owner decision; never silently weaken an existing required privacy check. Full standard adoption remains subject to conformance design and owner review.
+
+---
+
+
 ## 14 October 2026 — Global adoption of Morrow methodology becomes P0
 
 **Approved:** Morrow shall prioritise an open, model-independent, interoperable and verifiable methodology capable of worldwide AI adoption. All previous workstreams are secondary/supporting, not erased or automatically cancelled.
