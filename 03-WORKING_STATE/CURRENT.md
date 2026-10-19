@@ -1,5 +1,11 @@
 # Current Working State
 
+## Full pipeline reconciliation checkpoint — 19 October 2026
+
+**Verified:** Public GitHub `main` at `bd2119e` passes the privacy, verify-layer and ledger jobs. PRs #2–#4 merged; draft PR #1 remains unmerged with 24/24 synthetic Bridge tests and a staged readback pass. Core, Phase 3, Knowledge Architecture, Working State and Decision Log records in the authenticated Notion pipeline were updated where needed and re-read after the changes.
+
+**Blocked/unknown:** Cloudflare Workers Builds on the public knowledge repository is still failing; build-log root cause not established. No completed live cross-model A/B tests, private local store deployment, consent verification or user release confirmation. Phase 6 sample stays 19/20 unfrozen. See the [full public-safe audit](../05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md). This checkpoint supersedes old *next action* instructions but does not erase dated history.
+
 ## Repository operational baseline — 19 October 2026
 
 **Scoped status:** GitHub CI **active and independently verified**; no local encrypted/private store, real inter-model migration, or final user-confirmed Morrow Core release has been observed. See [Task Register TASK-001–TASK-004](TASK_REGISTER.md) and [ADR-001](../04-DECISIONS/DECISION_LOG.md). Notion remains the operational task authority; this GitHub record is a dated public-safe mirror, not proof of a Notion sync. A CI PASS measures the test named, not independent certification of the methodology.

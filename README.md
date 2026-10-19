@@ -79,7 +79,7 @@ This repository is public. Sensitive personal history, private files, unpublishe
 
 See [Current Working State](03-WORKING_STATE/CURRENT.md) and [Task Register](03-WORKING_STATE/TASK_REGISTER.md).
 
-Last consolidation: **2 October 2026**.
+Latest public-safe operational audit checkpoint: **19 October 2026**; prior detailed consolidation: 2 October 2026. See [pipeline audit](05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md).
 
 
 ### Ask Morrow staging

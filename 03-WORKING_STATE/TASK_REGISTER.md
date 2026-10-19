@@ -2,7 +2,7 @@
 
 ## Morrow operational baseline — 19 October 2026
 
-**Last consolidated (public GitHub mirror):** 19 October 2026  
+**Last consolidated (public GitHub mirror):** 19 October 2026 — GitHub, Notion and current CI reconciled; [audit evidence](../05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md)  
 **Current operational status:** **Active for GitHub CI and curated public knowledge**; portable model-to-model interoperability is **planned / NOT OBSERVED**.  
 **Authority boundary:** Notion's Morrow project pipeline remains the operational task authority; this GitHub record is a public-safe, independently readable checkpoint, not evidence of a Notion sync or a local workstation deployment.
 
@@ -14,6 +14,8 @@
 | TASK-002 | GitHub context and privacy gates | **independently verified** (repository CI scope) | Protected `main` requires passing `privacy` and `verify-layer`; both passed on [merge commit 54fd975](https://github.com/Dualis3283/morrow-knowledge3283/commit/54fd97524158c6a44a7afcc6c01eef3b79a7e2eb). Actual cross-model evaluation is **NOT OBSERVED**. | Retain CI and human semantic privacy review; inspect any future failures. |
 | TASK-003 | Cross-model Context Bridge interoperability | **planned** (live evaluation) | [Draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1) passed 24/24 synthetic tests and a staged destination readback. Distinct live models, paired outcomes, remote sync and independent behavioural assessment: **NOT OBSERVED**. | Fix a cross-compatibility matrix, model versions, synthetic cases, scoring and approved execution routes. |
 | TASK-004 | Secure private/local context store | **planned** (deployment) | Privacy separation and publication rules are active in GitHub; no encrypted private store, local runtime or deletion-propagation test has been independently verified. | Specify access controls, key ownership, retention, deletion and per-destination authorisation before any private-data import. |
+| TASK-005 | Cloudflare Workers build for the public knowledge repository | **planned** (investigation) | Cloudflare Workers Builds check **failed** on baseline `bd2119e`; GitHub privacy/verify-layer/ledger checks passed. Authenticated Cloudflare build-log cause is **NOT OBSERVED**. | Inspect the relevant Cloudflare Worker build logs; determine whether the unintended build integration should be corrected or disabled, without impacting website production. |
+| TASK-006 | Cross-system pipeline reconciliation | **independently verified** (Notion/GitHub record scope) | On 19 October, Notion Core, Phase 3, Knowledge Architecture, Working State and Decision Log updates were fetched after the writes; GitHub public-safe mirror has separate commit/CI gates. | Retain record provenance, avoid stale next-actions and keep private Notion source links out of public exports. |
 
 **Lifecycle legend:** `planned` → `attempted` → `accepted` → `active` → `independently verified` → `user confirmed`. These labels apply to **bounded tasks**, not to the entire Morrow project by inference. A successful CI check does not confer user confirmation.
 
