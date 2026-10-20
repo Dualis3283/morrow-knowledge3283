@@ -32,3 +32,11 @@ Morrow's public, version-controlled methodology must remain separate from privat
 - [ ] Independently verify professional activity figures and case-level attribution before public use.
 
 **Decision:** Preserve the public/private boundary and use the functioning GitHub integration through a review-first branch workflow. Never bypass protected-main release controls to resolve an access problem.
+
+## Commit-metadata privacy verification — 20 October 2026
+- The owner reports enabling both GitHub email-privacy options. The public-email listing returned no listed public addresses; direct inspection of the private preferences switches was not possible through the connector.
+- An initial review-branch commit made through the default integration identity exposed a regular personal author/committer email in commit metadata. That earlier unmerged branch and Git history have **not** been deleted or rewritten; this publication concern remains outstanding.
+- A separate clean review branch was created directly from protected main. Its staged checkpoint was committed with the owner's GitHub-provided ID-based no-reply identity explicitly set for both author and committer. An independent GitHub API read verified both email fields end in `users.noreply.github.com`.
+- The file body was independently checked for direct email-address syntax, internal issue-key syntax and private workspace deep links, with no matching values. These tests cannot certify legal or semantic anonymisation.
+- Existing older commits on `main` may expose ordinary commit-author email metadata; GitHub's privacy toggles do not retroactively rewrite historical commit objects.
+- Keep this checkpoint under pull-request review and run the actual privacy and verify-layer CI gates before merge; no outcome is claimed until the checks complete.
