@@ -18,3 +18,25 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 
 /* Per-line card-import diagnostics, shared with the website importer. */
 .import-diagnostics{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;min-width:0}.import-diagnostics h3{margin:0;font-size:1.35rem}.import-diagnostics details>summary{min-height:44px;padding:10px 0;color:var(--gold);cursor:pointer}.import-diagnostics .error-list{max-height:430px;overflow:auto;padding:0 8px 0 0;list-style:none}.import-issue{padding:14px 0;border-bottom:1px solid var(--line-soft);overflow-wrap:anywhere}.import-issue strong{display:block;color:#f0d3ad;font-size:.82rem}.import-issue p{font-size:.78rem;margin:7px 0;color:#d4baa3}.import-issue-code{display:block;margin-top:5px;color:#e7ad8a;font-size:.72rem}.import-source-line{display:block;white-space:pre-wrap;font-size:.7rem;color:#a99a87}.import-diagnostic-rows{max-height:430px;overflow:auto}.import-diagnostic-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;padding:11px 0;border-bottom:1px solid var(--line-soft);overflow-wrap:anywhere}.import-diagnostic-row strong{font-size:.76rem;font-weight:500}.import-diagnostic-row span{font-size:.68rem;color:var(--gold)}.import-diagnostic-row small{grid-column:1/-1;color:var(--muted);font-size:.7rem}.import-no-errors{color:#b9ca9e}.deck-entry-actions{flex-wrap:wrap}
+
+/* Keep the commander beside the hand, with a stable slot across all zones. */
+.hand-and-command{display:flex;align-items:stretch;gap:18px;min-width:0}
+.hand-cards-column{flex:1;min-width:0;overflow:hidden}
+.commander-strip{flex:0 0 128px;width:128px;min-width:0;padding:8px 18px 0 0;border-right:1px solid var(--gold);background:linear-gradient(90deg,#2b21132b,transparent)}
+.commander-heading{min-height:42px;margin-bottom:7px}
+.commander-heading h3{font:500 .7rem/1.3 ui-sans-serif,system-ui,sans-serif;letter-spacing:.03em;color:var(--gold-light);margin:0 0 5px}
+.commander-heading>span{display:block;font-size:.58rem;color:#b89a72;line-height:1.4;overflow-wrap:anywhere}
+.commander-card{min-height:142px;display:flex;align-items:flex-start;padding-top:2px}
+.commander-card .card-tile{width:98px;flex-basis:98px;min-height:138px;touch-action:pan-x}
+.commander-card .card-fallback{min-height:137px}
+.commander-empty{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;width:98px;min-height:138px;padding:14px 8px;border:1px dashed #8d7049;border-radius:6px;background:#17120c;color:#c0a27c;text-align:center;font:italic .82rem/1.5 Georgia,serif;overflow-wrap:anywhere}
+.commander-empty small{font:normal .55rem/1.5 ui-sans-serif,system-ui,sans-serif;color:#8f7c61}
+.commander-cost{font-size:.57rem;line-height:1.6;color:#d1b58e;margin:9px 0;overflow-wrap:anywhere;min-height:28px}
+.commander-return{display:flex;align-items:flex-start;min-height:44px;gap:7px;margin:8px 0 12px;font-size:.59rem;line-height:1.6;font-weight:400;color:#b8a386;cursor:pointer}
+.commander-return input{width:17px;min-width:17px;height:17px;min-height:17px;padding:0;margin:1px 0 0;accent-color:var(--gold);flex:0 0 17px}
+.commander-return>span{min-width:0;overflow-wrap:anywhere}
+.card-tile.commander-card-tile{border-color:var(--gold-light);box-shadow:0 0 0 1px #d4a86f55}
+.commander-badge{color:#221507;background:var(--gold-light);border-color:#f0d5ad;font-weight:700;font-size:.43rem;letter-spacing:.04em}
+.commander-resolution-note{margin:15px 0 0;padding:10px 12px;border-left:2px solid var(--gold);font-size:.72rem;line-height:1.6;color:#d3b991;background:#251b1044}
+.commander-override-note{font-size:.68rem;color:#c7aa83}
+@media(max-width:550px){.hand-and-command{gap:12px}.commander-strip{flex-basis:94px;width:94px;padding-right:12px}.commander-heading{min-height:37px}.commander-heading h3{font-size:.6rem}.commander-heading>span{font-size:.51rem}.commander-card{min-height:116px}.commander-card .card-tile{width:80px;flex-basis:80px;min-height:112px}.commander-card .card-fallback{min-height:111px}.commander-empty{width:80px;min-height:112px;padding:10px 6px;font-size:.7rem}.commander-empty small{font-size:.48rem}.commander-cost{font-size:.5rem;margin-top:7px;min-height:28px}.commander-return{font-size:.52rem;gap:5px;line-height:1.6}.commander-return input{width:16px;min-width:16px;height:16px;min-height:16px;flex-basis:16px}.commander-resolution-note{font-size:.67rem}.hand-cards-column .hand-row{min-width:0}}

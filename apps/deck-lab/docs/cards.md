@@ -1,4 +1,4 @@
-# Card import — 0.1.1
+# Card import — 0.1.2
 
 The Android app sends batches of card names to the public card-data resolver at `https://david-walsh.pages.dev/api/simulator-cards`. The resolver retrieves full card definitions from Scryfall. It does not receive the deck's title, simulation state or test reports. No Scryfall API key or AI model is required. Card artwork loads separately from Scryfall's image hosts.
 
@@ -10,7 +10,7 @@ Imports accept names alone, `4 Card`, `4x Card`, `4xCard`, `Card x4`, common pri
 
 Maybeboard/companion sections are retained as sideboard. `SB:` prefixes mark individual sideboard lines. Comment lines are ignored, while `//` inside split and double-faced card names is preserved. Duplicate names in the same section merge; entries in different sections remain separate. Quantities, individual lines and the total import size are validated before requests are sent.
 
-`expandDeck` includes only main-deck entries. Commanders and sideboards remain in saved data and are never silently shuffled into the library. Command-zone casting, tax and commander damage require manual handling in the current engine.
+`expandDeck` includes only main-deck entries. Commanders and sideboards remain in saved data and are never silently shuffled into the library or opening hand. The selected commander is displayed in a separate panel beside the hand. Playmat controls support ordinary/front-face command-zone casting with commander tax and a configurable return-on-death policy; complete Commander abilities, alternate-face casting and commander damage still need manual handling. The automatic batch policy does not cast command-zone commanders.
 
 ## Reports, pauses and retries
 

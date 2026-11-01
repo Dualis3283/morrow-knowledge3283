@@ -9,6 +9,7 @@ Build and browser checks cannot establish that touch interaction works well on t
 5. Declare attackers, inspect the defender's blockers, assign combat and check life totals and graveyards. Read the combat scope notice for unsupported keywords.
 6. Adjust life, add a +1/+1 counter, flip a coin and roll a die. Leave and reopen the app to check the saved state.
 7. Resolve a pasted deck through the website resolver and Scryfall. Confirm bracketed headings stay out of card requests, each card has a resolved/failed/pending report entry, copied reports preserve those details, retry uses cached matches, and double-faced images can be inspected. Inspect the coverage report before running a test.
+   With a Commander section, confirm the commander appears beside the hand across the divider without increasing the hand count. Cast it, return it on death, and verify the next command-zone cast adds two generic mana. Turn off automatic death return to check a graveyard line. A commander moved to hand must use ordinary casting cost rather than command tax.
 8. Run 8, 10 and 12 rounds with a fixed seed. Repeat an identical test, then change one deck. Record which differences result from the deck change and which mechanics are outside coverage.
 9. Try portrait and landscape, large system font size and TalkBack. Confirm card actions and navigation can be reached without gestures.
 

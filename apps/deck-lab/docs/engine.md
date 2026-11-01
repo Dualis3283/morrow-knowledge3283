@@ -6,7 +6,9 @@
 
 The public contract is in `API.md`. `act` returns a deep copy and rejects invalid actions without mutating its input. Deck instances have stable unique IDs, independent from Scryfall's definition IDs.
 
-Additional state fields are `rngState`, `startingPlayer`, `combatDone`, `stats`, `roundStats`, `warnings`, `lastRandom`, and optional `finishReason`. Each player also has a `manaPool` and `command` zone. `createGame` and `simulate` accept optional `commander` and `opponentCommander` card definitions. Commanders are not part of the shuffled library. Move commanders manually between command and battlefield; automatic commander casting, tax, replacement rules, and commander damage are not implemented.
+Additional state fields are `rngState`, `startingPlayer`, `combatDone`, `stats`, `roundStats`, `warnings`, `lastRandom`, and optional `finishReason`. Each player also has a `manaPool`, `command` zone, `commanderId` and `returnCommanderOnDeath` policy. `createGame` and `simulate` accept optional `commander` and `opponentCommander` card definitions. Commanders are not part of the shuffled library or opening hand. Their separate panel sits beside the hand with a divider.
+
+`upgradeGame` returns a migrated copy of an older saved table, and `act` applies the same migration before actions. Recognizable legacy `pN-commander` instances acquire the Commander fields wherever they currently reside, without marking ordinary cards with the same Scryfall definition ID as commanders. A missing historical cast count defaults to zero; earlier manual casts are not reconstructed from old logs.
 
 Phases are `opening`, `main`, and `finished`. `keep` ends opening-hand selection. Counted London mulligans redraw seven and require the exact number of bottom selections. There is no free mulligan. The auto policy takes at most two mulligans seeking 2–5 lands, then bottoms excess lands or expensive cards. An opening deck shorter than seven draws only available cards; subsequent failed draws end the test.
 
@@ -19,6 +21,18 @@ Tapping a known source manually adds its default color to the tracked pool. Unta
 The stack resolves last-in, first-out. Ordinary sorceries and permanents cannot be cast onto a nonempty stack. Supported instants can. Unknown spells can be put on the stack with their ordinary cost, but `resolve` rejects them. Resolve their actual effects yourself, then use `move` to place the card in its destination. Partial creature bodies can be resolved manually with an explicit omitted-abilities warning; automation skips them. A small set of partial mana sources and damage spells are automated only for their documented subset, with warnings and run notes.
 
 Manual `move` explicitly bypasses costs and effects. Zone changes clear counters, marked damage, deathtouch marks, and temporary buffs. Entering the battlefield sets the entry turn. Counter controls represent +1/+1 counters only.
+
+## Commander practice controls
+
+Commander identity is attached to the physical instance through `isCommander`, with persistent `commanderCasts` and an owner's `commanderId`. It persists through hand, stack, battlefield, graveyard, exile and command-zone moves. Copies of the same Scryfall card definition do not share cast counts or Commander identity.
+
+An ordinary cast from the command zone pays the card's base cost plus two generic mana for each previous cast from that zone. A successful cast increments `commanderCasts` when it reaches the stack, even if it is later removed without resolving. An illegal/unaffordable attempt does not increment it. Casting the commander from hand uses normal cost without adding or incrementing command-zone tax. Manual moves to the battlefield bypass casting and do not increment the count.
+
+For a double-faced commander, this casting control uses the front face's ordinary mana cost. Back-face/alternate casting and unsupported card abilities require manual handling; paying the casting cost does not make the full Oracle text executable.
+
+For practice, the owner's `returnCommanderOnDeath` policy defaults to true and is logged. A commander sent to the graveyard returns to its owner's command zone, even when another player controlled it. Disable the policy with `commanderReturnPolicy` to keep it in the graveyard, or supply `keepCommanderInGraveyard:true` on an explicit manual move. Moving a genuine commander directly to `command` always uses its owner's zone.
+
+That default is a practice convenience, not a complete model of official Commander state-based choices, death triggers or replacement timing. Commander damage and automatic commander casting by batch/opponent policy are not implemented. Coverage/manual controls remain authoritative for unsupported effects.
 
 ## Combat and opponent policy
 

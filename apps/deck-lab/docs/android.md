@@ -1,6 +1,6 @@
-# Android application — 0.1.1
+# Android application — 0.1.2
 
-The Android app bundles the `web/` interface and deterministic simulation engine. The 0.1.1 source configures version name `0.1.1` and version code `2` for package `dev.morrow.decklab`. It needs Android 8.0 (API 26) or later with an updated Android System WebView. Target/compile SDK is 35, Android Gradle Plugin is 8.9.1 and Gradle is 8.11.1. A full JDK 17+ is required, including `javac` and `jlink`; a Java runtime alone is insufficient.
+The Android app bundles the `web/` interface and deterministic simulation engine. The 0.1.2 source configures version name `0.1.2` and version code `3` for package `dev.morrow.decklab`. It needs Android 8.0 (API 26) or later with an updated Android System WebView. Target/compile SDK is 35, Android Gradle Plugin is 8.9.1 and Gradle is 8.11.1. A full JDK 17+ is required, including `javac` and `jlink`; a Java runtime alone is insufficient.
 
 Build from the project root with `bash scripts/build-android.sh`, or open `android/` in Android Studio and sync/build. The standard Gradle wrapper includes its JAR, Unix and Windows launchers, and a pinned distribution SHA-256. The build script provisions a project-local Android SDK and Gradle cache, accepts the Android SDK licenses, and copies the debug APK to `artifacts/morrow-deck-lab-debug.apk`. Internet access is needed for initial toolchain downloads. No release signing key or store publishing is configured.
 
@@ -11,3 +11,5 @@ The wrapper uses a custom `WebViewClient` asset handler equivalent to a local as
 Deck/session storage stays in the app's WebView storage. Android backup is disabled. Card-name batches go to the public website resolver at `https://david-walsh.pages.dev/api/simulator-cards`, which retrieves definitions from Scryfall. The resolver permits the app’s `https://appassets.androidplatform.net` origin. Artwork loads from Scryfall separately. No API key or AI backend is required; simulation state and reports are not uploaded. Clearing app data removes local decks and sessions.
 
 A debug APK is for sideload testing. Device/emulator interaction, system WebView compatibility, rotation, storage persistence, touch gestures and Scryfall import should be checked before a release. The bounded simulator is not a complete MTG rules engine.
+
+The commander update is version `0.1.2`, version code `3`. Its APK build, v2 signature, min SDK 26/target SDK 35 manifest and bundled-source parity were verified. Install the updated APK to receive the commander interface; a website deployment does not update an older app’s bundled files.
