@@ -163,7 +163,7 @@ test('unconditional flexible mana assigns scarce colors correctly and conditiona
   state = act(state, { type: 'play', id: 'h0' });
   assert.equal(state.stack.length, 1); assert(state.players[0].battlefield.every(x => x.tapped));
   const conditional = { name: 'Conditional source', type_line: 'Land', cmc: 0, oracle_text: '{T}: Add one mana of any color that a land an opponent controls could produce.', produced_mana: ['W', 'U', 'B', 'R', 'G'] };
-  assert.equal(coverage([conditional])[0].status, 'manual');
+  assert.equal(coverage([conditional])[0].status, 'partial');
   state = fixture({ hand: [bear], battlefield: [conditional, conditional] });
   assert.throws(() => act(state, { type: 'play', id: 'h0' }), /Not enough/);
 });

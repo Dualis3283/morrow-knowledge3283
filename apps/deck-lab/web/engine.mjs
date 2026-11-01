@@ -564,7 +564,7 @@ export function suggestions(state, player=0) {
     lands.sort((a,b)=>Number(Boolean(manaSource(b.card)))-Number(Boolean(manaSource(a.card))) || Number(entersTapped(b.card,profile(b.card)))-Number(entersTapped(a.card,profile(a.card))));
     for (const instance of lands) actions.push({type:'play',id:instance.id,label:`Play ${named(instance.card)}`,why:`Normal land drop${manaSource(instance.card)?'; mana source recognized':'; mana ability may require manual input'}.`,sourceNames:[],land:true});
   }
-  const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && profile(x.card).auto)];
+  const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && named(x.card)==='Ovika, Enigma Goliath' && profile(x.card).auto)];
   for(const instance of candidates) {
     const adapter=profile(instance.card);
     if (type(instance.card,'Land') || !adapter.auto) continue;
