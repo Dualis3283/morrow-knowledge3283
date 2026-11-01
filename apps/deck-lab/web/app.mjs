@@ -207,7 +207,7 @@ function openCastDialog(id,targetId='') {
   const where=lookup(id);
   if(!where || !['hand','command'].includes(where.zone) || where.player!==0)return;
   const quote=castOptions(game,0,id);
-  if(quote.land){dispatch({type:'play',id});return;}
+  if(quote.land){if($('card-dialog').open)$('card-dialog').close();dispatch({type:'play',id});return;}
   if($('card-dialog').open)$('card-dialog').close();
   casting={id,targetId,selected:new Set(quote.plan?.sourceIds||[]),choices:Object.fromEntries((quote.plan?.steps||[]).map(step=>[step.id,step.index]))};
   $('cast-dialog-title').textContent=`Cast ${quote.cardName} · ${quote.cost || '{0}'}${quote.tax?` + {${quote.tax}} tax`:''}`;
