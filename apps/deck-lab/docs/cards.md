@@ -1,13 +1,29 @@
-# Card import
+# Card import — 0.1.1
 
-`cards.mjs` uses the public Scryfall `GET /cards/named?exact=…` endpoint, without an API key. Unique card names are requested sequentially at most once per 130 ms. Each request and its JSON body have a 20 second timeout. HTTP 429 is retried at most twice with a bounded `Retry-After` wait. Cancel stops further requests and prevents a partial import from being returned as complete.
+The Android app sends batches of card names to the public card-data resolver at `https://david-walsh.pages.dev/api/simulator-cards`. The resolver retrieves full card definitions from Scryfall. It does not receive the deck's title, simulation state or test reports. No Scryfall API key or AI model is required. Card artwork loads separately from Scryfall's image hosts.
 
-Imports accept names alone, `4 Card`, `4x Card`, `4xCard`, `Card x4`, and Arena printing suffixes such as `(M10) 178` with whitespace before the collector number. `Deck`/`Mainboard`, `Commander` and `Sideboard` headings are retained as sections. Maybeboard is treated as sideboard. `SB:` prefixes mark an individual sideboard line. Comment lines starting `#`, `//` or `;` are skipped, and inline `#` comments are ignored. `//` inside a card name is preserved for double-faced and split cards. Duplicate names in the same section merge; entries in different sections stay separate.
+The browser sends at most 75 unique names in each batch and reuses cached matches before requesting more names. The Android lookup has a 60-second request/body timeout. The resolver uses Scryfall's collection endpoint, with narrowly scoped searches when an exact card-face alias needs discovery. A canonical card name or an exact face name must match; fuzzy replacements are rejected. Direct Scryfall GET lookup remains a library fallback, but the Android interface uses the website resolver.
 
-`expandDeck` includes mainboard entries only. Commanders and sideboards remain visible in saved deck data and are never silently shuffled into the main library. The current game engine does not automatically cast commanders from the command zone. The UI should disclose that limitation when commander entries exist.
+## Accepted text
 
-Resolved names and metadata are cached in `morrow.cards.v1` in localStorage for 30 days (up to 500 unique names). The application continues if device storage is blocked or full; its in-memory cache still works. This is a card-data cache; card images load separately from Scryfall when connected. Images and artist attribution for both card faces are retained. Each unresolved card is named in the error list; no fuzzy replacement is chosen automatically.
+Imports accept names alone, `4 Card`, `4x Card`, `4xCard`, `Card x4`, common printing/foil annotations and CSV/TSV exports with explicit name and quantity columns. Headings can be plain or bracketed: `Commander`/`[COMMANDER]`, `Deck`/`Mainboard`, `Sideboard`, and type headings such as `[CREATURES]`, `[INSTANTS]` and `[LANDS]`. Type headings return subsequent cards to the main deck. Add a main/type heading after the commander section before listing the library.
 
-Official Scryfall card metadata retrieved on 1 November 2026, including printing images and artist credits, is embedded in the samples. Two bundled 60 card teaching decks exercise the supported small card set with no network requirement for their rules and stats. The 40 basic land count is intentional to keep the reference-card set small; the lists are teaching fixtures, not deckbuilding recommendations or copies of the user's Ovika/Karn lists. Import a full real list for useful draw/land-drop analysis.
+Maybeboard/companion sections are retained as sideboard. `SB:` prefixes mark individual sideboard lines. Comment lines are ignored, while `//` inside split and double-faced card names is preserved. Duplicate names in the same section merge; entries in different sections remain separate. Quantities, individual lines and the total import size are validated before requests are sent.
 
-Verification: `node tests/cards.test.mjs` covers parser syntax and section boundaries, DFC names, invalid quantities, deck expansion, sample counts/copy limits, exact GET requests, per-card errors, cache reuse, progress, face images/artist fields, cancellation and 429 retries.
+`expandDeck` includes only main-deck entries. Commanders and sideboards remain in saved data and are never silently shuffled into the library. Command-zone casting, tax and commander damage require manual handling in the current engine.
+
+## Reports, pauses and retries
+
+The import report accounts for every nonblank source line. It shows the requested and normalized name, matched card, status, HTTP/error code and any lookup explanation. Section headings appear as ignored format lines rather than card requests. Failed names and names still pending after a timeout or rate limit are distinguished. Pending does not mean Scryfall found no such card.
+
+A provider cooldown is retained in local storage and honored for its stated duration. Retry waits for that deadline; cancel stops the waiting/request flow. Successful matches are cached, so retry can resume without repeating resolved names. Connection failures, incomplete responses and rate limits leave an honest partial report instead of marking the remaining deck complete.
+
+The report can be copied as JSON. Saving a partial deck explicitly saves only resolved cards and preserves its source text, diagnostics, statistics and omissions. **Import issues** reopens that saved report for correction and retry. Editing the text or deck name invalidates the previous save result until the updated input is resolved.
+
+## Local data and artwork
+
+Resolved names and full card definitions are cached in `morrow.deck-simulator.cards.v1` for 30 days, with up to 500 stored alias entries. The app continues with an in-memory cache if device storage is unavailable. The cache includes both faces' image URLs and artist attribution; it is not an offline card-image archive. The inspector's face switch previews artwork and rules text, without claiming automated transform mechanics.
+
+Official Scryfall metadata retrieved on 1 November 2026 is embedded in two 60-card teaching decks. Their 40 basic lands keep the supported reference-card pool small; these are interface examples, not deckbuilding recommendations or personal deck reconstructions.
+
+Decks, table state and simulation reports remain on the phone. Copying a report shares it only where the user chooses to paste it. Card lookup is the network service used by the importer; simulations run locally without uploading game or report data.

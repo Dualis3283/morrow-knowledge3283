@@ -29,12 +29,12 @@ The mobile prototype uses a newly written JavaScript state model and UI. It carr
 
 ## Website, card import and visual references
 
-The website is a separate, private repository, the separate website source repository. Inspected snapshot: `536990b62cdda7eb64b86d901dfdb72a66fb0142`.
+The website source is maintained in a separate private repository. Inspected snapshot: `536990b62cdda7eb64b86d901dfdb72a66fb0142`.
 
 | Source | What it provides |
 | --- | --- |
 | `site/projects/deck-planner/index.html` (website source reference; see the public website) | Existing deck entry and planning workflow, keep/mulligan notes, card resolution and multi-face handling. It is a planner, not a turn simulator. |
-| `functions/api/resolve-deck.js` (website source reference; see the public website) | Existing same-origin Scryfall-backed resolver. The new app uses direct, cached Scryfall GET requests as requested; it does not require this deployed function. |
+| `functions/api/resolve-deck.js` (website source reference; see the public website) | Existing same-origin Scryfall-backed resolver. The updated app uses the dedicated public simulator batch resolver for card metadata; simulation stays on the device. |
 | `site/projects/deck-wheel/index.html` (website source reference; see the public website) | Closest existing black-and-gold interface reference: near-black background, warm gold, serif display titles and touch-sized controls. |
 | `site/assets/cl-playmat.webp` (website source reference; see the public website) and `compleated-playmat.webp` (website source reference; see the public website) | Existing Compleated Loyalty playmat artwork. Both inspected assets show the project's visual world. Neither has printed stack, land, command or placement labels. The app's functional zones are new overlays, not a claimed reproduction of a placement diagram found in these assets. |
 | [`00-CORE/VISUAL_SYSTEM.md`](https://github.com/Dualis3283/morrow-knowledge3283/blob/538ca51e8cd903291e1d09168d3a6bb9af5a4ec3/00-CORE/VISUAL_SYSTEM.md) | Serif display hierarchy, clean interface text, restrained warm gold and dark editorial base. |

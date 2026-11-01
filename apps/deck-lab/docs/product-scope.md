@@ -1,14 +1,14 @@
 # Morrow Deck Lab — Android prototype
 
-The app is a local deck-testing workbench for short 8–12 round experiments. One round means one turn for each player. The purpose is to inspect opening hands, mulligans, land drops, castable spells, interaction and conditional damage, then change a deck and repeat with the same seed.
+The app is a private, local deck-testing workbench for short 8–12 round experiments. One round means one turn for each player. The purpose is to inspect opening hands, mulligans, land drops, castable spells, interaction and conditional damage, then change a deck and repeat with the same seed.
 
 ## Interaction model
 
-Decks are pasted as text, resolved through Scryfall GET requests and stored on the device. Card definitions and physical card instances are separate. Zones include the library, hand, battlefield, graveyard, exile and stack. Card images are sourced from Scryfall and need network access unless already cached by the device.
+Decks are pasted as text, resolved through the website’s Scryfall batch resolver and stored on the device. Card definitions and physical card instances are separate. Zones include the library, hand, battlefield, graveyard, exile and stack. Card images are sourced from Scryfall and need network access unless already cached by the device.
 
 Tapping opens explicit card actions. Swipes provide shortcuts; buttons provide the same actions for accessibility. Unsupported card effects are handled by the person using the playmat. Life adjustments, +1/+1 counters, coin flips and dice are logged. A saved local session can be resumed.
 
-The Android application bundles its interface and simulation code. Decks are sent to Scryfall one card name at a time for lookup; there is no app server, account, model inference or GitHub/Composio credential in the app. Composio is used during development to inspect the user's authorized source repositories.
+The Android application bundles its interface and simulation code. Only batches of card names go to the website resolver for Scryfall lookup. Game state and simulation reports stay on the device; there is no simulation server, account, model inference or GitHub/Composio credential in the app. Composio is used during development to inspect the user's authorized source repositories.
 
 ## Automated testing boundary
 

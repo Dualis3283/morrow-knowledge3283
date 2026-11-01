@@ -55,23 +55,33 @@ test('uses exact GET, reports individual errors and caches all sections by name'
   let calls = [];
   globalThis.fetch = async (url,options) => {
     calls.push({url,options});
-    const name = new URL(url).searchParams.get('exact');
-    return {ok:name !== 'Missing Card',status:name === 'Missing Card'?404:200,json:async()=>card(name)};
+    const parsedUrl = new URL(url);
+    const name = parsedUrl.searchParams.get('exact');
+    if (parsedUrl.pathname === '/cards/search' || name === 'Missing Card') {
+      return {ok:false,status:404,json:async()=>({object:'error',code:'not_found',details:'No matching card.'})};
+    }
+    return {ok:true,status:200,json:async()=>card(name)};
   };
   try {
     const {resolveDeck} = await fresh();
     const progress=[];
-    const resolved = await resolveDeck('4 Test Bear\nSideboard\n1 Test Bear\n1 Missing Card',{onProgress:p=>progress.push(p)});
-    assert.equal(calls.length,2);
-    assert.equal(calls[0].options.method,'GET');
+    const resolved = await resolveDeck('4 Test Bear\nSideboard\n1 Test Bear\n1 Missing Card',{onProgress:p=>progress.push(p),sleepImpl:async()=>{}});
+    // One successful named lookup, one missing named lookup, and one strictly
+    // validated face-alias search. A fallback search is not a fuzzy replacement.
+    assert.equal(calls.length,3);
+    assert.ok(calls.every(call=>call.options.method === 'GET'));
     assert.equal(new URL(calls[0].url).searchParams.get('exact'),'Test Bear');
+    assert.equal(new URL(calls[2].url).pathname,'/cards/search');
     assert.equal(resolved.entries.length,2);
     assert.equal(resolved.errors.length,1);
-    assert.match(resolved.errors[0],/Missing Card: No exact card match/);
-    assert.deepEqual(progress.map(p=>p.completed),[1,2]);
+    assert.match(resolved.errors[0],/Missing Card: No exact card or face-name match/);
+    assert.deepEqual(progress.filter(p=>['resolved','failed'].includes(p.status)).map(p=>p.completed),[1,2]);
+    const failed=resolved.diagnostics.find(item=>item.line===4);
+    assert.equal(failed.code,'lookup_not_found');
+    assert.equal(failed.httpStatus,404);
     await resolveDeck('2 Test Bear');
-    assert.equal(calls.length,2);
-    assert.match(globalThis.localStorage.getItem('morrow.cards.v1'),/Test Bear/);
+    assert.equal(calls.length,3);
+    assert.match(globalThis.localStorage.getItem('morrow.deck-simulator.cards.v1'),/Test Bear/);
   } finally { globalThis.fetch = oldFetch; globalThis.localStorage = oldStorage; }
 });
 
