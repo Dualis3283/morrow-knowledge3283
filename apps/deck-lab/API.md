@@ -5,8 +5,8 @@ ES modules, no bundler required. `web/` is copied into the Android application a
 Card definitions use Scryfall fields: `id`, `name`, `mana_cost`, `cmc`, `type_line`, `oracle_text`, `power`, `toughness`, `keywords`, `colors`, `produced_mana`, `image_uris`, optional `card_faces`.
 
 `web/cards.mjs` exports:
-- `parseDeck(text)` -> `{entries:[{name,quantity,section}],errors:[string]}`; sections main/commander/sideboard.
-- `resolveDeck(text,{onProgress,signal}={})` -> `{entries:[{name,quantity,section,card}],errors:[string]}` using rate-limited Scryfall GET, cached.
+- `parseDeck(text)` -> `{entries:[{name,quantity,section}],errors:[string],diagnostics,warnings}`; sections main/commander/sideboard. Diagnostics preserve source line, requested and normalized names, quantity, section and parsing status.
+- `resolveDeck(text,{onProgress,signal,resolverEndpoint,timeoutMs}={})` -> `{entries:[{name,quantity,section,card}],errors:[string],diagnostics,warnings,paused,pauseReason,stats}`. The Android UI selects the fixed official website batch endpoint; direct exact Scryfall GET remains available to library callers. Full card metadata is cached. Failed and pending lookups remain distinct; Retry-After is honored across retries/tabs. Progress includes per-line results and cancellable cooldown countdowns. Stats include weighted requested/resolved card counts, unique names, cache/request counts and resolved section counts.
 - `expandDeck(entries)` -> Card[] for main (commander excluded).
 - `demoDecks` -> `[{name,text,entries:[{name,quantity,section,card}]}]`, two clearly labeled sample decks with actual supported card metadata, functional offline.
 

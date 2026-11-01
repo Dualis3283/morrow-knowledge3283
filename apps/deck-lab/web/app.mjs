@@ -11,6 +11,9 @@ let currentDeckNames = ['Your deck', 'Opponent'];
 let bottomIds = new Set();
 let importResult = null;
 let importController = null;
+let importDiagnostics = [];
+let importReportStats = {};
+let importReportErrors = [];
 let report = null;
 let toastTimer;
 let inspected = null;
@@ -434,6 +437,18 @@ function renderDeckLibrary() {
       $('player-deck').value = deck.id; $('test-deck').value = deck.id; persist(); switchTab('play', true); toast(`${deck.name} is ready for your next table.`);
     });
     actions.append(view, use);
+    if (deck.importErrors?.length || deck.importDiagnostics?.some(row => ['failed', 'error', 'pending'].includes(row.status))) {
+      const issues = element('button', 'button', 'Import issues');
+      issues.addEventListener('click', () => {
+        if (importController) { toast('Finish or cancel the current lookup before reviewing a saved report.'); return; }
+        $('deck-text').value = deck.text || ''; $('deck-name').value = deck.name;
+        importResult = null; $('save-deck-button').hidden = true;
+        renderImportDiagnostics(deck.importDiagnostics || [], deck.importErrors || [], deck.importStats || {});
+        setText('import-status', 'Saved partial import. Review the report, correct names if needed, then retry the lookup.');
+        $('import-diagnostics').scrollIntoView({block:'nearest'});
+      });
+      actions.append(issues);
+    }
     if (!deck.sample) {
       const remove = element('button', 'button', 'Remove'); remove.setAttribute('aria-label', `Remove ${deck.name} from this device`);
       remove.addEventListener('click', () => {
@@ -463,17 +478,63 @@ async function loadDatedDeck(which) {
     $('deck-text').value = await response.text();
     $('deck-name').value = name;
     importResult = null; $('save-deck-button').hidden = true;
-    setText('import-status', 'Dated simulator deck loaded. Find cards on Scryfall to refresh its metadata. Many effects need manual resolution.');
+    setText('import-status', 'Dated simulator deck loaded. Look up cards through the website resolver and Scryfall to refresh their metadata. Many effects need manual resolution.');
     $('deck-text').focus();
   } catch (error) { toast(error.message); }
+}
+function renderImportDiagnostics(diagnostics = [], errors = [], stats = {}) {
+  importDiagnostics = diagnostics.map(row => ({...row}));
+  importReportStats = {...stats};
+  importReportErrors = [...errors];
+  const cardRows = importDiagnostics.filter(row => row.normalizedName && Number(row.quantity) > 0);
+  const resolved = cardRows.filter(row => ['resolved', 'cached'].includes(row.status));
+  const failed = importDiagnostics.filter(row => ['failed', 'error'].includes(row.status));
+  const pending = cardRows.filter(row => !['resolved', 'cached', 'failed', 'error', 'ignored'].includes(row.status));
+  const totalCards = cardRows.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+  const resolvedCards = resolved.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+  $('import-diagnostics').hidden = !importDiagnostics.length && !errors.length;
+  setText('import-diagnostics-summary', `${resolvedCards} / ${totalCards} cards resolved · ${failed.length} failed line(s) · ${pending.length} pending line(s).${stats.requestCount !== undefined ? ` ${stats.requestCount} lookup request(s).` : ''}`);
+  setText('import-error-summary', `${failed.length} failed · ${pending.length} pending — view affected cards`);
+  const issues = [...failed, ...pending];
+  $('import-errors').replaceChildren(...issues.map(row => {
+    const item = element('li', 'import-issue');
+    item.append(element('strong', '', `Line ${row.line} · ${row.requestedName || row.normalizedName || 'Invalid line'}`));
+    item.append(element('span', 'import-issue-code', `${row.httpStatus ? `HTTP ${row.httpStatus} · ` : ''}${row.code || (row.status === 'parsed' ? 'not attempted yet' : row.status)}`));
+    item.append(element('p', '', row.message || 'This card has not been looked up yet. Retry to continue; resolved cards are cached.'));
+    if (row.source) item.append(element('code', 'import-source-line', row.source));
+    if (row.normalizedName && row.normalizedName !== row.requestedName) item.append(element('p', 'tiny', `Searched as: ${row.normalizedName}`));
+    if (row.normalizedName) {
+      const link = element('a', 'text-button', 'Check this name on Scryfall ↗');
+      const url = new URL('https://scryfall.com/search'); url.searchParams.set('q', row.normalizedName);
+      link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; item.append(link);
+    }
+    return item;
+  }));
+  if (!issues.length && errors.length) $('import-errors').append(...errors.map(error => element('li', '', typeof error === 'string' ? error : error.message || JSON.stringify(error))));
+  if (!issues.length && !errors.length) $('import-errors').append(element('li', 'import-no-errors', 'No lookup failures.'));
+  $('import-error-details').open = !!(issues.length || errors.length);
+  $('import-diagnostic-rows').replaceChildren(...importDiagnostics.map(row => {
+    const line = element('div', `import-diagnostic-row ${row.status || 'parsed'}`);
+    line.append(element('strong', '', `Line ${row.line} · ${row.requestedName || row.normalizedName || row.source || ''}`), element('span', '', row.status || 'parsed'));
+    line.append(element('small', '', row.matchedName ? `Matched: ${row.matchedName}` : row.message || row.normalizedName || ''));
+    return line;
+  }));
+}
+function showImportReport() {
+  setText('export-title', 'Card import report');
+  setText('export-intro', 'Copy these per-line lookup results to review the failures or report a problem.');
+  $('report-export-content').value = JSON.stringify({createdAt: new Date().toISOString(),stats: importReportStats,errors: importReportErrors,diagnostics: importDiagnostics}, null, 2);
+  setText('copy-export-status', 'Copy the report, or select and copy the text.');
+  $('export-dialog').showModal();
+  $('report-export-content').focus();
 }
 async function importDeck() {
   if (importController) return;
   const text = $('deck-text').value.trim();
   if (!text) { toast('Paste a deck list first.'); $('deck-text').focus(); return; }
   const parsed = parseDeck(text);
-  if (!parsed.entries?.length) { setText('import-status', 'No cards found. Use one card name per line, with an optional quantity.'); return; }
-  $('import-errors').replaceChildren();
+  renderImportDiagnostics(parsed.diagnostics || [], parsed.errors || []);
+  if (!parsed.entries?.length) { setText('import-status', 'No valid card lines found. Review the import report below.'); return; }
   $('save-deck-button').hidden = true;
   $('resolve-deck-button').disabled = true;
   $('cancel-import-button').hidden = false;
@@ -481,26 +542,31 @@ async function importDeck() {
   $('deck-text').readOnly = true;
   $('deck-name').readOnly = true;
   const inputName = $('deck-name').value.trim() || 'Untitled deck';
-  setText('import-status', 'Looking up cards on Scryfall…');
+  setText('import-status', 'Looking up cards in batches…');
   try {
-    const resolvedResult = await resolveDeck(text, {signal: importController.signal, onProgress: (progress, total) => {
-      if (typeof progress === 'object' && progress !== null) {
-        const done = progress.completed ?? progress.done ?? progress.current ?? progress.loaded ?? 0;
-        const count = progress.total ?? total ?? parsed.entries.length;
-        setText('import-status', `Finding cards · ${done} / ${count}${progress.name ? ` · ${progress.name}` : ''}`);
-      } else setText('import-status', `Finding cards · ${progress ?? 0} / ${total ?? parsed.entries.length}`);
+    const resolvedResult = await resolveDeck(text, {resolverEndpoint: 'https://david-walsh.pages.dev/api/simulator-cards', timeoutMs: 60000, timeoutMs: 60000, signal: importController.signal, onProgress: progress => {
+      if (typeof progress !== 'object' || !progress) return;
+      if (Array.isArray(progress.diagnostics)) renderImportDiagnostics(progress.diagnostics, [], {requestCount: progress.requestCount});
+      const done = progress.completed ?? 0, total = progress.total ?? parsed.entries.length;
+      if (progress.status === 'cooldown') {
+        setText('import-status', `Scryfall rate limit: waiting ${progress.remainingSeconds ?? Math.ceil((progress.retryAfterMs || 0) / 1000)} seconds before continuing. Resolved cards are cached; you can cancel.`);
+      } else setText('import-status', `${done} / ${total} unique names checked${progress.name ? ` · ${progress.name}` : ''}${progress.requestCount !== undefined ? ` · ${progress.requestCount} request(s)` : ''}`);
     }});
     importResult = {...resolvedResult, inputText: text, inputName};
-    const entries = (importResult.entries || []).filter(e => e.card);
+    const entries = (importResult.entries || []).filter(entry => entry.card);
     const errors = importResult.errors || [];
-    $('import-errors').replaceChildren(...errors.map(error => element('li', '', typeof error === 'string' ? error : error.message || JSON.stringify(error))));
+    renderImportDiagnostics(importResult.diagnostics || [], errors, importResult.stats || {});
     const count = entries.reduce((sum, entry) => sum + Number(entry.quantity || 1), 0);
-    setText('import-status', `${count} cards resolved across ${entries.length} entries.${errors.length ? ' Review the unresolved lines below; only resolved cards can be saved.' : ' Ready to save to your deck library.'}`);
+    const expected = parsed.entries.reduce((sum, entry) => sum + Number(entry.quantity || 1), 0);
+    const missing = expected - count;
+    setText('import-status', `${count} / ${expected} cards resolved.${importResult.paused ? ' Lookup paused; retry to continue from the cache.' : missing || errors.length ? ' Review the affected lines below before saving a partial deck.' : ' All cards found. Ready to save.'}`);
     $('save-deck-button').hidden = !entries.length;
-    setText('save-deck-button', errors.length ? `Save ${count} resolved cards only` : 'Save deck to this device');
+    setText('save-deck-button', missing || errors.length ? `Save ${count} resolved cards only` : 'Save deck to this device');
+    setText('resolve-deck-button', missing || errors.length || importResult.paused ? 'Retry unresolved cards' : 'Find cards on Scryfall');
   } catch (error) {
     importResult = null;
-    setText('import-status', error.name === 'AbortError' ? 'Import canceled. Your saved decks are unchanged.' : `Scryfall could not be reached: ${error.message || 'check your connection and try again'}.`);
+    setText('import-status', error.name === 'AbortError' ? 'Import canceled. The lookup report remains below; retry to use already cached cards.' : `Card lookup failed: ${error.message || 'check the import report and try again'}.`);
+    setText('resolve-deck-button', 'Retry card lookup');
   } finally {
     importController = null;
     $('deck-text').readOnly = false;
@@ -518,7 +584,7 @@ function saveImportedDeck() {
   }
   const entries = importResult.entries.filter(e => e.card);
   if (!entries.length) return;
-  const deck = {id: `deck-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: importResult.inputName, text: importResult.inputText, entries, importErrors: importResult.errors || [], sample: false};
+  const deck = {id: `deck-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: importResult.inputName, text: importResult.inputText, entries, importErrors: importResult.errors || [], importDiagnostics: importResult.diagnostics || [], importStats: importResult.stats || {}, sample: false};
   decks.push(deck); deckOptions(); renderDeckLibrary();
   $('player-deck').value = deck.id; $('test-deck').value = deck.id;
   persist();
@@ -595,6 +661,8 @@ async function runTests() {
   } finally { $('run-test-button').disabled = false; }
 }
 async function exportReport() {
+  setText('export-title', 'Your test report');
+  setText('export-intro', 'Copy this JSON to keep a reproducible record of your test.');
   if (!report) return;
   const text = JSON.stringify(report, null, 2);
   const content = $('report-export-content');
@@ -642,6 +710,7 @@ $('confirm-combat').addEventListener('click', () => {
 $('resolve-deck-button').addEventListener('click', importDeck);
 $('cancel-import-button').addEventListener('click', () => importController?.abort());
 $('save-deck-button').addEventListener('click', saveImportedDeck);
+$('copy-import-report').addEventListener('click', showImportReport);
 for (const id of ['deck-text', 'deck-name']) $(id).addEventListener('input', () => {
   if (!importResult) return;
   importResult = null; $('save-deck-button').hidden = true;

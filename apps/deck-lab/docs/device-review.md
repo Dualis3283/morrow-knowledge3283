@@ -8,7 +8,7 @@ Build and browser checks cannot establish that touch interaction works well on t
 4. Swipe a hand card upward and a battlefield card rightward. Compare with the corresponding explicit buttons. Confirm horizontal hand scrolling remains usable.
 5. Declare attackers, inspect the defender's blockers, assign combat and check life totals and graveyards. Read the combat scope notice for unsupported keywords.
 6. Adjust life, add a +1/+1 counter, flip a coin and roll a die. Leave and reopen the app to check the saved state.
-7. Resolve a pasted deck through Scryfall. Confirm every name resolves correctly, errors remain visible, and double-faced card images can be inspected. Inspect the coverage report before running a test.
+7. Resolve a pasted deck through the website resolver and Scryfall. Confirm bracketed headings stay out of card requests, each card has a resolved/failed/pending report entry, copied reports preserve those details, retry uses cached matches, and double-faced images can be inspected. Inspect the coverage report before running a test.
 8. Run 8, 10 and 12 rounds with a fixed seed. Repeat an identical test, then change one deck. Record which differences result from the deck change and which mechanics are outside coverage.
 9. Try portrait and landscape, large system font size and TalkBack. Confirm card actions and navigation can be reached without gestures.
 

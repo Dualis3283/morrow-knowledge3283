@@ -10,13 +10,13 @@
     },
     {
       "path": "apps/deck-lab/downloads/morrow-deck-lab-debug.apk",
-      "sha256": "eae072594a92611aba4fbf2c953cda03e296e5ee718d7e9637505156fe72c6c1",
-      "review_evidence": "Android debug build completed and APK Signature Scheme v2 verified. Packaged web assets match reviewed final source by SHA-256; manifest requests only INTERNET. Independently inspected archive integrity and 14 entry names; no signing keystore or local toolchain is packaged."
+      "sha256": "2541bada349d66ec0c42bc03dd263542f85f29d937583c2e112c1a148c99c8d8",
+      "review_evidence": "Version 0.1.1 (code 2) Android debug build independently inspected: APK Signature Scheme v2 verifies, min SDK 26 and target SDK 35, with INTERNET as its only requested permission. All eight packaged web assets match reviewed public app source byte for byte and UTF-8 assets pass existing privacy patterns. Archive integrity and all 14 entry names were checked; no signing keystore or local toolchain is packaged."
     },
     {
       "path": "apps/deck-lab/downloads/source.zip",
-      "sha256": "624c3211d28e487b575710c4631735ff3674ad4cc1c488be814d859f22ee2e0b",
-      "review_evidence": "Independently inspected archive integrity and all 42 entry names. Every member matches the reviewed app source; every UTF-8 member passes existing privacy patterns. Contains app source, tests, public card data, playmat artwork, license and instructions; excludes SDK/JDK caches, credentials and signing material. Documentation was prepared for publication without private website source links. Build launchers invoke Bash explicitly so GitHub file-mode normalization does not prevent building; Unix wrapper execution mode is preserved in the source ZIP."
+      "sha256": "fe3c49f6b6d01597a850beadb309856eebd7633e0f8b7b4bcc2fc6ed36b360ad",
+      "review_evidence": "Version 0.1.1 source archive independently inspected for integrity and all 43 entry names, including the importer regression tests. Every member matches reviewed app source byte for byte, and every UTF-8 member passes existing privacy patterns. Contains app source, tests, public card data, playmat artwork, license and sanitized instructions; excludes SDK/JDK caches, credentials, private website source links and signing material."
     },
     {
       "path": "apps/deck-lab/downloads/playmat-preview.png",

@@ -1,0 +1,27 @@
+name: Deck Lab source checks
+
+on:
+  pull_request:
+    paths:
+      - 'apps/deck-lab/**'
+      - '.github/workflows/deck-lab.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/deck-lab/**'
+      - '.github/workflows/deck-lab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Importer and engine checks
+        working-directory: apps/deck-lab
+        run: npm test
