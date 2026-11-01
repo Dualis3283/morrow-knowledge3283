@@ -13,3 +13,8 @@ Deck/session storage stays in the app's WebView storage. Android backup is disab
 A debug APK is for sideload testing. Device/emulator interaction, system WebView compatibility, rotation, storage persistence, touch gestures and Scryfall import should be checked before a release. The bounded simulator is not a complete MTG rules engine.
 
 The commander update is version `0.1.2`, version code `3`. Its APK build, v2 signature, min SDK 26/target SDK 35 manifest and bundled-source parity were verified. Install the updated APK to receive the commander interface; a website deployment does not update an older app’s bundled files.
+
+
+## 0.1.3 guided-play candidate
+
+Version code 4 (Android package `dev.morrow.decklab`) bundles the shared site engine, seven-mana Ovika fixture correction, guided land/casting/stack actions, Undo and three bounded named interaction adapters. The CI debug APK is reproducibly built and SHA-256-compared to the source engine. Until a real Android device/browser input walkthrough and current website download replacement are verified, the installed 0.1.2 APK remains the older version. No store release is claimed.
