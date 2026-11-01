@@ -89,8 +89,8 @@ test('manual tap supplies known mana, while manual untap is logged as an overrid
   let state = fixture({ hand: [elf], battlefield: [forest] });
   state = act(state, { type: 'tap', id: 'b0' }); assert.equal(state.players[0].manaPool.G, 1);
   state = act(state, { type: 'play', id: 'h0' }); assert.equal(state.players[0].manaPool.G, 0);
-  state = act(state, { type: 'tap', id: 'b0' }); assert.equal(state.players[0].battlefield[0].tapped, false);
-  assert(state.log.at(-1).includes('override'));
+  assert.throws(()=>act(state,{type:'tap',id:'b0'}),/already spent|Undo/i);
+  assert.equal(state.players[0].battlefield[0].tapped,true,'spent mana cannot be reclaimed by manual untap');
 });
 
 test('Giant Growth modifies combat damage and expires at end of turn', () => {

@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {act,createGame,castOptions,tapOptions} from '../web/engine.mjs';
+const island={name:'Island',type_line:'Basic Land — Island',cmc:0,mana_cost:'',oracle_text:''};
+const mountain={...island,name:'Mountain',type_line:'Basic Land — Mountain'};
+const signet={name:'Arcane Signet',type_line:'Artifact',cmc:2,mana_cost:'{2}',oracle_text:"{T}: Add one mana of any color in your commander's color identity."};
+const izzet={name:'Izzet Signet',type_line:'Artifact',cmc:2,mana_cost:'{2}',oracle_text:'{1}, {T}: Add {U}{R}.'};
+const shock={name:'Shock',type_line:'Instant',cmc:1,mana_cost:'{R}',oracle_text:'Shock deals 2 damage to any target.'};
+const commander={name:'Ovika, Enigma Goliath',type_line:'Legendary Creature — Phyrexian Nightmare',mana_cost:'{5}{U}{R}',cmc:7,color_identity:['U','R'],power:'6',toughness:'6',oracle_text:''};
+const card=(card,id)=>({id,card,owner:0,controller:0,tapped:false,counters:0,damage:0,enteredTurn:0,attacking:false});
+const start=()=>act(createGame({deck:Array(75).fill(island),commander,rounds:8}),{type:'keep'});
+test('land mana pays for mana rock; tapping it generates colored mana to cast instant',()=>{
+ let g=start();g.players[0].battlefield.push(card(island,'blue'),card(mountain,'red'));g.players[0].hand=[card(signet,'rock'),card(shock,'spell')];
+ g=act(g,{type:'tap',id:'blue'});g=act(g,{type:'tap',id:'red'});
+ assert.equal(g.players[0].manaPool.U,1);assert.equal(g.players[0].manaPool.R,1);
+ assert.equal(castOptions(g,0,'rock').canCast,true);
+ g=act(g,{type:'play',id:'rock'});assert.equal(g.players[0].manaPool.R+g.players[0].manaPool.U,0);
+ g=act(g,{type:'resolve'});assert.equal(tapOptions(g,0,'rock').options.length,2);
+ assert.equal(castOptions(g,0,'spell').canCast,true,'untapped rock is included in cast affordability');
+ g=act(g,{type:'tap',id:'rock',choiceIndex:1});assert.equal(g.players[0].manaPool.R,1);
+ assert.equal(castOptions(g,0,'spell').canCast,true,'already-floating mana counts after manual rock tap');
+ g=act(g,{type:'play',id:'spell',sourceIds:[]});
+ assert.equal(g.players[0].manaPool.R,0);assert.equal(g.stack.length,1);
+ g=act(g,{type:'resolve'});assert.equal(g.players[1].life,38);
+});
+test('Izzet Signet costs one mana to activate; both colors float and can pay for a spell',()=>{
+ let g=start();g.players[0].battlefield.push(card(island,'blue'),card(izzet,'rock'));g.players[0].hand=[card(shock,'spell')];
+ assert.throws(()=>act(g,{type:'tap',id:'rock'}),/needs 1 mana/);
+ assert.equal(castOptions(g,0,'spell').canCast,true,'payment planner can tap Island for signet activation and use red');
+ g=act(g,{type:'tap',id:'blue'});
+ g=act(g,{type:'tap',id:'rock'});
+ assert.equal(g.players[0].manaPool.U,1);assert.equal(g.players[0].manaPool.R,1);
+ g=act(g,{type:'play',id:'spell',sourceIds:[]});assert.equal(g.players[0].manaPool.R,0);assert.equal(g.players[0].manaPool.U,1);
+});
+test('explicit source selection requires enough mana, does not spend rejected previews, and supports choosing flexible color',()=>{
+ let g=start();g.players[0].battlefield.push(card(island,'island'),card(signet,'rock'));g.players[0].hand=[card(shock,'spell')];
+ const before=JSON.stringify(g);
+ assert.equal(castOptions(g,0,'spell',{sourceIds:['island']}).canCast,false);
+ assert.equal(JSON.stringify(g),before);
+ assert.equal(castOptions(g,0,'spell',{sourceIds:['rock'],sourceChoices:{rock:1}}).canCast,true);
+ g=act(g,{type:'play',id:'spell',sourceIds:['rock'],sourceChoices:{rock:1}});
+ assert.equal(g.players[0].battlefield.find(x=>x.id==='island').tapped,false);
+ assert.equal(g.players[0].battlefield.find(x=>x.id==='rock').tapped,true);
+});
