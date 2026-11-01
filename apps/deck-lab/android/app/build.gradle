@@ -1,0 +1,35 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'dev.morrow.decklab'
+    compileSdk 35
+    buildFeatures {
+        buildConfig true
+    }
+    defaultConfig {
+        applicationId 'dev.morrow.decklab'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/morrow-assets')
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.register('copyWebAssets', Sync) {
+    from('../../web')
+    into(layout.buildDirectory.dir('generated/morrow-assets/web'))
+    include '**/*'
+}
+tasks.named('preBuild').configure { dependsOn 'copyWebAssets' }

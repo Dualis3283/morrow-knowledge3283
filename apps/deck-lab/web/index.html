@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090806">
+  <meta name="description" content="Morrow Deck Lab. A quiet space to test Magic decks, explore opening hands and play through the first twelve rounds.">
+  <title>Morrow · Deck Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to play area</a>
+  <header class="app-header">
+    <a class="brand" href="#play" aria-label="Morrow Deck Lab home"><span class="brand-mark" aria-hidden="true">M</span><span>Morrow <small>DECK LAB</small></span></a>
+    <span class="header-note"><i aria-hidden="true"></i> Your table. Your pace.</span>
+    <button class="icon-button" id="about-button" aria-label="About Deck Lab and supported rules">ⓘ</button>
+  </header>
+  <nav class="tab-bar" role="tablist" aria-label="App sections">
+    <button class="tab active" data-tab="play" role="tab" id="tab-play" aria-controls="play-panel" aria-selected="true"><span aria-hidden="true">▱</span> Playmat</button>
+    <button class="tab" data-tab="decks" role="tab" id="tab-decks" aria-controls="decks-panel" aria-selected="false"><span aria-hidden="true">▤</span> Decks <span id="deck-count" class="nav-count">2</span></button>
+    <button class="tab" data-tab="results" role="tab" id="tab-results" aria-controls="results-panel" aria-selected="false"><span aria-hidden="true">◴</span> Results</button>
+  </nav>
+  <main id="main">
+    <section id="play-panel" role="tabpanel" aria-labelledby="tab-play" class="tab-panel" aria-label="Playmat">
+      <div id="setup-view" class="setup-grid">
+        <div class="welcome">
+          <p class="eyebrow">A little preparation. A better next game.</p>
+          <h1>Know your deck.<br><em>Find its rhythm.</em></h1>
+          <p class="welcome-copy">Shuffle, keep, and play the opening rounds. Test an idea on your own table, then return to it with the same seed.</p>
+          <div class="welcome-art"><div class="art-shade"></div><span>COMPLEATED LOYALTY <small>YOUR WORLD, AT THE TABLE</small></span></div>
+          <p class="art-caption">Playmat artwork from your Compleated Loyalty project.</p>
+        </div>
+        <section class="session-setup" aria-labelledby="session-title">
+          <p class="eyebrow">Set your table</p>
+          <h2 id="session-title">The first twelve rounds<br>can tell you a lot.</h2>
+          <p class="secondary">Use the sample decks, or bring your own list.</p>
+          <label for="player-deck">Your deck</label><select id="player-deck"></select>
+          <label for="opponent-deck">Opponent deck</label><select id="opponent-deck"></select>
+          <div class="field-row"><div><label for="rounds">Rounds per player</label><select id="rounds"><option value="8">8 rounds</option><option value="10" selected>10 rounds</option><option value="12">12 rounds</option></select></div><div><label for="starting-life">Starting life</label><select id="starting-life"><option value="40">40 life</option><option value="20">20 life</option></select></div></div>
+          <div class="field-row"><div><label for="seed">Shuffle seed</label><input id="seed" value="morrow-01" maxlength="80" autocapitalize="off" spellcheck="false"></div><div><label for="play-order">Play order</label><select id="play-order"><option value="play">You play first</option><option value="draw">You draw first</option></select></div></div>
+          <button id="start-button" class="button primary wide">Start playtest <span aria-hidden="true">↗</span></button>
+          <button id="resume-button" class="button secondary-button wide" hidden>Resume saved table</button>
+          <button id="import-shortcut" class="text-button wide">Import a deck list →</button>
+          <p class="scope-note">Manual playmat + a scripted opponent. Supported effects automate; other effects stay in your hands.</p>
+        </section>
+      </div>
+      <div id="game-view" hidden>
+        <div class="game-heading"><div><p class="eyebrow" id="session-seed">SEEDED PLAYTEST</p><h1 class="small-title" id="game-title">Your table</h1></div><div class="game-heading-actions"><button id="new-table" class="text-button">New table</button><button id="save-table" class="button compact">Save table</button></div></div>
+        <div class="round-strip"><strong id="round-label">Round 1 / 10</strong><span id="phase-label">Opening hand</span><span class="strip-note">One round = one turn each</span></div>
+        <div class="play-layout">
+          <div class="table-column">
+            <section class="battlefield" aria-label="Battlefield">
+              <div class="table-player opponent-player"><div><small>SCRIPTED OPPONENT</small><h2 id="opponent-name">Opponent</h2></div><div class="life-control"><button class="life-button" data-life-player="1" data-life-delta="-1" aria-label="Decrease opponent life">−</button><strong id="opponent-life">40</strong><button class="life-button" data-life-player="1" data-life-delta="1" aria-label="Increase opponent life">+</button></div></div>
+              <div class="opponent-counts" id="opponent-counts"></div>
+              <div class="zone" id="opponent-land-zone"><div class="zone-label"><span>Opponent lands</span><small id="opponent-land-count">0</small></div><div class="card-row" id="opponent-lands"></div></div>
+              <div class="zone" id="opponent-battlefield-zone"><div class="zone-label"><span>Opponent battlefield</span><small>PUBLIC INFORMATION</small></div><div class="card-row battlefield-row" id="opponent-field"></div></div>
+              <div class="table-divider"><span>THE BATTLEFIELD</span><i></i></div>
+              <div class="zone" id="player-battlefield-zone"><div class="zone-label"><span>Your battlefield</span><small id="attack-count">TAP A CARD TO INTERACT</small></div><div class="card-row battlefield-row" id="player-field"></div></div>
+              <div class="zone" id="player-land-zone"><div class="zone-label"><span>Your lands</span><small id="player-land-count">0</small></div><div class="card-row" id="player-lands"></div></div>
+              <div class="table-player"><div><small>YOUR DECK</small><h2 id="player-name">You</h2></div><div class="life-control"><button class="life-button" data-life-player="0" data-life-delta="-1" aria-label="Decrease your life">−</button><strong id="player-life">40</strong><button class="life-button" data-life-player="0" data-life-delta="1" aria-label="Increase your life">+</button></div></div>
+            </section>
+            <section class="hand-panel" aria-label="Your hand"><div class="hand-title"><div><h2>Your hand <small id="hand-count">7</small></h2><p id="hand-help">Tap to inspect · swipe up to play</p></div><div class="pile-links"><button id="command-button" class="pile-button">Command <b id="command-count">0</b></button><button id="library-button" class="pile-button">Library <b id="library-count">0</b></button><button id="graveyard-button" class="pile-button">Graveyard <b id="graveyard-count">0</b></button><button id="exile-button" class="pile-button">Exile <b id="exile-count">0</b></button></div></div><div id="player-hand" class="hand-row"></div></section>
+            <div id="mulligan-controls" class="opening-controls"><div><strong id="keep-label">Find your opening hand.</strong><p id="bottom-help">Keep seven, or take a London mulligan.</p></div><button id="mulligan-button" class="button">Mulligan</button><button id="keep-button" class="button primary">Keep hand</button></div>
+            <div id="turn-controls" class="turn-controls" hidden><button id="combat-button" class="button">Assign combat</button><button id="end-turn-button" class="button primary">End turn <span aria-hidden="true">→</span></button></div>
+            <p class="gesture-note">Swipe a battlefield card right to tap or untap. Every gesture also has a button.</p>
+          </div>
+          <aside class="table-sidebar">
+            <section class="sidebar-section"><div class="section-heading"><h2>The stack</h2><span id="stack-count" class="mini-count">0</span></div><div id="stack-list"></div><button id="resolve-button" class="button wide" disabled>Resolve top spell</button><p class="tiny">Last in, first out. Unsupported effects require manual resolution.</p></section>
+            <section class="sidebar-section"><p class="eyebrow">Leave it to chance</p><div class="random-tools"><button id="coin-button" class="button">◐ Flip coin</button><label class="sr-only" for="die-sides">Dice sides</label><select id="die-sides"><option value="6">d6</option><option value="20">d20</option><option value="4">d4</option><option value="8">d8</option><option value="10">d10</option><option value="12">d12</option><option value="100">d100</option></select><button id="die-button" class="button">Roll</button></div><output id="random-result" aria-live="polite">A small chance of something.</output></section>
+            <section class="sidebar-section"><div class="section-heading"><h2>Turn notes</h2><span class="tiny">MOST RECENT FIRST</span></div><ol id="activity-log" class="activity-log"></ol></section>
+            <section class="sidebar-section"><h2>Test this opening</h2><p class="secondary">Run 100 seeded games against the selected opponent and compare the early rounds.</p><button id="game-sim-button" class="text-button">Run deck test →</button><p id="game-warnings" class="tiny"></p></section>
+          </aside>
+        </div>
+      </div>
+    </section>
+    <section id="decks-panel" role="tabpanel" aria-labelledby="tab-decks" class="tab-panel" aria-label="Deck library" hidden>
+      <div class="page-heading"><div><p class="eyebrow">Your ideas, card by card</p><h1>Bring your <em>deck.</em></h1></div><p class="secondary">Paste a list. Scryfall supplies the card information and artwork. Your decks stay on this device.</p></div>
+      <div class="decks-layout"><section class="import-panel"><h2>Import from text</h2><p class="secondary">One card per line, such as <code>4 Llanowar Elves</code>. Commander and Sideboard headings are recognized.</p><label for="deck-name">Deck name</label><input id="deck-name" placeholder="A new idea" maxlength="100"><label for="deck-text">Deck list</label><textarea id="deck-text" rows="12" spellcheck="false" placeholder="24 Forest&#10;4 Llanowar Elves&#10;4 Elvish Mystic&#10;…"></textarea><div class="import-actions"><button id="resolve-deck-button" class="button primary">Find cards on Scryfall</button><button id="cancel-import-button" class="button" hidden>Cancel</button></div><p id="import-status" class="status-text" role="status" aria-live="polite">Card requests are cached and paced to respect Scryfall’s API.</p><ul id="import-errors" class="error-list"></ul><button id="save-deck-button" class="button wide" hidden>Save deck</button><p class="tiny">Commander cards are retained in your library list but excluded from automatic tests in this first version. Command-zone rules and commander tax need manual handling.</p></section><div><div class="section-heading"><h2>Deck library</h2><span class="tiny">SAVED LOCALLY</span></div><div id="deck-library" class="deck-library"></div><div id="deck-preview" class="deck-preview" hidden><div class="section-heading"><h2 id="preview-title"></h2><button id="close-preview" class="text-button">Close</button></div><div id="preview-cards" class="preview-cards"></div></div></div></div>
+    </section>
+    <section id="results-panel" role="tabpanel" aria-labelledby="tab-results" class="tab-panel" aria-label="Simulation results" hidden>
+      <div class="page-heading"><div><p class="eyebrow">Less guesswork. More evidence.</p><h1>Watch an idea<br><em>play out.</em></h1></div><p class="secondary">Look at land drops, early plays and damage over 8–12 rounds. Repeat a seed to compare a change.</p></div>
+      <section class="test-config"><div><label for="test-deck">Your deck</label><select id="test-deck"></select></div><div><label for="test-opponent">Opponent deck</label><select id="test-opponent"></select></div><div><label for="test-rounds">Rounds</label><select id="test-rounds"><option value="8">8</option><option value="10" selected>10</option><option value="12">12</option></select></div><div><label for="test-seed">Base seed</label><input id="test-seed" value="morrow-01" maxlength="80"></div><button id="run-test-button" class="button primary">Run 100 tests <span aria-hidden="true">↗</span></button></section>
+      <p id="test-status" class="status-text" role="status" aria-live="polite">Each round gives both players one turn. Tests use the starting-life and play-order settings from your table.</p>
+      <div class="coverage-intro"><p><strong>Know what the model can play.</strong> This is a bounded card-testing script. Card data is not an executable Magic rules engine; unsupported effects are excluded from automated casting.</p><button id="preflight-button" class="text-button">Check card coverage →</button></div>
+      <div id="results-content" hidden><div class="section-heading"><h2 id="results-title">The opening, measured.</h2><button id="export-results" class="text-button">Export JSON ↗</button></div><div id="result-metrics" class="metric-grid"></div><section class="round-report"><div class="section-heading"><h2>Round by round</h2><span class="tiny">MEAN AMONG GAMES REACHING EACH ROUND</span></div><div class="table-scroll"><table><caption class="sr-only">Average simulation results by round</caption><thead><tr><th>Round</th><th>Games observed</th><th>Your damage</th><th>Opponent damage</th><th>Lands played</th><th>Cards cast</th><th>Missed drops</th><th>Life remaining</th></tr></thead><tbody id="round-results"></tbody></table></div></section><div id="result-notes" class="result-notes"></div></div>
+      <section id="coverage-section" class="coverage-section" hidden><div class="section-heading"><h2>Card coverage</h2><span id="coverage-summary" class="tiny"></span></div><div id="coverage-list"></div></section>
+    </section>
+    <footer class="app-footer"><span>MORROW <i>·</i> DECK LAB</span><p>Card data & artwork from <a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">Scryfall</a>. Magic: The Gathering © Wizards of the Coast. An independent playtesting tool.</p></footer>
+  </main>
+  <dialog id="card-dialog" class="card-dialog"><div class="dialog-header"><span class="eyebrow">AT YOUR TABLE</span><button class="icon-button close-dialog" aria-label="Close card details">×</button></div><div id="card-dialog-content"></div></dialog>
+  <dialog id="combat-dialog"><div class="dialog-header"><h2>Assign combat</h2><button class="icon-button close-dialog" aria-label="Close combat assignments">×</button></div><p class="secondary">Choose one blocker per attacker, or leave it unblocked. Supported combat keywords apply. Use life controls for effects outside the model.</p><div id="combat-assignments"></div><button id="confirm-combat" class="button primary wide">Deal combat damage</button></dialog>
+  <dialog id="pile-dialog"><div class="dialog-header"><h2 id="pile-title">Cards</h2><button class="icon-button close-dialog" aria-label="Close card pile">×</button></div><div id="pile-cards" class="pile-cards"></div></dialog>
+  <dialog id="about-dialog"><div class="dialog-header"><span class="eyebrow">MORROW / DECK LAB</span><button class="icon-button close-dialog" aria-label="Close about">×</button></div><h2>A place to learn<br>your deck’s rhythm.</h2><p>Built around your website’s black-and-gold visual language and Compleated Loyalty playmat artwork.</p><p>Play manually, or run repeatable, scripted opening tests. The opponent ranks threats using public battlefield information: combat pressure, mana value, legendary status, and recognized engine or synergy text. It does not inspect your hand.</p><h3>First version boundaries</h3><p>Automated tests cover a limited set of costs, effects and combat rules. Review card coverage before trusting a result. Unsupported spells remain manual. Commander tax, replacement effects, complex triggers and complete priority windows are not a complete rules implementation.</p><p>Decks and table state are saved on your device. Importing a card sends its name to Scryfall; simulation runs locally without an AI model.</p><p class="tiny">The sample decks are small demonstration fixtures, not reconstructed versions of your personal Commander lists.</p></dialog>
+  <dialog id="export-dialog"><div class="dialog-header"><h2>Your test report</h2><button class="icon-button close-dialog" aria-label="Close report export">×</button></div><p class="secondary">Copy this JSON to keep a reproducible record of your test.</p><label for="report-export-content">Simulation report JSON</label><textarea id="report-export-content" rows="12" readonly spellcheck="false"></textarea><button id="copy-export" class="button primary wide" style="margin-top:14px">Copy report</button><p id="copy-export-status" class="tiny" role="status" aria-live="polite">You can also long-press the text to select and copy it.</p></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
