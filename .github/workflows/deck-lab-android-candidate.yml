@@ -20,9 +20,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
       - name: Install pinned Android SDK packages
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager_bin="$(find "$ANDROID_HOME/cmdline-tools" -path "*/bin/sdkmanager" -type f | head -n 1)"
+          test -x "$sdkmanager_bin"
+          yes | "$sdkmanager_bin" --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
+          "$sdkmanager_bin" --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
       - name: Assemble unsigned-store debug candidate only
         working-directory: apps/deck-lab/android
         run: bash ./gradlew --no-daemon assembleDebug
