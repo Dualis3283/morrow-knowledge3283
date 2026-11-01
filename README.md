@@ -94,3 +94,10 @@ Latest public-safe operational audit checkpoint: **19 October 2026**; prior deta
 
 ### Ask Morrow Workers AI
 - `01-PROJECTS/ASK_MORROW_WORKERS_AI_CHECKPOINT.md` — free-provider evaluation, cost evidence, response-gate results and remaining system/UX gate.
+
+
+## Magic: The Gathering Deck Lab
+
+[Deck Lab](apps/deck-lab/) is an Android and browser deck-testing prototype. [Download the APK](apps/deck-lab/downloads/morrow-deck-lab-debug.apk), [get the source and instructions](apps/deck-lab/downloads/source.zip), or [view the playmat preview](apps/deck-lab/downloads/playmat-preview.png).
+
+It uses Scryfall card data and a bounded, seeded scripted opponent; complex effects and Commander rules require manual handling. See [instructions and validation](apps/deck-lab/README.md) before interpreting results.

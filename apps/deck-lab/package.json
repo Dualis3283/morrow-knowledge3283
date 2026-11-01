@@ -1,0 +1,11 @@
+{
+  "name": "morrow-deck-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory web",
+    "build:android": "cd android && ./gradlew assembleDebug"
+  }
+}
