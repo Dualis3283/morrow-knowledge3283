@@ -1,5 +1,5 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, simulate, upgradeGame} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, simulate, upgradeGame, suggestions} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'morrow-deck-lab-v1';
@@ -18,6 +18,7 @@ let report = null;
 let toastTimer;
 let inspected = null;
 let appConfig = {};
+let undoHistory = [];
 
 function element(tag, className, content) {
   const node = document.createElement(tag);
@@ -103,6 +104,7 @@ function startTable() {
   if (deck.length < 7 || opponentDeck.length < 7) { toast('Each deck needs at least seven main-deck cards for an opening hand.'); return; }
   try {
     game = createGame({...config, deck, opponentDeck, commander: commander(own), opponentCommander: commander(opponent)});
+    undoHistory=[];
     game.uiConfig = {...config};
     for (const [label, source] of [['Your deck', own], ['Opponent deck', opponent]]) {
       if (source.importErrors?.length) game.warnings.push(`${label} was saved as a partial import: ${source.importErrors.length} unresolved line(s) are absent from this table.`);
@@ -118,7 +120,9 @@ function startTable() {
 function dispatch(action, {close = false} = {}) {
   if (!game) { toast('Start a table first.'); return false; }
   try {
+    const previous=game;
     game = act(game, action);
+    undoHistory.push(previous); if(undoHistory.length>24) undoHistory.shift();
     savedGame = game;
     persist();
     renderGame();
@@ -284,6 +288,14 @@ function renderGame() {
   renderCommander();
   $('mulligan-controls').hidden = own.kept || game.finished;
   $('turn-controls').hidden = !own.kept;
+  const moves=suggestions(game,0);
+  const first=moves[0], land=moves.find(move=>move.land);
+  $('assisted-play').hidden= !game.players[0].kept || game.finished;
+  $('assist-land').disabled=!land;
+  $('assist-next').disabled=!first;
+  $('assist-main').disabled=!first;
+  $('undo-action').disabled=!undoHistory.length;
+  setText('assist-preview', first ? `${first.label} · ${first.why}${first.sourceNames.length ? ` · Auto-tap: ${first.sourceNames.join(', ')}` : ''}` : 'No payable supported action. Inspect a card, adjust the table manually or end your turn.');
   $('end-turn-button').disabled = game.finished;
   $('combat-button').disabled = game.finished || !attackers.length || game.combatDone;
   $('mulligan-button').disabled = own.mulligans >= 7;
@@ -763,6 +775,10 @@ $('import-shortcut').addEventListener('click', () => { switchTab('decks', true);
 $('mulligan-button').addEventListener('click', () => { if (dispatch({type: 'mulligan'})) { bottomIds.clear(); renderGame(); } });
 $('keep-button').addEventListener('click', () => { if (dispatch({type: 'keep', bottomIds: [...bottomIds]})) { bottomIds.clear(); renderGame(); } });
 $('end-turn-button').addEventListener('click', () => dispatch({type: 'endTurn'}));
+$('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'land'}));
+$('assist-next').addEventListener('click', () => dispatch({type:'assist',mode:'next'}));
+$('assist-main').addEventListener('click', () => dispatch({type:'assist',mode:'main'}));
+$('undo-action').addEventListener('click', () => { if(!undoHistory.length)return; game=undoHistory.pop(); savedGame=game; persist(); renderGame(); });
 $('resolve-button').addEventListener('click', () => dispatch({type: 'resolve'}));
 $('coin-button').addEventListener('click', () => dispatch({type: 'coin'}));
 $('die-button').addEventListener('click', () => dispatch({type: 'die', sides: Number($('die-sides').value)}));

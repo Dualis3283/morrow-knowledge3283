@@ -58,3 +58,22 @@ Each `rounds` row contains `round`, `damage`, `opponentDamage`, `landsPlayed`, `
 `coverage` contains separate `player` and `opponent` rows plus `skippedCards`. Status is `supported`, `partial`, or `manual`, with reasons. `notes` describes policy, limits, partial adapters, skipped card names, early termination, and denominator differences. Coverage and notes must accompany reported simulation results.
 
 The sample decks have full coverage for their limited card pool. Complex imported decks will have substantial manual coverage. Results measure the configured bounded scenario; they do not predict tournament outcomes or substitute for Magic rules adjudication.
+
+## Guided play and named interactions — candidate for web and Android
+
+**Corrected Oracle evidence:** [Ovika, Enigma Goliath](https://mtg.wtf/card/one/213/Ovika-Enigma-Goliath) costs `{5}{U}{R}` (mana value **7**), not eight. A previous purported recheck incorrectly changed the fixture to eight. Mana value stays seven even when commander tax increases the amount paid. Test fixtures and browser regression were corrected, and temporary haste expires at end of turn.
+
+The same engine now offers `suggestions(state, player)` and explicit `assist` actions (`land`, `next`, `main`). The playmat shows what will happen next and which recognized mana sources will be tapped; assisted actions are opt-in. `main` loops through recognized actions and ordered stack triggers only, without automatically ending the turn or assigning combat. An in-session Undo restores a previous table snapshot. Players can still move, tap, and adjust cards manually. Web and Android use identical engine code and parallel UI elements.
+
+Normal land drops work for any valid card with Land type, without requiring its mana ability to be interpreted. Known basic land subtypes (`Island`, `Mountain`, etc.) supply intrinsic tap colors even on nonbasic duals/triomes. Optional/conditional land-entry choices are conservative (tapped rather than falsely paying life); unknown mana abilities are never inferred from the card's `produced_mana` field. Choosing land types and tapping is deterministic, not a perfect optimization or a guarantee of preserving held-up interaction. Assisted actions expose that choice before committing; Undo permits retesting.
+
+Named, audited interaction adapters (not freeform Oracle interpretation): [Ovika](https://mtg.wtf/card/one/213/Ovika-Enigma-Goliath) creates mana-value-many Phyrexian Goblins with haste until turn end after a noncreature cast; [Third Path Iconoclast](https://mtg.wtf/card/bro/223/Third-Path-Iconoclast) creates one colorless 1/1 Soldier artifact creature token per noncreature cast; [Molten Gatekeeper](https://mtg.wtf/card/mh3/128/Molten-Gatekeeper) deals one to the opposing player for each *other* friendly creature entering (including these tokens). Each trigger goes on the stack, carries a source ID and resolves separately. The model represents a bounded 1v1 opponent, not full Commander multiplayer or general replacement/priority/ward/unearth/X-cost rules.
+
+**Evidence boundaries:** Tests exercise Ovika's seven-mana auto-cast, mana/color source provenance, known and unfamiliar lands, generated token interactions, stack order, unknown effect pause and Android source parity. Full MTG Arena rules parity, complete ManaBox playtesting feature parity, physical Android verification, external authenticated staging walkthrough and independent Oracle review of all imported cards are **not claimed**. Goldfish/head-to-head numbers are only meaningful within declared supported coverage; they are not competitive win-rate predictions.
+
+### UX rationale
+
+- ManaBox's compact mobile deck access, playtesting and deck charts support minimizing setup and manual board management.
+- MTG Arena community feedback about bad auto-tap choices and trigger overload supports visible mana-source previews, Undo, and bounded trigger resolution.
+- User can step, automate a main phase, or directly manipulate the playmat; the engine never silently pretends an unsupported card effect has resolved.
+
