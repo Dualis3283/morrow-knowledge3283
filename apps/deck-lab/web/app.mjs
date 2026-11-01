@@ -1,5 +1,5 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, simulate} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, simulate, upgradeGame} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'morrow-deck-lab-v1';
@@ -45,7 +45,7 @@ function restore() {
     const data = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (data?.version !== 1) return;
     if (Array.isArray(data.decks)) decks.push(...data.decks.filter(d => d.id && d.name && Array.isArray(d.entries)));
-    if (Array.isArray(data.game?.players) && data.game.players.length === 2) savedGame = data.game;
+    if (Array.isArray(data.game?.players) && data.game.players.length === 2) savedGame = upgradeGame(data.game);
     if (Array.isArray(data.names)) currentDeckNames = data.names;
     appConfig = data.config || {};
     report = data.report || null;
@@ -139,12 +139,59 @@ function imageUrl(card, large = false) {
   const url = large ? (uris.normal || uris.large || uris.small) : (uris.small || uris.normal);
   return typeof url === 'string' && /^https:\/\//.test(url) ? url : null;
 }
+function isCommanderInstance(instance) {
+  if (!instance?.id || !game) return false;
+  return instance.isCommander === true || game.players.some((player, index) => instance.id === (player.commanderId || `p${index}-commander`));
+}
+function commanderRecord(player = 0) {
+  if (!game) return null;
+  const expected = game.players[player].commanderId || `p${player}-commander`;
+  const existing = lookup(expected);
+  if (existing) return existing;
+  for (let owner = 0; owner < game.players.length; owner++) {
+    for (const zone of ['command', 'hand', 'battlefield', 'graveyard', 'exile', 'library']) {
+      const instance = (game.players[owner][zone] || []).find(card => card.isCommander && (card.owner ?? owner) === player);
+      if (instance) return {instance, player: owner, zone};
+    }
+  }
+  const instance = game.stack.find(card => card.isCommander && (card.owner ?? card.controller) === player);
+  return instance ? {instance, player: instance.controller ?? player, zone: 'stack'} : null;
+}
+function commanderTax(instance) { return Math.max(0, Number(instance.commanderCasts) || 0) * 2; }
+function printedMana(card) { return card.mana_cost || card.card_faces?.[0]?.mana_cost || '{0}'; }
+function renderCommander() {
+  const record = commanderRecord(0);
+  const container = $('commander-card');
+  container.replaceChildren();
+  $('commander-return-on-death').checked = game.players[0].returnCommanderOnDeath !== false;
+  $('commander-return-on-death').disabled = !record || game.finished;
+  if (!record) {
+    setText('commander-zone-status', 'No commander set');
+    setText('commander-cost', 'Import a Commander section to add one.');
+    container.append(element('div', 'commander-empty', 'No commander imported'));
+    return;
+  }
+  const {instance, player, zone} = record;
+  const labels = {command:'Command zone', battlefield:'Battlefield', stack:'On the stack', hand:'In your hand', graveyard:'Graveyard', exile:'Exile', library:'In the library'};
+  setText('commander-zone-status', labels[zone] || zone);
+  setText('commander-cost', `Cost ${printedMana(instance.card)} + {${commanderTax(instance)}} tax`);
+  if (zone === 'command') container.append(cardTile(instance, {player: 0, zone: 'command'}));
+  else {
+    const placeholder = element('button', 'commander-empty', labels[zone] || zone);
+    placeholder.type = 'button';
+    placeholder.setAttribute('aria-label', `Commander ${instance.card.name}: ${labels[zone] || zone}. View card and actions.`);
+    placeholder.append(element('small', '', 'Tap to inspect'));
+    placeholder.addEventListener('click', () => showCard(instance, player, zone));
+    container.append(placeholder);
+  }
+}
 function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = false, quantity} = {}) {
   const card = instance.card || instance;
   const tile = element('button', `card-tile${land ? ' land-card' : ''}${instance.tapped ? ' tapped' : ''}${instance.attacking ? ' attacking' : ''}${bottomIds.has(instance.id) && zone === 'hand' ? ' selected' : ''}`);
   tile.type = 'button';
+  if (isCommanderInstance(instance)) { tile.classList.add('commander-card-tile'); tile.dataset.commander = 'true'; }
   tile.dataset.cardId = instance.id || card.id || '';
-  tile.setAttribute('aria-label', `${card.name || 'Unknown card'}${instance.tapped ? ', tapped' : ''}${instance.attacking ? ', attacking' : ''}${zone === 'hand' && bottomIds.has(instance.id) ? ', selected to bottom' : ''}. View card and actions.`);
+  tile.setAttribute('aria-label', `${card.name || 'Unknown card'}${isCommanderInstance(instance) ? ', commander' : ''}${instance.tapped ? ', tapped' : ''}${instance.attacking ? ', attacking' : ''}${zone === 'hand' && bottomIds.has(instance.id) ? ', selected to bottom' : ''}. View card and actions.`);
   const fallback = element('div', 'card-fallback');
   fallback.append(element('span', '', card.name || 'Unknown card'), element('small', '', card.mana_cost || card.type_line || 'Card'));
   tile.append(fallback);
@@ -163,6 +210,7 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   }
   tile.append(element('span', 'card-caption', card.name));
   const badges = element('span', 'card-badges');
+  if (isCommanderInstance(instance)) badges.append(element('span', 'card-badge commander-badge', 'CMD'));
   if (Number(instance.counters)) badges.append(element('span', 'card-badge', `${Number(instance.counters) > 0 ? '+' : ''}${instance.counters}`));
   if (instance.damage) badges.append(element('span', 'card-badge', `${instance.damage} dmg`));
   if (instance.attacking) badges.append(element('span', 'card-badge', 'ATK'));
@@ -176,7 +224,7 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
       if (!pointer || !game?.players?.[0]?.kept || player !== 0) return;
       const dx = event.clientX - pointer.x, dy = event.clientY - pointer.y;
       pointer = null;
-      if (zone === 'hand' && dy < -35 && Math.abs(dy) > Math.abs(dx) * 1.2) {
+      if ((zone === 'hand' || zone === 'command') && dy < -35 && Math.abs(dy) > Math.abs(dx) * 1.2) {
         suppressUntil = Date.now() + 400;
         if (!/\btarget\b/i.test(card.oracle_text || '') && !card.card_faces?.some(face => /\btarget\b/i.test(face.oracle_text || ''))) dispatch({type: 'play', id: instance.id});
         else {
@@ -233,6 +281,7 @@ function renderGame() {
   setText('graveyard-count', own.graveyard.length);
   setText('exile-count', own.exile.length);
   setText('command-count', own.command?.length || 0);
+  renderCommander();
   $('mulligan-controls').hidden = own.kept || game.finished;
   $('turn-controls').hidden = !own.kept;
   $('end-turn-button').disabled = game.finished;
@@ -353,7 +402,7 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (zone !== 'preview' && game) {
     const actions = element('div', 'card-action-list');
     const ready = game.players[0].kept && !game.finished;
-    if (player === 0 && zone === 'hand') {
+    if (player === 0 && (zone === 'hand' || zone === 'command')) {
       let targetSelect;
       if (!isLand(card)) {
         const targetLabel = element('label', '', 'Target, if this spell needs one');
@@ -367,9 +416,24 @@ function showCard(instance, player = 0, zone = 'preview') {
         }));
         info.append(targetLabel, targetSelect);
       }
-      actions.append(actionButton(isLand(card) ? 'Play land' : 'Play card', () => ({type: 'play', id: instance.id, ...(targetSelect?.value ? {targetId: targetSelect.value} : {})}), {primary: true, disabled: !ready}));
+      actions.append(actionButton(zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => ({type: 'play', id: instance.id, ...(targetSelect?.value ? {targetId: targetSelect.value} : {})}), {primary: true, disabled: !ready}));
     }
-    if (zone === 'command') content.append(element('p', 'tiny', 'Command-zone costs and casting are manual in this version. Use the manual zone move below after paying costs and resolving the commander yourself.'));
+    const isCommander = isCommanderInstance(instance);
+    const owner = Number.isInteger(instance.owner) ? instance.owner : player;
+    const commanderCoverage = isCommander ? coverage([card])[0] : null;
+    if (isCommander) {
+      stats.append(element('span', '', `Commander · ${Number(instance.commanderCasts) || 0} command-zone cast(s)`));
+      if (zone === 'command') {
+        stats.append(element('span', '', `Commander tax +{${commanderTax(instance)}}`));
+        info.append(element('p', 'commander-cast-cost', `Cast for ${printedMana(card)} + {${commanderTax(instance)}} generic commander tax.`));
+        if (commanderCoverage?.status !== 'supported') content.append(element('p', 'commander-resolution-note', 'Play commander pays the displayed mana and commander tax. Its unsupported abilities remain manual; handle them yourself, then use Resolve commander manually on the stack.'));
+      }
+      if (zone !== 'command') actions.append(actionButton('Return to command zone', {type: 'move', id: instance.id, player: owner, zone: 'command'}, {disabled: game.finished}));
+      if (zone === 'stack' && commanderCoverage?.status !== 'supported' && /Creature|Artifact|Enchantment|Planeswalker|Battle/i.test(card.type_line || card.card_faces?.[0]?.type_line || '')) {
+        content.append(element('p', 'commander-resolution-note', 'This cast already paid its casting cost. Resolve the commander’s abilities yourself, then place it on the battlefield.'));
+        actions.append(actionButton('Resolve commander manually', {type: 'move', id: instance.id, player: instance.controller ?? player, zone: 'battlefield'}, {primary: true, disabled: !ready}));
+      }
+    }
     if (zone === 'battlefield') {
       actions.append(actionButton(instance.tapped ? 'Untap card' : 'Tap card', {type: 'tap', id: instance.id}, {disabled: !ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
@@ -387,6 +451,10 @@ function showCard(instance, player = 0, zone = 'preview') {
     }
     row.append(select, actionButton('Move card', () => ({type: 'move', id: instance.id, player, zone: select.value}), {disabled: game.finished}));
     manual.append(row);
+    if (isCommander && zone === 'command') {
+      manual.append(element('p', 'commander-override-note', 'Place without casting does not pay mana, run abilities or increase the command-zone cast count. For an ordinary cast with tracked tax, use Play commander.'));
+      manual.append(actionButton('Place without casting (manual)', {type:'move', id:instance.id, player:owner, zone:'battlefield'}, {disabled:game.finished}));
+    }
     content.append(manual);
   }
   if (!$('card-dialog').open) $('card-dialog').showModal();
@@ -701,6 +769,7 @@ $('die-button').addEventListener('click', () => dispatch({type: 'die', sides: Nu
 document.querySelectorAll('[data-life-player]').forEach(button => button.addEventListener('click', () => dispatch({type: 'life', player: Number(button.dataset.lifePlayer), delta: Number(button.dataset.lifeDelta)})));
 for (const zone of ['command', 'library', 'graveyard', 'exile']) $(`${zone}-button`).addEventListener('click', () => showPile(zone));
 $('combat-button').addEventListener('click', openCombat);
+$('commander-return-on-death').addEventListener('change', () => dispatch({type:'commanderReturnPolicy', player:0, enabled:$('commander-return-on-death').checked}));
 $('confirm-combat').addEventListener('click', () => {
   const assignments = [...$('combat-assignments').querySelectorAll('select')].map(select => ({attackerId: select.dataset.attacker, ...(select.value ? {blockerId: select.value} : {})}));
   const blockers = assignments.map(a => a.blockerId).filter(Boolean);

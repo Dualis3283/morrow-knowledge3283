@@ -1,10 +1,10 @@
 # Validation — 1 November 2026
 
-Current source: **0.1.1**, version code `2`, Android package `dev.morrow.decklab`.
+Current source: **0.1.2**, version code `3`, Android package `dev.morrow.decklab`.
 
 The 0.1.1 importer adds bracketed headings, cached batch resolution through the website, per-line diagnostics, provider cooldowns, pending-versus-not-found distinctions and copyable import reports. Card names reach the resolver and Scryfall; simulations and their reports stay on the device.
 
-## Current 0.1.1 checks
+## Earlier 0.1.1 checks
 
 | Check | Observed result |
 | --- | --- |
@@ -39,3 +39,9 @@ The implemented model remains deliberately bounded: card coverage and skipped ef
 The update recognizes bracketed Commander and card-type sections, uses the website’s full-metadata Scryfall batch resolver and displays per-line import diagnostics. Native importer/engine tests pass (61 cases). Website integration checks pass (95 unit/worker cases plus browser import, partial-save, cooldown-cancel and deterministic simulation checks at 320px, 390px and 1440px). Direct Scryfall collection responses accounted for every unique name in the privately supplied 100-card reproduction. The private list is not included in this source package.
 
 The 0.1.1 APK build and v2 signature verify; min SDK 26, target SDK 35, version code 2, with INTERNET as its only requested permission. All packaged web files match this version’s source. The original physical-device limitation still applies.
+
+## Commander update 0.1.2
+
+The commander now occupies a divided slot beside the hand, separate from opening draws and mulligans. Ordinary command-zone casts pay printed costs plus increasing commander tax. A persistent owner choice returns it to the command zone when it enters the graveyard; this can be turned off. Complex abilities and unsupported costs remain manual.
+
+Validation: 74 native importer/engine tests and 108 website unit/worker tests pass. Browser checks at 320px, 390px and 1440px cover separate hand counts, London mulligans, mana payment, touch casting, lethal returns, recasting tax, physical-card conservation and saved settings. APK 0.1.2/code 3 builds, v2 signature verifies, manifest requests INTERNET only, and all bundled web assets match source. Physical-device review remains outstanding.

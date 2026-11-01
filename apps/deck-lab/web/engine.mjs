@@ -22,7 +22,7 @@ function warn(state, message) { if (!state.warnings.includes(message)) state.war
 function number(value) { return Number.isFinite(Number(value)) ? Number(value) : 0; }
 function power(instance) { return Math.max(0, number(instance.card.power) + instance.counters + (instance.tempPower || 0)); }
 function toughness(instance) { return number(instance.card.toughness) + instance.counters + (instance.tempToughness || 0); }
-function fresh(card, player, index) { return { id: `p${player}-${index}`, card: clone(card), owner: player, controller: player, tapped: false, counters: 0, damage: 0, enteredTurn: 0, attacking: false }; }
+function fresh(card, player, index, commander = false) { return { id: `p${player}-${index}`, card: clone(card), owner: player, controller: player, tapped: false, counters: 0, damage: 0, enteredTurn: 0, attacking: false, ...(commander ? {isCommander: true, commanderCasts: 0} : {}) }; }
 function mono(color, amount = 1) { return { [color]: amount }; }
 
 function manaSource(card) {
@@ -158,11 +158,52 @@ function find(state, id) {
   return index < 0 ? null : { instance: state.stack[index], player: state.stack[index].controller, zone: 'stack', index };
 }
 function remove(state, location) { return (location.zone === 'stack' ? state.stack : state.players[location.player][location.zone]).splice(location.index, 1)[0]; }
-function moveTo(state, instance, player, zone) {
+function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false} = {}) {
+  if (instance.isCommander) {
+    // Control can change on the battlefield; private zones belong to the owner.
+    const owner = instance.owner;
+    if (zone !== 'battlefield') player = owner;
+    if (zone === 'graveyard' && state.players[owner].returnCommanderOnDeath !== false && !keepCommanderInGraveyard) {
+      zone = 'command';
+      log(state, `Practice choice: ${named(instance.card)} returns from the graveyard to ${state.players[owner].name}'s command zone (return on death enabled).`);
+    }
+  }
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
   if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; }
   if (zone === 'battlefield') { instance.enteredTurn = state.turn; instance.damage = 0; }
   state.players[player][zone].push(instance);
+}
+
+/** Upgrade older saved tables without changing the caller's snapshot. */
+export function upgradeGame(snapshot) {
+  const state = clone(snapshot);
+  for (const player of state.players) {
+    for (const zone of ZONES) if (!Array.isArray(player[zone])) player[zone] = [];
+    if (typeof player.returnCommanderOnDeath !== 'boolean') player.returnCommanderOnDeath = true;
+  }
+  state.stack ||= [];
+  const all = [...state.players.flatMap(player => ZONES.flatMap(zone => player[zone])), ...state.stack];
+  for (let owner = 0; owner < state.players.length; owner++) {
+    const player = state.players[owner], stableId = `p${owner}-commander`;
+    const commander = all.find(instance => instance.id === player.commanderId && (instance.owner === owner || instance.id === stableId))
+      || all.find(instance => instance.id === stableId)
+      || all.find(instance => instance.isCommander && instance.owner === owner);
+    player.commanderId = commander?.id || null;
+    if (!commander) continue;
+    commander.isCommander = true; commander.owner = owner;
+    if (!Number.isInteger(commander.commanderCasts) || commander.commanderCasts < 0) commander.commanderCasts = 0;
+    const location = find(state, commander.id);
+    if (location?.zone === 'command' && location.player !== owner) {
+      remove(state, location); commander.controller = owner; state.players[owner].command.push(commander);
+    }
+  }
+  return state;
+}
+function castingCard(instance) {
+  const card = instance.card;
+  // Imported DFCs keep their complete identity and manual effect coverage. The
+  // ordinary front face supplies casting characteristics, never the back face.
+  return instance.isCommander && card.card_faces?.[0] ? {...card, ...card.card_faces[0]} : card;
 }
 function stat(state, player, key, amount = 1) {
   state.stats[player][key] = (state.stats[player][key] || 0) + amount;
@@ -195,8 +236,8 @@ function cleanupDead(state) {
   for (let p = 0; p < 2; p++) for (const instance of [...state.players[p].battlefield]) {
     if (!isCreature(instance)) continue;
     if (toughness(instance) <= 0 || (!has(instance, 'indestructible') && (instance.damage >= toughness(instance) || instance.deathtouchDamage))) {
-      const location = find(state, instance.id); remove(state, location); moveTo(state, instance, instance.owner ?? p, 'graveyard');
-      log(state, `${named(instance.card)} dies.`);
+      const location = find(state, instance.id); remove(state, location); log(state, `${named(instance.card)} dies.`);
+      moveTo(state, instance, instance.owner ?? p, 'graveyard');
     }
   }
 }
@@ -206,8 +247,9 @@ function dealToPlayer(state, sourcePlayer, targetPlayer, amount, source = 'Damag
   log(state, `${source}: ${amount} damage to ${state.players[targetPlayer].name}.`);
 }
 function canCover(available, wanted) { return COLORS.every(c => available[c] >= wanted[c]) && COLORS.reduce((sum, c) => sum + available[c] - wanted[c], 0) >= wanted.generic; }
-function payment(state, player, card) {
+function payment(state, player, card, extraGeneric = 0) {
   const wanted = cost(card); if (!wanted) return null;
+  wanted.generic += extraGeneric;
   const sources = state.players[player].battlefield.filter(x => !x.tapped && !sickness(state, x) && manaSource(x.card)).map(x => ({ instance: x, ...manaSource(x.card) }));
   const visited = new Set();
   function search(available, remaining, used) {
@@ -255,10 +297,14 @@ function validTarget(state, caster, targetId, descriptor) {
 function play(state, player, id, targetId) {
   if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('Cards may be played only during your active main phase.');
   const location = find(state, id);
-  if (!location || location.player !== player || location.zone !== 'hand') throw new Error('Choose a card in your hand.');
-  const instance = location.instance, card = instance.card, adapter = profile(card);
+  if (!location || location.player !== player || !['hand', 'command'].includes(location.zone)) throw new Error('Choose a card in your hand or your commander in the command zone.');
+  const instance = location.instance, card = castingCard(instance), adapter = profile(instance.card);
+  const commandCast = location.zone === 'command';
+  if (commandCast && (!instance.isCommander || instance.owner !== player)) throw new Error('Only your own commander can be cast from your command zone.');
+  if (instance.isCommander && !card.mana_cost) throw new Error('This commander has no supported printed mana cost; use manual payment and placement.');
   if (state.stack.length && !type(card, 'Instant')) throw new Error('Only supported instants may be cast while the stack is not empty.');
   if (type(card, 'Land')) {
+    if (commandCast) throw new Error('A land cannot be played from the command zone.');
     if (state.stack.length) throw new Error('Resolve the stack before playing a land.');
     if (state.players[player].landPlayed) throw new Error('Only one land drop is supported each turn.');
     if (adapter.status === 'manual') throw new Error(`${named(card)} needs manual placement: ${adapter.reason}`);
@@ -266,13 +312,15 @@ function play(state, player, id, targetId) {
     state.players[player].landPlayed = true; stat(state, player, 'landsPlayed'); log(state, `${state.players[player].name} plays ${named(card)}.`); return;
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
-  const paid = payment(state, player, card);
+  const commanderTax = commandCast ? 2 * instance.commanderCasts : 0;
+  const paid = payment(state, player, card, commanderTax);
   if (!paid) throw new Error('Not enough usable mana of the required colors; unsupported costs require a manual move.');
   for (const sourceId of paid.sourceIds) find(state, sourceId).instance.tapped = true;
   state.players[player].manaPool = paid.pool;
   remove(state, location); instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
+  if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
-  log(state, `${state.players[player].name} casts ${named(card)}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
+  log(state, `${state.players[player].name} casts ${named(instance.card)}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 function searchBasic(state, player, destination) {
@@ -284,7 +332,7 @@ function searchBasic(state, player, destination) {
 function resolve(state) {
   const instance = state.stack.at(-1); if (!instance) throw new Error('The stack is empty.');
   const adapter = profile(instance.card), player = instance.controller;
-  if (adapter.status === 'manual') throw new Error(`${named(instance.card)} has no effect adapter. Use a manual move after resolving its effects yourself.`);
+  if (adapter.status === 'manual' || (instance.isCommander && !adapter.auto)) throw new Error(`${named(instance.card)} has no complete effect adapter. Use a manual move after resolving its effects yourself.`);
   state.stack.pop();
   if (adapter.target && !validTarget(state, player, instance.targetId, adapter.target)) {
     moveTo(state, instance, instance.owner, 'graveyard'); log(state, `${named(instance.card)} has no legal target and does not resolve.`); return;
@@ -479,14 +527,14 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   if (!Number.isInteger(rounds) || rounds < 8 || rounds > 12) throw new Error('Choose 8 to 12 rounds.');
   if (!Number.isFinite(life) || life <= 0) throw new Error('Starting life must be positive.');
   const state = {
-    players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander')] : [], passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
+    players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander', true)] : [], commanderId: [commander, opponentCommander][p] ? `p${p}-commander` : null, returnCommanderOnDeath: true, passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
     stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
     stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null,
   };
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }
   if (opponentDeck.length) autoKeep(state, 1); else { state.players[1].kept = true; warn(state, 'Opponent has no deck: passive goldfish practice; no opposing draws or actions.'); }
   for (const row of [...coverage(deck), ...coverage(opponentDeck)]) if (row.status !== 'supported') warn(state, `${row.name}: ${row.reason}`);
-  log(state, 'Bounded deck test: command zone placement is manual; no commander tax, commander damage, triggers, general priority, replacement effects or multiplayer rules. Automation uses named adapters and supported bodies only.');
+  log(state, 'Bounded deck test: manual commander casting pays ordinary front-face costs plus commander tax. Return on death defaults to an owner-controlled practice choice. No automatic commander casting, commander damage, triggers, general priority, general replacement effects or multiplayer rules. Automation uses named adapters and supported bodies only.');
   return state;
 }
 function apply(state, action) {
@@ -529,9 +577,14 @@ function apply(state, action) {
     case 'move': {
       if (!ZONES.includes(action.zone)) throw new Error('Choose a supported destination zone.');
       const location = find(state, action.id); if (!location) throw new Error('Card not found.');
-      const instance = remove(state, location); moveTo(state, instance, player, action.zone);
-      log(state, `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[player].name}'s ${action.zone}; effects and costs are user-resolved.`); break;
+      const instance = remove(state, location); moveTo(state, instance, player, action.zone, {keepCommanderInGraveyard: action.keepCommanderInGraveyard === true});
+      const destination = find(state, instance.id);
+      log(state, `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[destination.player].name}'s ${destination.zone}; effects and costs are user-resolved.`); break;
     }
+    case 'commanderReturnPolicy':
+      if (typeof action.enabled !== 'boolean') throw new Error('Choose whether to return the commander on death.');
+      state.players[player].returnCommanderOnDeath = action.enabled;
+      log(state, `${state.players[player].name}: return commander on death ${action.enabled ? 'enabled (default practice choice)' : 'disabled; keep it in the graveyard'}.`); break;
     case 'coin': { const result = random(state) < 0.5 ? 'Heads' : 'Tails'; state.lastRandom = { kind: 'coin', result }; log(state, `Coin flip: ${result}.`); break; }
     case 'die': {
       if (!Number.isInteger(action.sides) || action.sides < 2 || action.sides > 1000) throw new Error('A die must have 2 to 1000 sides.');
@@ -541,9 +594,9 @@ function apply(state, action) {
   }
   return state;
 }
-export function act(state, action) { return apply(clone(state), action); }
+export function act(state, action) { return apply(upgradeGame(state), action); }
 
-export function simulate({ deck = [], opponentDeck = [], commander = null, opponentCommander = null, seed = 'morrow', life = 40, rounds = 10, runs = 100, onPlay = true } = {}) {
+export function simulate({ deck = [], opponentDeck = [], commander = null, opponentCommander = null, seed = 'morrow', life = 40, rounds = 10, runs = 100, onPlay = true, onProgress } = {}) {
   if (!Number.isInteger(rounds) || rounds < 8 || rounds > 12) throw new Error('Choose 8 to 12 rounds.');
   if (!Number.isInteger(runs) || runs < 1 || runs > 1000) throw new Error('Choose 1 to 1000 simulation runs.');
   if (!deck.length || !opponentDeck.length) throw new Error('Both decks are required for automatic simulation.');
@@ -557,7 +610,7 @@ export function simulate({ deck = [], opponentDeck = [], commander = null, oppon
     'First player skips the first draw. Each round includes one turn per player. One legal land drop and one combat per turn.',
     'Runs stop at lethal damage, a failed draw from an empty library, or the round limit. Summary means include every run; per-round means include only runs reaching that round (runsObserved), so later rounds may reflect survivors.',
     'Targets use public battlefield threat factors only. Opposing hands and libraries never influence threat ranking.',
-    'Combat supports one blocker per attacker, numeric power/toughness and listed keywords. Commander placement is manual; no automatic commander casting, tax, commander damage, triggered abilities, multiplayer, alternate costs or general stack-response decisions.',
+    'Combat supports one blocker per attacker, numeric power/toughness and listed keywords. Manual practice supports commander casting, tax and an owner-controlled return-on-death choice; scripted runs do not cast commanders. Commander damage, triggered abilities, multiplayer, alternate costs and general stack-response decisions are not automated.',
     'Search effects choose the first basic land; optional search is always accepted. Automated players cast immediately, with no reserved mana or bluffing.',
     ...(skippedCards.length ? [`Not automated; cards remain in hand: ${skippedCards.join(', ')}.`] : []),
     ...combined.filter(x => x.status === 'partial' && profile([...deck, ...opponentDeck].find(c => c.name === x.name)).auto).map(x => `${x.name}: ${x.reason}`),
@@ -574,6 +627,7 @@ export function simulate({ deck = [], opponentDeck = [], commander = null, oppon
       const row = rows[record.round - 1], ownRound = record.players[0], enemyRound = record.players[1]; row.runsObserved++;
       row.damage += ownRound.damageDealt || 0; row.opponentDamage += enemyRound.damageDealt || 0; row.landsPlayed += ownRound.landsPlayed || 0; row.cardsCast += ownRound.cardsCast || 0; row.missedLandDrops += ownRound.missedLandDrops || 0; row.lifeRemaining += ownRound.lifeRemaining ?? state.players[0].life;
     }
+    if (typeof onProgress === 'function') onProgress({completed: run + 1, total: runs});
   }
   const average = n => Math.round(n / runs * 1000) / 1000;
   return {

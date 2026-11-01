@@ -8,6 +8,8 @@ Decks are pasted as text, resolved through the website’s Scryfall batch resolv
 
 Tapping opens explicit card actions. Swipes provide shortcuts; buttons provide the same actions for accessibility. Unsupported card effects are handled by the person using the playmat. Life adjustments, +1/+1 counters, coin flips and dice are logged. A saved local session can be resumed.
 
+The selected commander has a divided panel beside the hand and is not counted as a hand card. Ordinary/front-face casting from command pays the displayed tax, which tracks prior casts from that zone only. A logged return-on-death policy defaults to returning it to its owner's command zone and can be disabled for graveyard lines. Complex Commander abilities, alternate casts, commander damage and complete replacement choices remain outside automation; batch/opponent policy does not cast command-zone commanders.
+
 The Android application bundles its interface and simulation code. Only batches of card names go to the website resolver for Scryfall lookup. Game state and simulation reports stay on the device; there is no simulation server, account, model inference or GitHub/Composio credential in the app. Composio is used during development to inspect the user's authorized source repositories.
 
 ## Automated testing boundary
@@ -26,5 +28,5 @@ The black base, warm restrained gold, serif display type and clean interface typ
 - Add explicit card/effect adapters for the actual imported decks, prioritized from their coverage reports.
 - Expand combat/priority support only with rules-based regression fixtures.
 - Compare simulation traces with manually played opening sequences before drawing deck-strength conclusions.
-- Add Commander-specific command-zone casting, tax and replacement choices as a separate rules layer.
+- Expand Commander abilities, alternate casting and complete replacement/trigger choices with explicit rules fixtures.
 - Prepare a release signing key and distribution workflow after device review.

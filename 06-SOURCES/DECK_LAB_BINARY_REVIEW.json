@@ -10,18 +10,18 @@
     },
     {
       "path": "apps/deck-lab/downloads/morrow-deck-lab-debug.apk",
-      "sha256": "2541bada349d66ec0c42bc03dd263542f85f29d937583c2e112c1a148c99c8d8",
-      "review_evidence": "Version 0.1.1 (code 2) Android debug build independently inspected: APK Signature Scheme v2 verifies, min SDK 26 and target SDK 35, with INTERNET as its only requested permission. All eight packaged web assets match reviewed public app source byte for byte and UTF-8 assets pass existing privacy patterns. Archive integrity and all 14 entry names were checked; no signing keystore or local toolchain is packaged."
+      "sha256": "696974ee84a75810e8527795b88d52520ae2eb5341c7c5a6428679083ef175ec",
+      "review_evidence": "Version 0.1.2 (code 3) Android debug build independently inspected: APK Signature Scheme v2 verifies, min SDK 26 and target SDK 35, with INTERNET as its only requested permission. Its signing certificate matches the previously published version 0.1.1 APK, preserving signature compatibility for installation updates. All eight packaged web assets match reviewed public app source byte for byte and UTF-8 assets pass existing privacy patterns. Archive integrity and all 14 entry names were checked; no signing keystore or local toolchain is packaged."
     },
     {
       "path": "apps/deck-lab/downloads/source.zip",
-      "sha256": "fe3c49f6b6d01597a850beadb309856eebd7633e0f8b7b4bcc2fc6ed36b360ad",
-      "review_evidence": "Version 0.1.1 source archive independently inspected for integrity and all 43 entry names, including the importer regression tests. Every member matches reviewed app source byte for byte, and every UTF-8 member passes existing privacy patterns. Contains app source, tests, public card data, playmat artwork, license and sanitized instructions; excludes SDK/JDK caches, credentials, private website source links and signing material."
+      "sha256": "33f29818d59f40073da6ba1187ca2b47a435556e09b2e8b8dfb502cda942555f",
+      "review_evidence": "Version 0.1.2 source archive independently inspected for integrity and all 44 entry names. Every member matches reviewed public app source byte for byte, and every UTF-8 member passes existing privacy patterns. Contains app source, regression tests, public card data, playmat artwork, license and sanitized instructions; excludes SDK/JDK caches, credentials, private website source links and signing material."
     },
     {
       "path": "apps/deck-lab/downloads/playmat-preview.png",
-      "sha256": "ab7f4fab96dfeac53a936a0c1c0cddad4dd322864d4dbf4063432f2e248cae6c",
-      "review_evidence": "Browser screenshot of the approved app interface and sample cards. Independently inspected PNG structure: only IHDR, IDAT and IEND chunks; no EXIF, text, location or contact metadata. No personal deck/session data was used in the preview."
+      "sha256": "69f95aa2d5a5df2209b6a254f1bb9657bec1c6ee98497043ad3a29ea115a7c68",
+      "review_evidence": "Version 0.1.2 Commander-interface preview independently viewed: public teaching decks and the public Ovika card illustrate the command zone and gold divider, without a private user deck list or personal identifiers. PNG dimensions are 390 by 2560 pixels. All chunk CRCs verify; only IHDR, IDAT and IEND chunks are present, with no EXIF, text, location or contact metadata."
     },
     {
       "path": "apps/deck-lab/web/assets/playmat.webp",
