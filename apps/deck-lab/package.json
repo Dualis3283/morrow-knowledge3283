@@ -6,6 +6,6 @@
   "scripts": {
     "test": "node --test --test-isolation=none tests/*.test.mjs",
     "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory web",
-    "build:android": "cd android && ./gradlew assembleDebug"
+    "build:android": "cd android && bash ./gradlew assembleDebug"
   }
 }

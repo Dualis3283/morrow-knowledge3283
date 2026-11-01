@@ -24,6 +24,6 @@ sdkmanager="$sdk_dir/cmdline-tools/latest/bin/sdkmanager"
 # Android command-line packages require their standard SDK licenses.
 yes | "$sdkmanager" --sdk_root="$sdk_dir" --licenses >/dev/null || true
 "$sdkmanager" --sdk_root="$sdk_dir" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
-"$project_dir/android/gradlew" assembleDebug
+bash "$project_dir/android/gradlew" assembleDebug
 cp "$project_dir/android/app/build/outputs/apk/debug/app-debug.apk" "$project_dir/artifacts/morrow-deck-lab-debug.apk"
 printf 'APK: %s\n' "$project_dir/artifacts/morrow-deck-lab-debug.apk"
