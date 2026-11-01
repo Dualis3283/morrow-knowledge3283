@@ -327,8 +327,8 @@ function play(state, player, id, targetId) {
   remove(state, location); instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
-  queueCastInteractions(state, player, card);
   log(state, `${state.players[player].name} casts ${named(instance.card)}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
+  queueCastInteractions(state, player, card);
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 // Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.

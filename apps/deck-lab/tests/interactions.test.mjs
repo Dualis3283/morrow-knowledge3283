@@ -22,6 +22,7 @@ test('Ovika trigger stacks over a successfully cast noncreature spell and resolv
   const cast=act(state,{type:'play',id:'spell'});
   assert.equal(JSON.stringify(state),prior,'actions do not mutate the prior game');
   assert.equal(cast.stack.length,2);
+  assert.ok(cast.log.findIndex(entry=>entry.includes('casts Divination')) < cast.log.findIndex(entry=>entry.includes('Ovika trigger from')), 'provenance log records casting before its triggered interaction');
   assert.equal(cast.stack[0].card.name,'Divination');
   assert.equal(cast.stack[1].trigger.adapter,'ovika-goblins');
   assert.equal(cast.stack[1].trigger.count,3);
