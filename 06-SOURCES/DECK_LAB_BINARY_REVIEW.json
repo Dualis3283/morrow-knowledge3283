@@ -15,8 +15,8 @@
     },
     {
       "path": "apps/deck-lab/downloads/source.zip",
-      "sha256": "7bbfec21123b79ee79c3a0d8997a21fce275b7b608399184ce032025bd59839a",
-      "review_evidence": "Independently inspected archive integrity and all 42 entry names. Every member matches the reviewed app source; every UTF-8 member passes existing privacy patterns. Contains app source, tests, public card data, playmat artwork, license and instructions; excludes SDK/JDK caches, credentials and signing material. Documentation was prepared for publication without private website source links."
+      "sha256": "624c3211d28e487b575710c4631735ff3674ad4cc1c488be814d859f22ee2e0b",
+      "review_evidence": "Independently inspected archive integrity and all 42 entry names. Every member matches the reviewed app source; every UTF-8 member passes existing privacy patterns. Contains app source, tests, public card data, playmat artwork, license and instructions; excludes SDK/JDK caches, credentials and signing material. Documentation was prepared for publication without private website source links. Build launchers invoke Bash explicitly so GitHub file-mode normalization does not prevent building; Unix wrapper execution mode is preserved in the source ZIP."
     },
     {
       "path": "apps/deck-lab/downloads/playmat-preview.png",
