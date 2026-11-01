@@ -10,6 +10,7 @@ const cardOf = value => value?.card || value || {};
 const named = card => String(card?.name || 'Unnamed card');
 const isCreature = value => type(cardOf(value), 'Creature');
 function has(value, keyword) {
+  if (keyword.toLowerCase() === 'haste' && value?.temporaryHaste === true) return true;
   const card = cardOf(value);
   return (card.keywords || []).some(x => x.toLowerCase() === keyword) || new RegExp(`(?:^|[\\n,;])\\s*${keyword}(?=\\s*(?:[,(.;\\n]|$))`, 'i').test(text(card));
 }
@@ -354,10 +355,11 @@ function resolveInteraction(state, instance) {
   state.stack.pop();
   const controller = instance.controller, count = instance.trigger.count;
   const tokenCard = {name: 'Phyrexian Goblin', type_line: 'Token Creature — Phyrexian Goblin', cmc: 0,
-    mana_cost: '', oracle_text: 'Haste', keywords: ['Haste'], colors: ['R'], power: '1', toughness: '1'};
+    mana_cost: '', oracle_text: '', keywords: [], colors: ['R'], power: '1', toughness: '1'};
   for (let i = 0; i < count; i++) {
     const token = fresh(tokenCard, controller, `ovika-token-${state.nextTokenId++}`);
     token.isToken = true;
+    token.temporaryHaste = true; // Ovika grants haste only until the end of this turn.
     moveTo(state, token, controller, 'battlefield');
   }
   log(state, `Ovika trigger resolves: ${count} 1/1 red Phyrexian Goblin token(s) with haste.`);
@@ -536,7 +538,7 @@ function endCurrent(state) {
   const p = state.players[state.activePlayer];
   if (!p.landPlayed) stat(state, state.activePlayer, 'missedLandDrops');
   p.manaPool = pool();
-  for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; }
+  for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; delete instance.temporaryHaste; }
   const row = state.roundStats.find(x => x.round === state.round);
   if (row) for (let i = 0; i < 2; i++) row.players[i].lifeRemaining = state.players[i].life;
 }

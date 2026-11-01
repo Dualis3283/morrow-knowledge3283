@@ -5,7 +5,7 @@ import {act, createGame, coverage} from '../web/engine.mjs';
 const forest = {name:'Forest',type_line:'Basic Land — Forest',mana_cost:'',cmc:0,oracle_text:'',produced_mana:['G']};
 const island = {...forest,name:'Island',type_line:'Basic Land — Island',produced_mana:['U']};
 const wastes = {...forest,name:'Wastes',type_line:'Basic Land',oracle_text:'{T}: Add {C}.',produced_mana:['C']};
-const ovika = {name:'Ovika, Enigma Goliath',type_line:'Legendary Creature — Phyrexian Nightmare',mana_cost:'{5}{U}{R}',cmc:7,power:'6',toughness:'6',oracle_text:'Flying; Ward—{3}, Pay 3 life. Whenever you cast a noncreature spell, create X 1/1 red Phyrexian Goblin creature tokens, where X is the mana value of that spell. They gain haste until end of turn.'};
+const ovika = {name:'Ovika, Enigma Goliath',type_line:'Legendary Creature — Phyrexian Nightmare',mana_cost:'{5}{U}{U}{R}',cmc:8,power:'6',toughness:'6',oracle_text:'Flying; Ward—{3}, Pay 3 life. Whenever you cast a noncreature spell, create X 1/1 red Phyrexian Goblin creature tokens, where X is the mana value of that spell. They gain haste until end of turn.'};
 const divination = {name:'Divination',type_line:'Sorcery',mana_cost:'{2}{U}',cmc:3,oracle_text:'Draw two cards.'};
 const bear = {name:'Bear',type_line:'Creature — Bear',mana_cost:'{1}{G}',cmc:2,power:'2',toughness:'2',oracle_text:''};
 const physical = (card,id) => ({id,card,owner:0,controller:0,tapped:false,counters:0,damage:0,enteredTurn:0,attacking:false});
@@ -30,13 +30,17 @@ test('Ovika trigger stacks over a successfully cast noncreature spell and resolv
   const triggered=act(cast,{type:'resolve'});
   const goblins=triggered.players[0].battlefield.filter(x=>x.isToken);
   assert.equal(goblins.length,3);
-  assert.ok(goblins.every(x=>x.card.power==='1'&&x.card.keywords.includes('Haste')));
+  assert.ok(goblins.every(x=>x.card.power==='1'&&x.temporaryHaste===true));
   assert.equal(triggered.stack.length,1,'original spell remains waiting below its trigger');
   const after=act(triggered,{type:'resolve'});
   assert.equal(after.stack.length,0);
   assert.equal(after.players[0].graveyard.filter(x=>x.card.name==='Divination').length,1);
   const attacking=act(after,{type:'attack',id:goblins[0].id});
   assert.equal(attacking.players[0].battlefield.find(x=>x.id===goblins[0].id).attacking,true,'new tokens can attack through haste');
+  const nextTurn=act(attacking,{type:'endTurn'});
+  const oldToken=nextTurn.players[0].battlefield.find(x=>x.id===goblins[0].id);
+  assert.equal(oldToken?.temporaryHaste,undefined,'Ovika grants haste only until end of turn');
+  assert.equal(oldToken?.card.keywords.includes('Haste'),false,'temporary haste must not become printed token text');
 });
 test('Ovika does not trigger from command zone, from creatures, or from an unaffordable cast',()=>{
   const absent=act(table(false),{type:'play',id:'spell'});
@@ -61,4 +65,9 @@ test('Morrow coverage distinguishes supported interaction from unsupported remai
   const row=coverage([ovika])[0];
   assert.equal(row.status,'partial');
   assert.match(row.reason,/trigger.*supported.*ward.*manual/i);
+});
+
+test('Ovika fixture matches official printed mana cost and mana value',()=>{
+  assert.equal(ovika.mana_cost,'{5}{U}{U}{R}');
+  assert.equal(ovika.cmc,8);
 });
