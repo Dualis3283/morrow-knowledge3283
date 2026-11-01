@@ -58,3 +58,11 @@ Each `rounds` row contains `round`, `damage`, `opponentDamage`, `landsPlayed`, `
 `coverage` contains separate `player` and `opponent` rows plus `skippedCards`. Status is `supported`, `partial`, or `manual`, with reasons. `notes` describes policy, limits, partial adapters, skipped card names, early termination, and denominator differences. Coverage and notes must accompany reported simulation results.
 
 The sample decks have full coverage for their limited card pool. Complex imported decks will have substantial manual coverage. Results measure the configured bounded scenario; they do not predict tournament outcomes or substitute for Magic rules adjudication.
+
+## Candidate card-interaction adapter — Ovika (review branch, not released)
+
+The first verified triggered-ability slice is Ovika, Enigma Goliath in **manual table play**. After Ovika has been manually resolved to the battlefield, casting a noncreature spell with a known fixed mana value puts an Ovika token-production trigger **above the spell** on the stack. Resolving the trigger creates exactly that many red 1/1 Phyrexian Goblin tokens with haste. The original spell remains on the stack and resolves separately. Tokens cease to exist when moved off the battlefield. Triggering only happens after a successful cast, and not while Ovika is in the command zone.
+
+The interaction is restricted to a named, auditable adapter and does **not** execute arbitrary Oracle text. Ovika's ward is unimplemented, variable-X and unusual face-based costs need manual resolution, and commander casting remains manual for unsupported abilities. Batch games do not auto-cast commanders; therefore **this update does not establish Ovika win rates or goldfish token counts**. The simulation report must continue to disclose partial card coverage and skipped effects.
+
+The exact effect was cross-checked against Wizards of the Coast's Phyrexia: All Will Be One release notes (Ovika card ruling): https://media.wizards.com/2023/downloads/ONE_Release_Notes/EN_MTGDMR_ReleaseNotes_20221129.pdf . Dedicated regression cases verify trigger ordering, known mana value, haste, cost failure, absence, creature exclusion, immutable state and token disappearance. Both browser and Android engine sources must remain byte-identical before any release.

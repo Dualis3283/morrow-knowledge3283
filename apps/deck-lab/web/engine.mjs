@@ -100,6 +100,7 @@ function profile(card) {
   if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if (named(card) === 'Ovika, Enigma Goliath') return { status: 'partial', reason: 'Noncreature-spell cast token trigger is supported in manual table play; ward and other rules remain manual. No automatic commander casting.', auto: false };
   if (type(card, 'Land')) return { status: 'manual', reason: 'Nonbasic land conditions and abilities need manual resolution.', auto: false };
   if (type(card, 'Creature')) {
     if (!/^-?\d+$/.test(String(card.power)) || !/^-?\d+$/.test(String(card.toughness))) return { status: 'manual', reason: 'Variable power or toughness requires manual adjustment.', auto: false };
@@ -159,6 +160,10 @@ function find(state, id) {
 }
 function remove(state, location) { return (location.zone === 'stack' ? state.stack : state.players[location.player][location.zone]).splice(location.index, 1)[0]; }
 function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false} = {}) {
+  if (instance.isToken && zone !== 'battlefield') {
+    log(state, `${named(instance.card)} token ceases to exist after leaving the battlefield.`);
+    return;
+  }
   if (instance.isCommander) {
     // Control can change on the battlefield; private zones belong to the owner.
     const owner = instance.owner;
@@ -182,6 +187,8 @@ export function upgradeGame(snapshot) {
     if (typeof player.returnCommanderOnDeath !== 'boolean') player.returnCommanderOnDeath = true;
   }
   state.stack ||= [];
+  state.nextTriggerId ??= 0;
+  state.nextTokenId ??= 0;
   const all = [...state.players.flatMap(player => ZONES.flatMap(zone => player[zone])), ...state.stack];
   for (let owner = 0; owner < state.players.length; owner++) {
     const player = state.players[owner], stableId = `p${owner}-commander`;
@@ -320,8 +327,41 @@ function play(state, player, id, targetId) {
   remove(state, location); instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
+  queueCastInteractions(state, player, card);
   log(state, `${state.players[player].name} casts ${named(instance.card)}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
+}
+// Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.
+function queueCastInteractions(state, player, spell) {
+  if (type(spell, 'Creature') || type(spell, 'Land')) return;
+  const sources = state.players[player].battlefield.filter(value => named(value.card) === 'Ovika, Enigma Goliath');
+  if (!sources.length) return;
+  const manaValue = number(spell.cmc);
+  if (!Number.isInteger(manaValue) || manaValue < 0 || manaValue > 40 || spell.card_faces?.length || /\{X\}/i.test(String(spell.mana_cost || ''))) {
+    warn(state, `Ovika trigger for ${named(spell)} requires manual resolution: unknown or unsupported mana value.`);
+    return;
+  }
+  for (const source of sources) {
+    const id = `p${player}-trigger-${state.nextTriggerId++}`;
+    state.stack.push({id, owner: player, controller: player, kind: 'trigger', sourceId: source.id,
+      card: {name: 'Ovika: create Phyrexian Goblins', type_line: 'Triggered Ability', cmc: 0, oracle_text: 'Create X 1/1 red Phyrexian Goblin tokens with haste, where X is the triggering spell mana value.'},
+      trigger: {adapter: 'ovika-goblins', count: manaValue}});
+    log(state, `Ovika trigger from ${source.id}: ${named(spell)} mana value ${manaValue}; resolve the trigger above the spell.`);
+  }
+}
+function resolveInteraction(state, instance) {
+  if (instance?.trigger?.adapter !== 'ovika-goblins') return false;
+  state.stack.pop();
+  const controller = instance.controller, count = instance.trigger.count;
+  const tokenCard = {name: 'Phyrexian Goblin', type_line: 'Token Creature — Phyrexian Goblin', cmc: 0,
+    mana_cost: '', oracle_text: 'Haste', keywords: ['Haste'], colors: ['R'], power: '1', toughness: '1'};
+  for (let i = 0; i < count; i++) {
+    const token = fresh(tokenCard, controller, `ovika-token-${state.nextTokenId++}`);
+    token.isToken = true;
+    moveTo(state, token, controller, 'battlefield');
+  }
+  log(state, `Ovika trigger resolves: ${count} 1/1 red Phyrexian Goblin token(s) with haste.`);
+  return true;
 }
 function searchBasic(state, player, destination) {
   const library = state.players[player].library;
@@ -331,6 +371,7 @@ function searchBasic(state, player, destination) {
 }
 function resolve(state) {
   const instance = state.stack.at(-1); if (!instance) throw new Error('The stack is empty.');
+  if (resolveInteraction(state, instance)) return;
   const adapter = profile(instance.card), player = instance.controller;
   if (adapter.status === 'manual' || (instance.isCommander && !adapter.auto)) throw new Error(`${named(instance.card)} has no complete effect adapter. Use a manual move after resolving its effects yourself.`);
   state.stack.pop();
@@ -529,12 +570,12 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   const state = {
     players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander', true)] : [], commanderId: [commander, opponentCommander][p] ? `p${p}-commander` : null, returnCommanderOnDeath: true, passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
     stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
-    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null,
+    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0,
   };
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }
   if (opponentDeck.length) autoKeep(state, 1); else { state.players[1].kept = true; warn(state, 'Opponent has no deck: passive goldfish practice; no opposing draws or actions.'); }
   for (const row of [...coverage(deck), ...coverage(opponentDeck)]) if (row.status !== 'supported') warn(state, `${row.name}: ${row.reason}`);
-  log(state, 'Bounded deck test: manual commander casting pays ordinary front-face costs plus commander tax. Return on death defaults to an owner-controlled practice choice. No automatic commander casting, commander damage, triggers, general priority, general replacement effects or multiplayer rules. Automation uses named adapters and supported bodies only.');
+  log(state, 'Bounded deck test: manual commander casting pays ordinary front-face costs plus commander tax. Return on death defaults to an owner-controlled practice choice. No automatic commander casting, commander damage, general triggered abilities, general priority, general replacement effects or multiplayer rules. Ovika token cast triggers have a narrowly supported manual-table adapter; other triggers remain manual.');
   return state;
 }
 function apply(state, action) {
@@ -577,9 +618,10 @@ function apply(state, action) {
     case 'move': {
       if (!ZONES.includes(action.zone)) throw new Error('Choose a supported destination zone.');
       const location = find(state, action.id); if (!location) throw new Error('Card not found.');
+      if (location.instance.kind === 'trigger') throw new Error('Resolve the triggered ability from the stack instead of moving it to a card zone.');
       const instance = remove(state, location); moveTo(state, instance, player, action.zone, {keepCommanderInGraveyard: action.keepCommanderInGraveyard === true});
       const destination = find(state, instance.id);
-      log(state, `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[destination.player].name}'s ${destination.zone}; effects and costs are user-resolved.`); break;
+      log(state, destination ? `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[destination.player].name}'s ${destination.zone}; effects and costs are user-resolved.` : `Manual override: ${named(instance.card)} leaves ${location.zone} and ceases to exist; effects and costs are user-resolved.`); break;
     }
     case 'commanderReturnPolicy':
       if (typeof action.enabled !== 'boolean') throw new Error('Choose whether to return the commander on death.');
