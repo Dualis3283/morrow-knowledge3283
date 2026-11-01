@@ -41,6 +41,12 @@ jobs:
           source="$(sha256sum apps/deck-lab/web/engine.mjs | cut -d' ' -f1)"
           printf 'packaged=%s\nsource=%s\n' "$packaged" "$source"
           test "$packaged" = "$source"
+          for asset in app.mjs styles.css index.html; do
+            packaged="$(unzip -p "$apk" "assets/web/$asset" | sha256sum | cut -d' ' -f1)"
+            source="$(sha256sum "apps/deck-lab/web/$asset" | cut -d' ' -f1)"
+            printf '%s bundled=%s source=%s\n' "$asset" "$packaged" "$source"
+            test "$packaged" = "$source"
+          done
       - name: Upload short-lived test-only artifact
         uses: actions/upload-artifact@v4
         with:

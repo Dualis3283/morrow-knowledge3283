@@ -26,7 +26,7 @@ function toughness(instance) { return number(instance.card.toughness) + instance
 function fresh(card, player, index, commander = false) { return { id: `p${player}-${index}`, card: clone(card), owner: player, controller: player, tapped: false, counters: 0, damage: 0, enteredTurn: 0, attacking: false, ...(commander ? {isCommander: true, commanderCasts: 0} : {}) }; }
 function mono(color, amount = 1) { return { [color]: amount }; }
 
-function manaSource(card) {
+function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
   if (BASE_MANA[named(card)]) return { options: [mono(BASE_MANA[named(card)])] };
   // Basic land TYPES grant intrinsic tap abilities, including on nonbasic duals/triomes.
   if (type(card, 'Land') && /—/.test(String(card.type_line || ''))) {
@@ -46,6 +46,20 @@ function manaSource(card) {
     'Fyndhorn Elves': { options: [mono('G')] },
   };
   if (known[named(card)]) return known[named(card)];
+  // Explicit, bounded mana abilities. Colors derive from the user's commander,
+  // never from the controller's desired spell or a blanket produced_mana list.
+  const commanderColors = (state, player) => {
+    const candidate = [...(state?.players[player].command || []), ...(state?.players[player].battlefield || []), ...(state?.players[player].graveyard || [])].find(x => x.isCommander);
+    return (candidate?.card?.color_identity || []).filter(c => COLORS.includes(c) && c !== 'C');
+  };
+  if (['Arcane Signet', "Commander's Sphere"].includes(named(card))) {
+    const colors = commanderColors(argumentsState, argumentsPlayer);
+    return colors.length ? {options: colors.map(color=>mono(color)), partial: named(card)==="Commander's Sphere"} : null;
+  }
+  const signets = {Azorius:'WU',Boros:'WR',Dimir:'UB',Golgari:'BG',Gruul:'RG',Izzet:'UR',Orzhov:'WB',Rakdos:'BR',Selesnya:'WG',Simic:'UG'};
+  const signet = String(named(card)).match(/^([A-Za-z]+) Signet$/);
+  if (signet && signets[signet[1]]) return {options:[Object.fromEntries([...signets[signet[1]]].map(c=>[c,1]))], activationGeneric:1};
+
   // Only unconditional tap abilities, never infer conditional/sacrifice mana from produced_mana.
   let oracle = text(card).replace(/\([^)]*\)/g, '').trim();
   const lines = oracle.split('\n').map(line => line.trim()).filter(Boolean);
@@ -107,6 +121,8 @@ function profile(card) {
   if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
+  if (named(card) === "Commander's Sphere") return {status:'partial',reason:'Commander identity mana supported; sacrifice draw mode is manual.',auto:true};
   if (named(card) === 'Ovika, Enigma Goliath') return { status: 'partial', reason: 'Cast-trigger Goblins and commander casting supported; ward, alternative effects and opponent decisions are not modeled.', auto: true };
   if (named(card) === 'Third Path Iconoclast') return { status: 'partial', reason: 'Cast-trigger Soldier tokens supported; other interactions may need manual review.', auto: true };
   if (named(card) === 'Molten Gatekeeper') return { status: 'partial', reason: 'Other friendly creature entry triggers 1 damage to opponent; unearth is manual.', auto: true };
@@ -241,7 +257,7 @@ function sickness(state, instance) { return isCreature(instance) && instance.ent
 function beginTurn(state, player) {
   state.activePlayer = player; state.turn++; state.phase = 'main'; state.combatDone = false;
   state.players[player].landPlayed = false; state.players[player].manaPool = pool();
-  for (const permanent of state.players[player].battlefield) { permanent.tapped = false; permanent.attacking = false; }
+  for (const permanent of state.players[player].battlefield) { permanent.tapped = false; permanent.attacking = false; delete permanent.manualMana; }
   recordRound(state);
   log(state, `Round ${state.round}: ${state.players[player].name}'s turn.`);
   if (!state.players[player].passive && !(state.round === 1 && player === state.startingPlayer)) draw(state, player);
@@ -264,40 +280,71 @@ function dealToPlayer(state, sourcePlayer, targetPlayer, amount, source = 'Damag
   log(state, `${source}: ${amount} damage to ${state.players[targetPlayer].name}.`);
 }
 function canCover(available, wanted) { return COLORS.every(c => available[c] >= wanted[c]) && COLORS.reduce((sum, c) => sum + available[c] - wanted[c], 0) >= wanted.generic; }
-function payment(state, player, card, extraGeneric = 0) {
-  const wanted = cost(card); if (!wanted) return null;
-  wanted.generic += extraGeneric;
-  const sources = state.players[player].battlefield.filter(x => !x.tapped && !sickness(state, x) && manaSource(x.card)).map(x => ({ instance: x, ...manaSource(x.card) }));
-  const visited = new Set();
-  function search(available, remaining, used) {
-    const maximum = { ...available };
-    for (const source of remaining) for (const color of COLORS) maximum[color] += Math.max(...source.options.map(option => option[color] || 0));
-    if (COLORS.some(color => maximum[color] < wanted[color])) return null;
-    const availableTotal = COLORS.reduce((sum, color) => sum + available[color], 0);
-    const possibleTotal = availableTotal + remaining.reduce((sum, source) => sum + Math.max(...source.options.map(option => Object.values(option).reduce((total, n) => total + n, 0))), 0);
-    if (possibleTotal < wanted.generic + COLORS.reduce((sum, color) => sum + wanted[color], 0)) return null;
-    if (canCover(available, wanted)) {
-      const left = { ...available };
-      for (const color of COLORS) left[color] -= wanted[color];
-      let generic = wanted.generic;
-      for (const color of ['C', 'W', 'U', 'B', 'R', 'G']) { const spent = Math.min(generic, left[color]); left[color] -= spent; generic -= spent; }
-      return { pool: left, sourceIds: used };
-    }
-    const key = `${remaining.map(x => x.instance.id).join(',')}:${COLORS.map(c => available[c]).join(',')}`;
-    if (visited.has(key)) return null; visited.add(key);
-    const deficits = COLORS.filter(c => wanted[c] > available[c]).sort((a, b) => remaining.filter(s => s.options.some(o => o[a])).length - remaining.filter(s => s.options.some(o => o[b])).length);
-    const need = deficits[0];
-    const options = remaining.flatMap((source, index) => source.options.map(option => ({ source, index, option }))).filter(x => !need || x.option[need]);
-    // Prefer inflexible sources, preserving flexible sources for other colors.
-    options.sort((a, b) => a.source.options.length - b.source.options.length || Object.values(b.option).reduce((s, n) => s + n, 0) - Object.values(a.option).reduce((s, n) => s + n, 0));
-    for (const { source, index, option } of options) {
-      const next = { ...available }; for (const color of COLORS) next[color] += option[color] || 0;
-      const found = search(next, remaining.filter((_, i) => i !== index), [...used, source.instance.id]);
-      if (found) return found;
+function manaPoolValue(available) { return COLORS.reduce((sum,c)=>sum+(available[c]||0),0); }
+function spendPool(available, wanted) {
+  if (!canCover(available,wanted)) return null;
+  const left={...available};
+  for(const c of COLORS) left[c]-=wanted[c]||0;
+  let generic=wanted.generic;
+  for(const c of ['C','W','U','B','R','G']) {const n=Math.min(left[c],generic);left[c]-=n;generic-=n;}
+  return left;
+}
+function payment(state, player, card, extraGeneric=0, filter=null) {
+  const wanted=cost(card);if (!wanted) return null;
+  wanted.generic+=extraGeneric;
+  const constraints=filter?.sourceIds ? new Set(filter.sourceIds) : null;
+  const available=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
+    .map(x=>({instance:x,...(manaSource(x.card,state,player)||{})}))
+    .filter(x=>x.options && (!constraints || constraints.has(x.instance.id)));
+  const choiceFilter=filter?.sourceChoices || {};
+  const sources=available.map(x=>({...x, options:x.options.map((mana,i)=>({mana,index:i})).filter(option=>choiceFilter[x.instance.id]===undefined || option.index===Number(choiceFilter[x.instance.id]))})).filter(x=>x.options.length);
+  const visited=new Set();
+  function search(pending, remaining, steps) {
+    if (canCover(pending,wanted)) return {pool:spendPool(pending,wanted),sourceIds:steps.map(x=>x.id),steps};
+    const total=manaPoolValue(pending)+remaining.reduce((n,x)=>n+Math.max(...x.options.map(o=>manaPoolValue(o.mana))),0);
+    if (total<wanted.generic+COLORS.reduce((n,c)=>n+wanted[c],0)) return null;
+    for(const color of COLORS) if(pending[color]+remaining.reduce((n,x)=>n+Math.max(...x.options.map(o=>o.mana[color]||0)),0)<wanted[color]) return null;
+    const key=remaining.map(x=>x.instance.id).join('|')+':'+COLORS.map(c=>pending[c]).join(',');
+    if(visited.has(key))return null;visited.add(key);
+    const missing=COLORS.filter(c=>wanted[c]>pending[c]);
+    const options=remaining.flatMap((x,index)=>x.options.map(({mana,index:optionIndex})=>({x,index,mana,optionIndex})))
+      .filter(({x,mana})=>!(x.activationGeneric && manaPoolValue(pending)<x.activationGeneric) && (!missing.length || missing.some(c=>mana[c]) || remaining.some(source=>source.activationGeneric && source.options.some(o=>missing.some(c=>o.mana[c])))));
+    options.sort((a,b)=>a.x.options.length-b.x.options.length || manaPoolValue(b.mana)-manaPoolValue(a.mana));
+    for(const {x,index,mana,optionIndex} of options){
+      const next={...pending};
+      if(x.activationGeneric){
+        let activation=x.activationGeneric;
+        for(const c of ['C','W','U','B','R','G']){const n=Math.min(activation,next[c]);next[c]-=n;activation-=n;}
+        if(activation)continue;
+      }
+      for(const c of COLORS)next[c]+=(mana[c]||0);
+      const result=search(next,remaining.filter((_,i)=>i!==index),[...steps,{id:x.instance.id,index:optionIndex,mana,activationGeneric:x.activationGeneric||0}]);
+      if(result)return result;
     }
     return null;
   }
-  return search({ ...state.players[player].manaPool }, sources, []);
+  return search({...state.players[player].manaPool},sources,[]);
+}
+/** Uncommitted quote used by hand highlight and cast-payment dialog. */
+export function castOptions(state,player,id,filter=null) {
+  const where=find(state,id);
+  if(!where || where.player!==player || !['hand','command'].includes(where.zone))return {canCast:false,reason:'Card is not in your hand or command zone.',sources:[],pool:pool()};
+  const card=castingCard(where.instance),land=type(card,'Land');
+  const ready=state.phase==='main' && state.activePlayer===player && !state.finished;
+  const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
+  const tax=where.zone==='command' ? 2*(where.instance.commanderCasts||0):0;
+  const sources=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
+    .map(x=>({id:x.id,name:named(x.card),...manaSource(x.card,state,player)})).filter(x=>x.options);
+  const plan=land ? null : payment(state,player,card,tax,filter);
+  const canCast=ready && !stackBlocked && (land ? !state.players[player].landPlayed : Boolean(plan));
+  const reason=!ready?'Keep your hand; casting happens on your turn.':stackBlocked?'Resolve the stack before casting this card.':land?(state.players[player].landPlayed?'Land drop already used.':'Land drop ready.') : !cost(card)?'Unsupported casting cost needs manual handling.':plan?'Mana available. Review sources and confirm.':'Not enough payable mana. Tap a rock or land to float mana, or adjust your selection.';
+  return {canCast,reason,land,tax,cost:card.mana_cost||'',pool:{...state.players[player].manaPool},sources,plan,cardName:named(card)};
+}
+/** Safe, explicit mana modes for the tap-card interface. */
+export function tapOptions(state,player,id){
+ const x=find(state,id);if(!x || x.player!==player || x.zone!=='battlefield')return null;
+ const source=manaSource(x.instance.card,state,player);
+ return source?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,options:source.options}:null;
 }
 function entersTapped(card, adapter) {
   const oracle = text(card);
@@ -316,7 +363,7 @@ function validTarget(state, caster, targetId, descriptor) {
   if (descriptor === 'nonartifactCreature') return !type(card, 'Artifact');
   return true;
 }
-function play(state, player, id, targetId) {
+function play(state, player, id, targetId, argumentsPayment=null) {
   if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('Cards may be played only during your active main phase.');
   const location = find(state, id);
   if (!location || location.player !== player || !['hand', 'command'].includes(location.zone)) throw new Error('Choose a card in your hand or your commander in the command zone.');
@@ -338,9 +385,14 @@ function play(state, player, id, targetId) {
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
   const commanderTax = commandCast ? 2 * instance.commanderCasts : 0;
-  const paid = payment(state, player, card, commanderTax);
+  const paid = payment(state, player, card, commanderTax, argumentsPayment);
   if (!paid) throw new Error('Not enough usable mana of the required colors; unsupported costs require a manual move.');
-  for (const sourceId of paid.sourceIds) find(state, sourceId).instance.tapped = true;
+  for (const step of paid.steps) {
+    const source=find(state,step.id)?.instance;
+    if(!source || source.tapped) throw new Error('Chosen mana source became unavailable.');
+    source.tapped=true;
+    log(state,`Mana payment: tap ${named(source.card)} for ${Object.entries(step.mana).map(([c,n])=>`${n}${c}`).join(' + ')}${step.activationGeneric?` after paying ${step.activationGeneric} generic to activate`:''}.`);
+  }
   state.players[player].manaPool = paid.pool;
   remove(state, location); instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
@@ -602,7 +654,7 @@ function endCurrent(state) {
   const p = state.players[state.activePlayer];
   if (!p.landPlayed) stat(state, state.activePlayer, 'missedLandDrops');
   p.manaPool = pool();
-  for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; delete instance.temporaryHaste; }
+  for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; delete instance.temporaryHaste; delete instance.manualMana; }
   const row = state.roundStats.find(x => x.round === state.round);
   if (row) for (let i = 0; i < 2; i++) row.players[i].lifeRemaining = state.players[i].life;
 }
@@ -655,16 +707,40 @@ function apply(state, action) {
     case 'keep':
       if (state.phase !== 'opening') throw new Error('Opening hand already kept.');
       keep(state, 0, action.bottomIds || []); startKeptGame(state); break;
-    case 'play': play(state, player, action.id, action.targetId); break;
+    case 'play': play(state, player, action.id, action.targetId, action.sourceIds ? {sourceIds:action.sourceIds,sourceChoices:action.sourceChoices||{}} : null); break;
     case 'resolve': resolve(state); break;
     case 'tap': {
       const location = find(state, action.id);
       if (!location || location.zone !== 'battlefield') throw new Error('Choose a battlefield card.');
-      const instance = location.instance, source = manaSource(instance.card);
+      const instance = location.instance, source = manaSource(instance.card,state,location.player);
       if (!instance.tapped && source && sickness(state, instance)) throw new Error('A summoning-sick creature cannot activate its tap mana ability.');
-      instance.tapped = !instance.tapped;
-      if (source) for (const [color, amount] of Object.entries(source.options[0])) state.players[location.player].manaPool[color] = Math.max(0, state.players[location.player].manaPool[color] + (instance.tapped ? amount : -amount));
-      log(state, `${named(instance.card)} ${instance.tapped ? 'tapped' : 'manually untapped (manual override)'}${source ? '; known mana pool adjusted (default color)' : ''}.`); break;
+      if(!instance.tapped && source){
+        const option=source.options[action.choiceIndex ?? 0];
+        if(!option) throw new Error('Select one available mana color or mode.');
+        let available={...state.players[location.player].manaPool};
+        let activationSpent={};
+        if(source.activationGeneric){
+          const before={...available};
+          const costToActivate={generic:source.activationGeneric,...pool()};
+          available=spendPool(available,costToActivate);
+          if(!available)throw new Error(`Tap another mana source first: ${named(instance.card)} needs ${source.activationGeneric} mana to activate.`);
+          activationSpent=Object.fromEntries(COLORS.filter(c=>before[c]!==available[c]).map(c=>[c,before[c]-available[c]]));
+        }
+        for(const [color,amount] of Object.entries(option))available[color]+=amount;
+        state.players[location.player].manaPool=available;
+        instance.manualMana={option:action.choiceIndex??0,produced:option,activationSpent};
+      }else if(instance.tapped && instance.manualMana){
+        // Rewind only unspent floating mana; never create negative balances.
+        const next={...state.players[location.player].manaPool};
+        for(const [color,n] of Object.entries(instance.manualMana.produced)){
+          if(next[color]<n)throw new Error('Mana from this source was already spent. Use Undo instead of untapping to reverse the payment.');
+          next[color]-=n;
+        }
+        for(const [c,n] of Object.entries(instance.manualMana.activationSpent||{}))next[c]+=n;
+        state.players[location.player].manaPool=next;delete instance.manualMana;
+      }
+      instance.tapped=!instance.tapped;
+      log(state,`${named(instance.card)} ${instance.tapped?'tapped':'manually untapped'}${source?`; floating mana ${COLORS.filter(c=>state.players[location.player].manaPool[c]).map(c=>`${state.players[location.player].manaPool[c]}${c}`).join(' ')||'empty'}`:'; unmodeled mana ability'}.`);break;
     }
     case 'attack':
       if (state.phase !== 'main' || state.activePlayer !== player) throw new Error('Declare attackers during your turn.');

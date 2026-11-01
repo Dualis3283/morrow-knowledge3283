@@ -53,3 +53,24 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 .assist-actions button:disabled { opacity: .48; }
 .assist-notice { margin: .65rem 0 0; }
 @media(max-width: 430px) { .assist-actions .button { flex-basis: 100%; } }
+
+/* Mana-aware casting: usable cards, accessible drop zone and explicit payment. */
+.card-tile.castable { outline: 3px solid rgba(207,168,89,.95); outline-offset: -2px; box-shadow: 0 0 0 3px rgba(207,168,89,.2),0 0 18px rgba(206,168,82,.25); }
+.card-tile.castable:focus-visible {outline: 4px solid #f4db9b; outline-offset: 2px;}
+.payable-badge {color:#191511;background:#f0cd83;font-weight:750;}
+.cast-drop-zone { margin: .65rem 0; padding: .9rem; border: 2px dashed rgba(204,167,94,.65); border-radius: .75rem; text-align:center; font-size: .89rem; background: rgba(204,167,94,.08); min-height: 3rem; }
+.cast-drop-zone.casting-over,.casting-over {background:rgba(214,175,97,.2);border-color:#ebcb82;}
+.mana-pool-status {margin:.2rem 0 .8rem; color:#e4c991; font-size:.82rem;}
+.cast-dialog {width:min(92vw,34rem);max-height:88vh;overflow:auto;border:1px solid rgba(224,193,133,.55);border-radius:1rem;padding:1rem 1.25rem;background:#202125;color:#f5ede2;}
+.payment-sources {max-height:40vh;overflow:auto;border:1px solid rgba(200,172,123,.32);border-radius:.65rem;padding:.7rem;margin:.7rem 0;}
+.payment-sources legend{padding:0 .35rem;font-weight:650;}
+.payment-source {display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.5rem .1rem;border-bottom:1px solid rgba(200,172,123,.16);}
+.payment-source-label {display:flex;align-items:center;gap:.6rem;flex:1 1 10rem;cursor:pointer;}
+.payment-source-label input {width:1.1rem;height:1.1rem;}
+.payment-source select {max-width:9rem;min-height:40px;}
+.payment-source small {opacity:.75;}
+.payment-actions,.mana-choice-list {display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1rem;}
+.payment-actions .button,.mana-choice-list .button {flex:1 1 10rem;min-height:44px;}
+@media(max-width:450px){.payment-actions .button{flex-basis:100%;}.cast-dialog{padding:.75rem;}}
+
+.cast-drop-zone[hidden] {display:none;}

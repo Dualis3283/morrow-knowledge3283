@@ -1,5 +1,5 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, simulate, upgradeGame, suggestions} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, simulate, upgradeGame, suggestions, castOptions, tapOptions} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'morrow-deck-lab-v1';
@@ -19,6 +19,7 @@ let toastTimer;
 let inspected = null;
 let appConfig = {};
 let undoHistory = [];
+let casting = null;
 
 function element(tag, className, content) {
   const node = document.createElement(tag);
@@ -189,6 +190,53 @@ function renderCommander() {
     container.append(placeholder);
   }
 }
+function manaText(options) { return Object.entries(options || {}).filter(([,n])=>n).map(([c,n])=>`${n}${c}`).join(' + ') || 'none'; }
+function openManaChoice(instance) {
+  const source=tapOptions(game,0,instance.id);
+  if(!source || source.tapped) {dispatch({type:'tap',id:instance.id});return;}
+  if(source.options.length===1){dispatch({type:'tap',id:instance.id});return;}
+  $('mana-choice-title').textContent=`Tap ${instance.card.name} for mana`;
+  $('mana-choice-list').replaceChildren(...source.options.map((option,index)=>{
+    const button=element('button','button',`Add ${manaText(option)}${source.activationGeneric?` (costs ${source.activationGeneric} mana)`:''}`);
+    button.type='button';button.addEventListener('click',()=>{if(dispatch({type:'tap',id:instance.id,choiceIndex:index}))$('mana-choice-dialog').close();});return button;
+  }));
+  $('mana-choice-dialog').showModal();
+}
+function openCastDialog(id,targetId='') {
+  if(!game)return;
+  const where=lookup(id);
+  if(!where || !['hand','command'].includes(where.zone) || where.player!==0)return;
+  const quote=castOptions(game,0,id);
+  if(quote.land){dispatch({type:'play',id});return;}
+  if($('card-dialog').open)$('card-dialog').close();
+  casting={id,targetId,selected:new Set(quote.plan?.sourceIds||[]),choices:Object.fromEntries((quote.plan?.steps||[]).map(step=>[step.id,step.index]))};
+  $('cast-dialog-title').textContent=`Cast ${quote.cardName} · ${quote.cost || '{0}'}${quote.tax?` + {${quote.tax}} tax`:''}`;
+  const sourceBox=$('cast-payment-sources');sourceBox.replaceChildren();
+  for(const source of quote.sources){
+    const row=element('div','payment-source');
+    const label=element('label','payment-source-label');
+    const toggle=document.createElement('input');toggle.type='checkbox';toggle.value=source.id;toggle.checked=casting.selected.has(source.id);
+    toggle.addEventListener('change',()=>{if(toggle.checked)casting.selected.add(source.id);else casting.selected.delete(source.id);updateCastQuote();});
+    label.append(toggle,element('span','',source.name));row.append(label);
+    if(source.options.length>1){
+      const picker=document.createElement('select');picker.setAttribute('aria-label',`Mana from ${source.name}`);picker.dataset.sourceId=source.id;
+      source.options.forEach((choice,i)=>{const option=element('option','',manaText(choice));option.value=i;picker.append(option);});
+      picker.value=String(casting.choices[source.id]??0);
+      picker.addEventListener('change',()=>{casting.choices[source.id]=Number(picker.value);updateCastQuote();});
+      row.append(picker);
+    }else row.append(element('small','',manaText(source.options[0])));
+    if(source.activationGeneric)row.append(element('small','',`Activation costs ${source.activationGeneric} mana`));
+    sourceBox.append(row);
+  }
+  $('cast-dialog').showModal();updateCastQuote();
+}
+function updateCastQuote(){
+  if(!casting || !game)return;
+  const quote=castOptions(game,0,casting.id,{sourceIds:[...casting.selected],sourceChoices:casting.choices});
+  $('cast-payment-pool').textContent=`Already floating: ${manaText(quote.pool)}. Only checked untapped sources are available. Tap modes can be changed.`;
+  $('cast-payment-status').textContent=quote.canCast?`Ready: ${quote.plan.steps.map(step=>`${lookup(step.id)?.instance?.card.name || 'Source'} (${manaText(step.mana)})`).join(', ')||'pay from floating pool'}; ${quote.reason}`:quote.reason;
+  $('cast-pay-button').disabled=!quote.canCast;
+}
 function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = false, quantity} = {}) {
   const card = instance.card || instance;
   const tile = element('button', `card-tile${land ? ' land-card' : ''}${instance.tapped ? ' tapped' : ''}${instance.attacking ? ' attacking' : ''}${bottomIds.has(instance.id) && zone === 'hand' ? ' selected' : ''}`);
@@ -196,6 +244,14 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   if (isCommanderInstance(instance)) { tile.classList.add('commander-card-tile'); tile.dataset.commander = 'true'; }
   tile.dataset.cardId = instance.id || card.id || '';
   tile.setAttribute('aria-label', `${card.name || 'Unknown card'}${isCommanderInstance(instance) ? ', commander' : ''}${instance.tapped ? ', tapped' : ''}${instance.attacking ? ', attacking' : ''}${zone === 'hand' && bottomIds.has(instance.id) ? ', selected to bottom' : ''}. View card and actions.`);
+  if(!preview && player===0 && (zone==='hand' || zone==='command') && game?.players[0]?.kept){
+    const quote=castOptions(game,0,instance.id);
+    if(quote.canCast){tile.classList.add('castable');tile.setAttribute('aria-description',quote.land?'Land drop available':'Mana available; drag to casting zone or tap for payment choices');}
+    if(quote.canCast && !quote.land)tile.title=`Ready to cast ${card.name}; choose mana to pay`;
+    if(quote.canCast && quote.land)tile.title=`Land drop available: ${card.name}`;
+    tile.draggable=true;
+    tile.addEventListener('dragstart',event=>{event.dataTransfer?.setData('text/plain',instance.id);event.dataTransfer.effectAllowed='move';});
+  }
   const fallback = element('div', 'card-fallback');
   fallback.append(element('span', '', card.name || 'Unknown card'), element('small', '', card.mana_cost || card.type_line || 'Card'));
   tile.append(fallback);
@@ -219,6 +275,7 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   if (instance.damage) badges.append(element('span', 'card-badge', `${instance.damage} dmg`));
   if (instance.attacking) badges.append(element('span', 'card-badge', 'ATK'));
   if (quantity > 1) badges.append(element('span', 'card-badge', `×${quantity}`));
+  if(tile.classList.contains('castable'))badges.append(element('span','card-badge payable-badge',isLand(card)?'LAND':'READY'));
   if (badges.childNodes.length) tile.append(badges);
   let pointer = null, suppressUntil = 0;
   if (!preview) {
@@ -230,14 +287,12 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
       pointer = null;
       if ((zone === 'hand' || zone === 'command') && dy < -35 && Math.abs(dy) > Math.abs(dx) * 1.2) {
         suppressUntil = Date.now() + 400;
-        if (!/\btarget\b/i.test(card.oracle_text || '') && !card.card_faces?.some(face => /\btarget\b/i.test(face.oracle_text || ''))) dispatch({type: 'play', id: instance.id});
-        else {
-          showCard(instance, player, zone);
-          toast('Choose a target, then tap Play card.');
-        }
+        if (/\btarget\b/i.test(card.oracle_text || '') || card.card_faces?.some(face => /\btarget\b/i.test(face.oracle_text || ''))) {
+          showCard(instance,player,zone);toast('Choose a target, then choose mana payment.');
+        } else openCastDialog(instance.id);
       } else if (zone === 'battlefield' && dx > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
         suppressUntil = Date.now() + 400;
-        dispatch({type: 'tap', id: instance.id});
+        openManaChoice(instance);
       }
     });
   }
@@ -280,6 +335,7 @@ function renderGame() {
   setText('attack-count', attackers.length ? `${attackers.length} ATTACKER${attackers.length === 1 ? '' : 'S'} SELECTED` : 'TAP A CARD TO INTERACT');
   $('player-hand').replaceChildren(...own.hand.map(instance => cardTile(instance, {player: 0, zone: 'hand'})));
   if (!own.hand.length) $('player-hand').append(element('p', 'empty-zone', 'Your hand is empty.'));
+  setText('mana-pool-status',`Floating mana: ${manaText(own.manaPool)} · Highlighted cards have payable costs`);
   setText('hand-count', own.hand.length);
   setText('library-count', own.library.length);
   setText('graveyard-count', own.graveyard.length);
@@ -288,6 +344,7 @@ function renderGame() {
   renderCommander();
   $('mulligan-controls').hidden = own.kept || game.finished;
   $('turn-controls').hidden = !own.kept;
+  $('cast-drop-zone').hidden=!own.kept || game.finished;
   const moves=suggestions(game,0);
   const first=moves[0], land=moves.find(move=>move.land);
   $('assisted-play').hidden= !game.players[0].kept || game.finished;
@@ -428,7 +485,7 @@ function showCard(instance, player = 0, zone = 'preview') {
         }));
         info.append(targetLabel, targetSelect);
       }
-      actions.append(actionButton(zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => ({type: 'play', id: instance.id, ...(targetSelect?.value ? {targetId: targetSelect.value} : {})}), {primary: true, disabled: !ready}));
+      actions.append(actionButton(zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => {openCastDialog(instance.id,targetSelect?.value||'');return null;}, {primary: true, disabled: !ready}));
     }
     const isCommander = isCommanderInstance(instance);
     const owner = Number.isInteger(instance.owner) ? instance.owner : player;
@@ -447,7 +504,7 @@ function showCard(instance, player = 0, zone = 'preview') {
       }
     }
     if (zone === 'battlefield') {
-      actions.append(actionButton(instance.tapped ? 'Untap card' : 'Tap card', {type: 'tap', id: instance.id}, {disabled: !ready}));
+      actions.append(actionButton(instance.tapped ? 'Untap card' : tapOptions(game,player,instance.id)?'Tap for mana':'Tap card', () => {if(player===0 && !instance.tapped && tapOptions(game,player,instance.id)){openManaChoice(instance);return null;}return {type:'tap',id:instance.id};}, {disabled: !ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
       actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
     }
@@ -774,6 +831,18 @@ $('save-table').addEventListener('click', () => persist(true));
 $('import-shortcut').addEventListener('click', () => { switchTab('decks', true); $('deck-text').focus(); });
 $('mulligan-button').addEventListener('click', () => { if (dispatch({type: 'mulligan'})) { bottomIds.clear(); renderGame(); } });
 $('keep-button').addEventListener('click', () => { if (dispatch({type: 'keep', bottomIds: [...bottomIds]})) { bottomIds.clear(); renderGame(); } });
+for(const id of ['cast-drop-zone','player-battlefield-zone','player-land-zone']) {
+  const drop=$(id);
+  drop.addEventListener('dragover',event=>{if(event.dataTransfer?.types.includes('text/plain')){event.preventDefault();event.dataTransfer.dropEffect='move';drop.classList.add('casting-over');}});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('casting-over'));
+  drop.addEventListener('drop',event=>{event.preventDefault();drop.classList.remove('casting-over');const cardId=event.dataTransfer?.getData('text/plain');if(cardId)openCastDialog(cardId);});
+}
+$('cast-cancel').addEventListener('click',()=>$('cast-dialog').close());
+$('cast-pay-button').addEventListener('click',()=>{
+  if(!casting)return;
+  const action={type:'play',id:casting.id,sourceIds:[...casting.selected],sourceChoices:{...casting.choices},...(casting.targetId?{targetId:casting.targetId}:{})};
+  if(dispatch(action)){$('cast-dialog').close();casting=null;}
+});
 $('end-turn-button').addEventListener('click', () => dispatch({type: 'endTurn'}));
 $('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'land'}));
 $('assist-next').addEventListener('click', () => dispatch({type:'assist',mode:'next'}));
