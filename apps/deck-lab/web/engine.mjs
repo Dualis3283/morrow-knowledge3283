@@ -28,6 +28,12 @@ function mono(color, amount = 1) { return { [color]: amount }; }
 
 function manaSource(card) {
   if (BASE_MANA[named(card)]) return { options: [mono(BASE_MANA[named(card)])] };
+  // Basic land TYPES grant intrinsic tap abilities, including on nonbasic duals/triomes.
+  if (type(card, 'Land') && /—/.test(String(card.type_line || ''))) {
+    const subtypes = String(card.type_line).split('—').slice(1).join(' ');
+    const types = Object.entries(BASE_MANA).filter(([land]) => new RegExp(`\\b${land}\\b`).test(subtypes));
+    if (types.length) return {options: types.map(([,color]) => mono(color))};
+  }
   const known = {
     'Sol Ring': { options: [mono('C', 2)] },
     'Thran Dynamo': { options: [mono('C', 3)] },
@@ -101,8 +107,10 @@ function profile(card) {
   if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
-  if (named(card) === 'Ovika, Enigma Goliath') return { status: 'partial', reason: 'Noncreature-spell cast token trigger is supported in manual table play; ward and other rules remain manual. No automatic commander casting.', auto: false };
-  if (type(card, 'Land')) return { status: 'manual', reason: 'Nonbasic land conditions and abilities need manual resolution.', auto: false };
+  if (named(card) === 'Ovika, Enigma Goliath') return { status: 'partial', reason: 'Cast-trigger Goblins and commander casting supported; ward, alternative effects and opponent decisions are not modeled.', auto: true };
+  if (named(card) === 'Third Path Iconoclast') return { status: 'partial', reason: 'Cast-trigger Soldier tokens supported; other interactions may need manual review.', auto: true };
+  if (named(card) === 'Molten Gatekeeper') return { status: 'partial', reason: 'Other friendly creature entry triggers 1 damage to opponent; unearth is manual.', auto: true };
+  if (type(card, 'Land')) return { status: 'partial', reason: 'Land drop supported; unrecognized mana abilities or entry choices stay manual and are not inferred.', auto: false };
   if (type(card, 'Creature')) {
     if (!/^-?\d+$/.test(String(card.power)) || !/^-?\d+$/.test(String(card.toughness))) return { status: 'manual', reason: 'Variable power or toughness requires manual adjustment.', auto: false };
     let rest = text(card).replace(/\([^)]*\)/g, '').trim();
@@ -178,6 +186,7 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
   if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; }
   if (zone === 'battlefield') { instance.enteredTurn = state.turn; instance.damage = 0; }
   state.players[player][zone].push(instance);
+  if (zone === 'battlefield' && isCreature(instance)) queueCreatureEntryInteractions(state, player, instance);
 }
 
 /** Upgrade older saved tables without changing the caller's snapshot. */
@@ -290,6 +299,11 @@ function payment(state, player, card, extraGeneric = 0) {
   }
   return search({ ...state.players[player].manaPool }, sources, []);
 }
+function entersTapped(card, adapter) {
+  const oracle = text(card);
+  if (/\benters (?:the battlefield )?tapped\b/i.test(oracle)) return true;
+  return Boolean(adapter.source?.entersTapped);
+}
 function validTarget(state, caster, targetId, descriptor) {
   if (!targetId) return descriptor === 'creatureOrPlayer';
   const target = find(state, targetId);
@@ -315,9 +329,12 @@ function play(state, player, id, targetId) {
     if (commandCast) throw new Error('A land cannot be played from the command zone.');
     if (state.stack.length) throw new Error('Resolve the stack before playing a land.');
     if (state.players[player].landPlayed) throw new Error('Only one land drop is supported each turn.');
-    if (adapter.status === 'manual') throw new Error(`${named(card)} needs manual placement: ${adapter.reason}`);
-    remove(state, location); instance.tapped = !!adapter.source?.entersTapped; moveTo(state, instance, player, 'battlefield');
-    state.players[player].landPlayed = true; stat(state, player, 'landsPlayed'); log(state, `${state.players[player].name} plays ${named(card)}.`); return;
+    // Playing a land never requires resolving its activated mana text. Unknown abilities remain inert.
+    remove(state, location); instance.tapped = entersTapped(card, adapter); moveTo(state, instance, player, 'battlefield');
+    state.players[player].landPlayed = true; stat(state, player, 'landsPlayed'); log(state, `${state.players[player].name} plays ${named(card)}${instance.tapped ? ' tapped' : ''}.`);
+    if (!manaSource(card)) warn(state, `${named(card)} land played; unmodeled mana/activation abilities require manual intervention.`);
+    if (/\b(?:unless|you may pay|you may reveal)\b/i.test(text(card)) && /enters/i.test(text(card))) warn(state, `${named(card)} enters tapped conservatively; optional entry cost or condition not automated.`);
+    return;
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
   const commanderTax = commandCast ? 2 * instance.commanderCasts : 0;
@@ -333,36 +350,55 @@ function play(state, player, id, targetId) {
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 // Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.
+function pushInteraction(state, controller, source, adapter, count) {
+  state.stack.push({id:`p${controller}-trigger-${state.nextTriggerId++}`,owner:controller,controller,
+    kind:'trigger',sourceId:source.id,card:{name:`${named(source.card)} — ${adapter}`,type_line:'Triggered Ability',cmc:0,oracle_text:'Named supported trigger; see activity log.'},
+    trigger:{adapter,count}});
+}
 function queueCastInteractions(state, player, spell) {
-  if (type(spell, 'Creature') || type(spell, 'Land')) return;
-  const sources = state.players[player].battlefield.filter(value => named(value.card) === 'Ovika, Enigma Goliath');
-  if (!sources.length) return;
-  const manaValue = number(spell.cmc);
-  if (!Number.isInteger(manaValue) || manaValue < 0 || manaValue > 40 || spell.card_faces?.length || /\{X\}/i.test(String(spell.mana_cost || ''))) {
-    warn(state, `Ovika trigger for ${named(spell)} requires manual resolution: unknown or unsupported mana value.`);
-    return;
-  }
+  if (type(spell,'Creature') || type(spell,'Land')) return;
+  const sources = state.players[player].battlefield.filter(x => ['Ovika, Enigma Goliath','Third Path Iconoclast'].includes(named(x.card)));
   for (const source of sources) {
-    const id = `p${player}-trigger-${state.nextTriggerId++}`;
-    state.stack.push({id, owner: player, controller: player, kind: 'trigger', sourceId: source.id,
-      card: {name: 'Ovika: create Phyrexian Goblins', type_line: 'Triggered Ability', cmc: 0, oracle_text: 'Create X 1/1 red Phyrexian Goblin tokens with haste, where X is the triggering spell mana value.'},
-      trigger: {adapter: 'ovika-goblins', count: manaValue}});
-    log(state, `Ovika trigger from ${source.id}: ${named(spell)} mana value ${manaValue}; resolve the trigger above the spell.`);
+    if (named(source.card) === 'Third Path Iconoclast') {
+      pushInteraction(state,player,source,'iconoclast-soldier',1);
+      log(state,`Third Path Iconoclast trigger: one 1/1 colorless Soldier artifact creature on resolving.`);
+      continue;
+    }
+    const manaValue = Number(spell.cmc);
+    if (!Number.isInteger(manaValue) || manaValue < 0 || manaValue > 40 || spell.card_faces?.length || /\{X\}/i.test(String(spell.mana_cost || ''))) {
+      warn(state,`Ovika trigger for ${named(spell)} requires manual X/face mana-value resolution.`); continue;
+    }
+    pushInteraction(state,player,source,'ovika-goblins',manaValue);
+    log(state,`Ovika trigger from ${source.id}: ${named(spell)} mana value ${manaValue}; trigger placed above spell.`);
+  }
+}
+function queueCreatureEntryInteractions(state, controller, entering) {
+  const sources = state.players[controller].battlefield.filter(x => x.id !== entering.id && named(x.card) === 'Molten Gatekeeper');
+  for (const source of sources) {
+    pushInteraction(state,controller,source,'gatekeeper-damage',1);
+    log(state,`Molten Gatekeeper trigger: ${named(entering.card)} entered under your control; 1 damage to opponent on resolution.`);
   }
 }
 function resolveInteraction(state, instance) {
-  if (instance?.trigger?.adapter !== 'ovika-goblins') return false;
+  const trigger = instance?.trigger;
+  if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage'].includes(trigger?.adapter)) return false;
   state.stack.pop();
-  const controller = instance.controller, count = instance.trigger.count;
-  const tokenCard = {name: 'Phyrexian Goblin', type_line: 'Token Creature — Phyrexian Goblin', cmc: 0,
-    mana_cost: '', oracle_text: '', keywords: [], colors: ['R'], power: '1', toughness: '1'};
-  for (let i = 0; i < count; i++) {
-    const token = fresh(tokenCard, controller, `ovika-token-${state.nextTokenId++}`);
-    token.isToken = true;
-    token.temporaryHaste = true; // Ovika grants haste only until the end of this turn.
-    moveTo(state, token, controller, 'battlefield');
+  const controller = instance.controller, count = trigger.count;
+  if (trigger.adapter === 'gatekeeper-damage') {
+    dealToPlayer(state,controller,1-controller,1,'Molten Gatekeeper');
+    finishIfLethal(state); return true;
   }
-  log(state, `Ovika trigger resolves: ${count} 1/1 red Phyrexian Goblin token(s) with haste.`);
+  const goblin = trigger.adapter === 'ovika-goblins';
+  const tokenCard = goblin
+    ? {name:'Phyrexian Goblin',type_line:'Token Creature — Phyrexian Goblin',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:['R'],power:'1',toughness:'1'}
+    : {name:'Soldier',type_line:'Token Artifact Creature — Soldier',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:[],power:'1',toughness:'1'};
+  for (let i=0;i<count;i++) {
+    const token=fresh(tokenCard,controller,`interaction-token-${state.nextTokenId++}`);
+    token.isToken=true;
+    if (goblin) token.temporaryHaste=true;
+    moveTo(state,token,controller,'battlefield');
+  }
+  log(state,`${goblin?'Ovika':'Third Path Iconoclast'} trigger resolves: ${count} ${named(tokenCard)} token(s)${goblin?' with haste until end of turn':''}.`);
   return true;
 }
 function searchBasic(state, player, destination) {
@@ -511,28 +547,56 @@ function targetFor(state, player, adapter) {
   if (adapter.effect === 'pump') return candidates.filter(x => canAttack(state, x)).sort((a, b) => power(b) - power(a))[0];
   return candidates.sort((a, b) => scoreThreat(b, state.players[side].battlefield).score - scoreThreat(a, state.players[side].battlefield).score)[0];
 }
-function autoTurn(state, player) {
-  if (state.finished) return;
-  const p = state.players[player];
-  const land = p.hand.find(x => type(x.card, 'Land') && profile(x.card).auto);
-  if (land && !p.landPlayed) play(state, player, land.id);
-  for (let limit = 0; limit < 30 && !state.finished; limit++) {
-    const choices = p.hand.filter(x => !type(x.card, 'Land')).map(instance => {
-      const adapter = profile(instance.card); if (!adapter.auto || !payment(state, player, instance.card)) return null;
-      const target = adapter.target ? targetFor(state, player, adapter) : null;
-      if (adapter.target && !target && adapter.target !== 'creatureOrPlayer') return null;
-      if (adapter.effect === 'destroy' && target && has(target, 'indestructible')) return null;
-      const priority = adapter.source ? (state.round <= 5 ? 90 : 20) : adapter.effect === 'draw' ? 60 : ['destroy', 'exile', 'bounce'].includes(adapter.effect) ? 50 + scoreThreat(target, state.players[1 - player].battlefield).score : adapter.effect === 'pump' ? 10 : adapter.effect === 'ramp' || adapter.effect === 'cultivate' ? 85 : isCreature(instance) ? 30 + number(instance.card.cmc) : 15;
-      return { instance, adapter, target, priority };
-    }).filter(Boolean).sort((a, b) => b.priority - a.priority);
-    if (!choices.length) break;
-    const choice = choices[0];
-    if (choice.target && choice.adapter.effect !== 'pump') { const scored = scoreThreat(choice.target, state.players[1 - player].battlefield); log(state, `Public battlefield target: ${named(choice.target.card)}, threat ${scored.score} (${scored.reasons.join('; ')}).`); }
-    play(state, player, choice.instance.id, choice.target?.id); resolve(state);
+// Public, inspectable suggestions. Both automated practice and the manual UI use this
+// same decision path. Never invent a cost, target, or hidden card effect.
+export function suggestions(state, player=0) {
+  if (state.phase !== 'main' || state.activePlayer !== player || state.finished) return [];
+  const p=state.players[player];
+  if (state.stack.length) {
+    const top=state.stack.at(-1), adapter=profile(top.card);
+    if (top.kind === 'trigger' || (adapter.auto && adapter.status !== 'manual'))
+      return [{type:'resolve',label:`Resolve ${named(top.card)}`,why:'Top of the stack must resolve before continuing.',sourceNames:[]}];
+    return [];
   }
-  if (state.finished) return;
-  for (const instance of p.battlefield) if (canAttack(state, instance)) instance.attacking = true;
-  if (p.battlefield.some(x => x.attacking)) combat(state, player);
+  const actions=[];
+  if (!p.landPlayed) {
+    const lands=p.hand.filter(x=>type(x.card,'Land'));
+    lands.sort((a,b)=>Number(Boolean(manaSource(b.card)))-Number(Boolean(manaSource(a.card))) || Number(entersTapped(b.card,profile(b.card)))-Number(entersTapped(a.card,profile(a.card))));
+    for (const instance of lands) actions.push({type:'play',id:instance.id,label:`Play ${named(instance.card)}`,why:`Normal land drop${manaSource(instance.card)?'; mana source recognized':'; mana ability may require manual input'}.`,sourceNames:[],land:true});
+  }
+  const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && profile(x.card).auto)];
+  for(const instance of candidates) {
+    const adapter=profile(instance.card);
+    if (type(instance.card,'Land') || !adapter.auto) continue;
+    const card=castingCard(instance);
+    const tax=instance.isCommander ? instance.commanderCasts*2 : 0;
+    const paid=payment(state,player,card,tax);
+    if(!paid) continue;
+    const target=adapter.target ? targetFor(state,player,adapter) : null;
+    if(adapter.target && !target && adapter.target!=='creatureOrPlayer') continue;
+    if(adapter.effect==='destroy' && target && has(target,'indestructible')) continue;
+    const sourceNames=paid.sourceIds.map(id=>named(find(state,id).instance.card));
+    const priority=instance.isCommander ? 100 : adapter.source ? (state.round<=5 ? 90 : 20) : adapter.effect==='draw' ? 60 : ['destroy','exile','bounce'].includes(adapter.effect) ? 50 : ['ramp','cultivate'].includes(adapter.effect) ? 85 : isCreature(instance) ? 30+number(card.cmc) : 15;
+    actions.push({type:'play',id:instance.id,targetId:target?.id,label:`Cast ${named(instance.card)}`,why:`Known cost${tax?` + ${tax} commander tax`:''}; ${adapter.status==='partial'?'partial rules support':'recognized effect'}.`,sourceNames,priority});
+  }
+  return [...actions.filter(x=>x.land).slice(0,1),...actions.filter(x=>!x.land).sort((a,b)=>b.priority-a.priority)];
+}
+function assistedStep(state,player,mode='next') {
+  const choices=suggestions(state,player);
+  const choice=mode==='land' ? choices.find(x=>x.land) : choices[0];
+  if (!choice) return false;
+  if (choice.type==='resolve') resolve(state);
+  else play(state,player,choice.id,choice.targetId);
+  return true;
+}
+function autoTurn(state,player) {
+  if(state.finished) return;
+  for(let count=0;count<35 && !state.finished;count++) if(!assistedStep(state,player)) break;
+  if(state.stack.length) { warn(state,'Automated opponent paused: unsupported stack resolution.'); return; }
+  if(state.finished) return;
+  const p=state.players[player];
+  for(const x of p.battlefield) if(canAttack(state,x)) x.attacking=true;
+  if(p.battlefield.some(x=>x.attacking)) combat(state,player);
 }
 function endCurrent(state) {
   const p = state.players[state.activePlayer];
@@ -577,7 +641,7 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }
   if (opponentDeck.length) autoKeep(state, 1); else { state.players[1].kept = true; warn(state, 'Opponent has no deck: passive goldfish practice; no opposing draws or actions.'); }
   for (const row of [...coverage(deck), ...coverage(opponentDeck)]) if (row.status !== 'supported') warn(state, `${row.name}: ${row.reason}`);
-  log(state, 'Bounded deck test: manual commander casting pays ordinary front-face costs plus commander tax. Return on death defaults to an owner-controlled practice choice. No automatic commander casting, commander damage, general triggered abilities, general priority, general replacement effects or multiplayer rules. Ovika token cast triggers have a narrowly supported manual-table adapter; other triggers remain manual.');
+  log(state, 'Bounded deck test: supported Ovika commander casting and named Ovika/Iconoclast/Gatekeeper triggers are automated, ordinary command tax and land drops supported. Other commanders, card abilities, priority, replacement effects and multiplayer rules may require manual intervention.');
   return state;
 }
 function apply(state, action) {
@@ -608,6 +672,14 @@ function apply(state, action) {
     case 'combat':
       if (state.phase !== 'main' || state.activePlayer !== player) throw new Error('Resolve combat during your turn.');
       combat(state, player, action.assignments); break;
+    case 'assist': {
+      if (player !== 0) throw new Error('Assisted play operates on your table only.');
+      if (!['land','next','main'].includes(action.mode)) throw new Error('Choose land, next, or main assistance.');
+      const steps=action.mode==='main' ? 35 : 1; let applied=0;
+      for (let i=0;i<steps;i++) {if (!assistedStep(state,player,action.mode)) break;applied++;}
+      if (!applied) warn(state,'No further fully payable, recognized play; inspect your hand and use manual controls for unmodeled effects.');
+      log(state,`Guided ${action.mode} play: ${applied} action(s); no automatic end turn or combat.`); break;
+    }
     case 'endTurn': endTurn(state); break;
     case 'life':
       if (!Number.isFinite(action.delta)) throw new Error('Life change must be a number.');
@@ -647,14 +719,14 @@ export function simulate({ deck = [], opponentDeck = [], commander = null, oppon
   const sums = { damage: 0, opponentDamage: 0, mulligans: 0, missedLandDrops: 0, cardsCast: 0, landsPlayed: 0, lifeRemaining: 0, lethalRuns: 0, completedRounds: 0 };
   const rows = Array.from({ length: rounds }, (_, i) => ({ round: i + 1, damage: 0, opponentDamage: 0, landsPlayed: 0, cardsCast: 0, missedLandDrops: 0, lifeRemaining: 0, runsObserved: 0 }));
   const combined = [...coverage(deck), ...coverage(opponentDeck)];
-  const skippedCards = [...new Set([...deck, ...opponentDeck].filter(card => !profile(card).auto).map(named))];
+  const skippedCards = [...new Set([...deck, ...opponentDeck].filter(card => !profile(card).auto && !type(card,'Land')).map(named))];
   const notes = [
     'Bounded deterministic policy, not a complete Magic rules engine or competitive win-rate estimate.',
     'London mulligan policy keeps 2–5 lands, attempts at most two mulligans, and bottoms excess lands or expensive cards; no free mulligan.',
     'First player skips the first draw. Each round includes one turn per player. One legal land drop and one combat per turn.',
     'Runs stop at lethal damage, a failed draw from an empty library, or the round limit. Summary means include every run; per-round means include only runs reaching that round (runsObserved), so later rounds may reflect survivors.',
     'Targets use public battlefield threat factors only. Opposing hands and libraries never influence threat ranking.',
-    'Combat supports one blocker per attacker, numeric power/toughness and listed keywords. Manual practice supports commander casting, tax and an owner-controlled return-on-death choice; scripted runs do not cast commanders. Commander damage, triggered abilities, multiplayer, alternate costs and general stack-response decisions are not automated.',
+    'Combat supports one blocker per attacker and numeric power/toughness. Scripted runs cast named supported commanders (currently Ovika), evaluate known mana and land drops, and resolve the verified Ovika/Iconoclast/Gatekeeper triggers; commander damage, unmodeled triggers, multiplayer, alternate costs and general stack-response decisions remain manual.',
     'Search effects choose the first basic land; optional search is always accepted. Automated players cast immediately, with no reserved mana or bluffing.',
     ...(skippedCards.length ? [`Not automated; cards remain in hand: ${skippedCards.join(', ')}.`] : []),
     ...combined.filter(x => x.status === 'partial' && profile([...deck, ...opponentDeck].find(c => c.name === x.name)).auto).map(x => `${x.name}: ${x.reason}`),

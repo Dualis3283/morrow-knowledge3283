@@ -40,3 +40,16 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 .commander-resolution-note{margin:15px 0 0;padding:10px 12px;border-left:2px solid var(--gold);font-size:.72rem;line-height:1.6;color:#d3b991;background:#251b1044}
 .commander-override-note{font-size:.68rem;color:#c7aa83}
 @media(max-width:550px){.hand-and-command{gap:12px}.commander-strip{flex-basis:94px;width:94px;padding-right:12px}.commander-heading{min-height:37px}.commander-heading h3{font-size:.6rem}.commander-heading>span{font-size:.51rem}.commander-card{min-height:116px}.commander-card .card-tile{width:80px;flex-basis:80px;min-height:112px}.commander-card .card-fallback{min-height:111px}.commander-empty{width:80px;min-height:112px;padding:10px 6px;font-size:.7rem}.commander-empty small{font-size:.48rem}.commander-cost{font-size:.5rem;margin-top:7px;min-height:28px}.commander-return{font-size:.52rem;gap:5px;line-height:1.6}.commander-return input{width:16px;min-width:16px;height:16px;min-height:16px;flex-basis:16px}.commander-resolution-note{font-size:.67rem}.hand-cards-column .hand-row{min-width:0}}
+
+/* Guided-play controls: small-screen friendly, independent of card modal gestures. */
+.assisted-play { margin: .8rem 0 1.2rem; padding: 1rem; border: 1px solid rgba(184,144,86,.35); border-radius: .8rem; background: rgba(22,24,27,.75); }
+.assisted-play[hidden] { display: none; }
+.assist-heading { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; margin-bottom: .35rem; }
+.assist-heading strong { color: #e3c599; font-size: 1rem; }
+.assist-heading small, .assist-notice { opacity: .82; font-size: .78rem; line-height: 1.5; }
+.assist-preview { margin: .55rem 0; line-height: 1.5; overflow-wrap: anywhere; }
+.assist-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.assist-actions .button { flex: 1 1 8rem; min-height: 44px; }
+.assist-actions button:disabled { opacity: .48; }
+.assist-notice { margin: .65rem 0 0; }
+@media(max-width: 430px) { .assist-actions .button { flex-basis: 100%; } }
