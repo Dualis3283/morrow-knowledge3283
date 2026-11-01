@@ -192,6 +192,7 @@ function renderCommander() {
 }
 function manaText(options) { return Object.entries(options || {}).filter(([,n])=>n).map(([c,n])=>`${n}${c}`).join(' + ') || 'none'; }
 function openManaChoice(instance) {
+  if($('card-dialog').open)$('card-dialog').close();
   const source=tapOptions(game,0,instance.id);
   if(!source || source.tapped) {dispatch({type:'tap',id:instance.id});return;}
   if(source.options.length===1){dispatch({type:'tap',id:instance.id});return;}

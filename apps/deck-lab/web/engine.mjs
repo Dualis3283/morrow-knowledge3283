@@ -49,7 +49,7 @@ function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
   // Explicit, bounded mana abilities. Colors derive from the user's commander,
   // never from the controller's desired spell or a blanket produced_mana list.
   const commanderColors = (state, player) => {
-    const candidate = [...(state?.players[player].command || []), ...(state?.players[player].battlefield || []), ...(state?.players[player].graveyard || [])].find(x => x.isCommander);
+    const candidate = [...ZONES.flatMap(zone => state?.players?.[player]?.[zone] || []), ...(state?.stack || []).filter(x=>x.isCommander && x.owner===player)].find(x=>x.isCommander && x.owner===player);
     return (candidate?.card?.color_identity || []).filter(c => COLORS.includes(c) && c !== 'C');
   };
   if (['Arcane Signet', "Commander's Sphere"].includes(named(card))) {
