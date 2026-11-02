@@ -102,3 +102,10 @@ Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the 
 - Test: `apps/deck-lab/tests/cost-reduction-responder.test.mjs`, web `tests/cost-reduction-opponent-response-browser.mjs` (390/1440px).
 - Open: The Darkness Crystal nontoken-creature death replacement/exile/lifegain and exiled-card return activation; Cloud Key or Semblance Anvil type choice and imprint; alternative costs, convoke/delve/affinity, +/− cost layering with many modifiers, replacement/trigger batching, post-main opponent responses, commander zone choices.
 - Stage: locally tested candidate until independently verified CI/merge/deployment/readback.
+
+## MECH-022 · Dynamic chosen/imprinted spell reducers and The Darkness Crystal linked replacement (0.1.15 candidate)
+
+- Cloud Key chosen type and Semblance Anvil imprint of actual nonland hand card with shared type discount use common payable cost quote. Choices stored per instance; cannot change; no reduction before choice.
+- The Darkness Crystal replaces non-token opposing creature deaths with owner exile, linked to specific Crystal, +2 life. Actual paid 4BB and tap return creature from precisely linked exile tapped under your control with +2 +1/+1 counters. Death queue suppressed on replaced deaths.
+- Evidence files `tests/dynamic-cost-crystal.test.mjs`, `tests/dynamic-cost-crystal-browser.mjs`, docs RELEASE_0.1.15.md. Verify independent source→CI→APK→merge→Cloudflare→HTTP/hash gates.
+- Unimplemented: simultaneous Crystal+creature board wipes and competing replacements, commander exile decisions, true as-enters/ETB priority decisions and activated ability responses, full generalized alternative/variable costs and APNAP event batches.
