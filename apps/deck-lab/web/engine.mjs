@@ -153,6 +153,7 @@ const EFFECTS = {
   'Divination': { effect: 'draw', amount: 2 },
   'Ponder': {effect:'ponder',status:'supported'},
   'Preordain': {effect:'preordain',status:'supported'},
+  'Mass Polymorph': {effect:'mass-polymorph',status:'partial'},
   'Harmonize': { effect: 'draw', amount: 3 },
   "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
   'Think Twice': {effect:'draw',amount:1,status:'partial',reason:'Normal cast draws one card; Flashback casting and exile remain manual.'},
@@ -177,9 +178,11 @@ function profile(card) {
   if (card.card_faces?.length || /\b(Battle|Saga|Aura|Equipment)\b/.test(card.type_line || '')) return { status: 'manual', reason: 'Faces, defense, chapters and attachments require manual resolution.', auto: false };
   if (type(card,'Planeswalker')) return {status:'partial',reason:'Printed loyalty and one ability activation per turn tracked; loyalty ability effects and planeswalker combat require manual adjudication.',auto:false,planeswalker:true};
   if (!cost(card)) return { status: 'manual', reason: 'Variable, hybrid, Phyrexian, alternative or missing mana cost requires manual payment.', auto: false };
-  if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
+  if(EFFECTS[card.name])return {...EFFECTS[card.name],status:EFFECTS[card.name].status||'supported',reason:EFFECTS[card.name].status==='partial'?'Named reveal; other ETB replacements remain manual.':'Explicit named effect adapter.',auto:EFFECTS[card.name].effect!=='mass-polymorph'};
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
+  if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
   if (named(card) === 'Fellwar Stone') return {status:'partial',reason:'Dynamic opponent-land colors evaluated at play time; other conditional effects are not inferred.',auto:true};
   if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
   if (named(card) === "Commander's Sphere") return {status:'partial',reason:'Commander identity mana supported; sacrifice draw mode is manual.',auto:true};
@@ -655,12 +658,43 @@ function startLibraryReview(state,player,mode,count=3,sourceName='Manual review'
   state.pendingLibrary={mode,player,sourceName,ids,topOrder:ids.slice(),revealFound:mode==='reveal-nonland'&&selected.length>0&&!type(selected.at(-1).card,'Land'),createdTurn:state.turn};
   log(state,`${sourceName}: ${mode==='reveal-nonland'?`reveal ${ids.length} card(s) until first nonland or end`: `look at top ${ids.length} card(s)`}; awaiting ordered allocation.`);
 }
+function qualifies(instance,predicate){
+  if(!isCreature(instance))return false;
+  return predicate==='creature'||(predicate==='zombie'&&/\bZombie\b/.test(String(instance.card.type_line||'').split('—').slice(1).join(' ')));
+}
+function startMatchReview(state,player,variant,required,sourceName){
+  if(state.pendingLibrary||!['proteus','mass-polymorph','empty-lab'].includes(variant)||!Number.isInteger(required)||required<0||required>99)throw new Error('Invalid or overlapping reveal.');
+  const typeName=variant==='empty-lab'?'zombie':'creature',seen=[];let matches=0;
+  if(required)for(const card of state.players[player].library){seen.push(card);if(qualifies(card,typeName)&&++matches>=required)break;}
+  state.pendingLibrary={mode:'matching-reveal',variant,player,sourceName,required,ids:seen.map(x=>x.id),matches:seen.filter(x=>qualifies(x,typeName)).map(x=>x.id),createdTurn:state.turn};
+  log(state,`${sourceName}: revealed ${seen.length} card(s) looking for ${required} ${typeName} match(es); found ${matches}. Awaiting confirmation.`);
+}
 function commitLibraryReview(state,action){
   const pending=state.pendingLibrary;if(!pending)throw new Error('No library selection is awaiting allocation.');
   const actual=state.players[pending.player],original=pending.ids,order=action.order;
   if(!Array.isArray(order)||order.length!==original.length||new Set(order).size!==order.length||order.some(id=>!original.includes(id)))
     throw new Error('Choose exactly the revealed cards, each once, in your preferred order.');
   if(actual.library.slice(0,original.length).map(x=>x.id).join('|')!==original.join('|'))throw new Error('Library changed during selection; undo and reopen.');
+  if(pending.mode==='matching-reveal'){
+    if(action.shuffle!==false||Object.keys(action.destinations||{}).length)throw new Error('This card has fixed destinations, not arbitrary allocations.');
+    const hits=new Set(pending.matches),byId=new Map(actual.library.slice(0,original.length).map(x=>[x.id,x]));
+    const predicate=pending.variant==='empty-lab'?'zombie':'creature';
+    for(const id of order)if(hits.has(id)!==qualifies(byId.get(id),predicate))throw new Error('Invalid match classification.');
+    const taken=actual.library.splice(0,original.length),lookup=new Map(taken.map(x=>[x.id,x]));
+    const hitCards=order.filter(id=>hits.has(id)).map(id=>lookup.get(id));
+    const rest=order.filter(id=>!hits.has(id)).map(id=>lookup.get(id));
+    for(const card of hitCards)moveTo(state,card,pending.player,'battlefield');
+    actual.library.push(...rest);
+    if(pending.variant==='mass-polymorph')shuffle(state,actual.library);
+    if(pending.variant==='empty-lab'){
+      actual.library.splice(actual.library.length-rest.length,rest.length);
+      shuffle(state,rest);actual.library.push(...rest);
+    }
+    delete state.pendingLibrary;
+    log(state,`${pending.sourceName}: ${hitCards.length} matched creature(s) entered together; ${rest.length} others ${pending.variant==='mass-polymorph'?'shuffled into the library':pending.variant==='proteus'?'placed on bottom in selected order':'randomized on the bottom'}.`);
+    if(hitCards.length)warn(state,'Simultaneous entry was recorded; complex ETB and replacement effects still require manual handling.');
+    return;
+  }
   if(typeof action.shuffle!=='boolean')throw new Error('Choose whether to shuffle.');
   if(action.shuffle&&pending.mode!=='ponder'&&pending.mode!=='look')throw new Error('Shuffling is supported only when explicitly chosen for a manual look or Ponder.');
   const destinations=action.destinations||{};
@@ -723,6 +757,14 @@ function resolve(state) {
           token.isToken=true;moveTo(state,token,player,'battlefield');
         }
         log(state,`${named(instance.card)} creates ${count} ${adapter.token.name} token(s).`);
+        break;
+      }
+      case 'mass-polymorph': {
+        const creatures=state.players[player].battlefield.filter(x=>isCreature(x));
+        const count=creatures.length;
+        for(const victim of creatures){const loc=find(state,victim.id);if(loc){remove(state,loc);moveTo(state,victim,victim.owner,'exile');}}
+        startMatchReview(state,player,'mass-polymorph',count,'Mass Polymorph');
+        log(state,`Mass Polymorph: exiled ${count} creatures. Commander zone choices and ETB replacements remain manual.`);
         break;
       }
       case 'ponder':
@@ -1045,6 +1087,50 @@ function apply(state, action) {
     case 'keep':
       if (state.phase !== 'opening') throw new Error('Opening hand already kept.');
       keep(state, 0, action.bottomIds || []); startKeptGame(state); break;
+    case 'activateProteusStaff': {
+      if(state.finished||state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice)throw new Error('Activate Proteus Staff in your main phase with an empty stack.');
+      const staff=find(state,action.id),target=find(state,action.targetId);
+      if(!staff||staff.zone!=='battlefield'||staff.player!==player||named(staff.instance.card)!=='Proteus Staff'||staff.instance.tapped)throw new Error('Choose your untapped Proteus Staff.');
+      if(!target||target.zone!=='battlefield'||!isCreature(target.instance))throw new Error('Choose a battlefield creature to transform.');
+      const sources=state.players[player].battlefield.filter(x=>x.id!==staff.instance.id).map(x=>x.id);
+      const paid=payment(state,player,{name:'Proteus Staff activation',type_line:'Instant',mana_cost:'{2}{U}',cmc:3},0,{sourceIds:sources});
+      if(!paid)throw new Error('Pay {2}{U} to activate Proteus Staff.');
+      for(const step of paid.steps){const mana=find(state,step.id)?.instance;if(!mana||mana.tapped)throw new Error('Mana source unavailable.');mana.tapped=true;if(step.damage)state.players[player].life-=step.damage;if(step.lifeGain)state.players[player].life+=step.lifeGain;}
+      state.players[player].manaPool=paid.pool;staff.instance.tapped=true;
+      const controller=target.player,creature=remove(state,target);
+      moveTo(state,creature,creature.owner,'library');
+      startMatchReview(state,controller,'proteus',1,'Proteus Staff');
+      log(state,`Proteus Staff: ${named(creature.card)} put on its owner library bottom; reveal from its controller library. Response timing is not modelled.`);
+      break;
+    }
+    case 'castEmptyLaboratory': {
+      if(state.finished||state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice)throw new Error('Cast this sorcery during your main phase.');
+      const x=action.x,where=find(state,action.id);
+      if(!where||where.zone!=='hand'||where.player!==player||named(where.instance.card)!=='Empty the Laboratory')throw new Error('Choose Empty the Laboratory in your hand.');
+      if(!Number.isInteger(x)||x<0||x>20)throw new Error('Choose X between 0 and 20.');
+      const wanted={name:'Empty the Laboratory X cost',type_line:'Sorcery',mana_cost:`{${x}}{U}{U}`,cmc:x+2};
+      const paid=payment(state,player,wanted);
+      if(!paid)throw new Error(`Insufficient mana for Empty the Laboratory at X=${x}: pay {${x}}{U}{U}.`);
+      for(const step of paid.steps){const mana=find(state,step.id)?.instance;if(!mana||mana.tapped)throw new Error('A chosen mana source is unavailable.');mana.tapped=true;if(step.damage)state.players[player].life-=step.damage;if(step.lifeGain)state.players[player].life+=step.lifeGain;}
+      state.players[player].manaPool=paid.pool;
+      const spell=remove(state,where);spell.controller=player;spell.paidX=x;state.stack.push(spell);
+      stat(state,player,'cardsCast');queueCastInteractions(state,player,spell.card);
+      log(state,`Empty the Laboratory cast for X=${x}; {${x}}{U}{U} paid with the normal mana planner. Choose Zombies when it resolves.`);
+      finishIfLethal(state);break;
+    }
+    case 'resolveEmptyLaboratory': {
+      const where=find(state,action.id);
+      if(!where||where.zone!=='stack'||named(where.instance.card)!=='Empty the Laboratory'||state.stack.at(-1)?.id!==where.instance.id)throw new Error('Resolve the paid Empty the Laboratory at the top of the stack.');
+      if(!Array.isArray(action.sacrificeIds)||new Set(action.sacrificeIds).size!==action.sacrificeIds.length||action.sacrificeIds.length>30||!Number.isInteger(where.instance.paidX))throw new Error('Choose distinct Zombies for a spell cast with validated X payment.');
+      const availableZombies=state.players[where.player].battlefield.filter(x=>qualifies(x,'zombie'));
+      if(action.sacrificeIds.length!==Math.min(where.instance.paidX,availableZombies.length))throw new Error('Sacrifice X Zombies, or all available Zombies if fewer than X.');
+      for(const id of action.sacrificeIds){const loc=find(state,id);if(!loc||loc.zone!=='battlefield'||loc.player!==where.player||!qualifies(loc.instance,'zombie'))throw new Error('Choose only Zombies you control.');}
+      for(const id of action.sacrificeIds){const loc=find(state,id),victim=remove(state,loc);queueDeathDrawInteractions(state,where.player,victim);moveTo(state,victim,victim.owner,'graveyard');}
+      const spell=remove(state,where);moveTo(state,spell,spell.owner,'graveyard');
+      startMatchReview(state,where.player,'empty-lab',action.sacrificeIds.length,'Empty the Laboratory');
+      log(state,`Empty the Laboratory: ${action.sacrificeIds.length} Zombie(s) sacrificed after casting for X=${spell.paidX}.`);
+      break;
+    }
     case 'startLibraryReview': {
       if(state.finished||!state.players[0].kept)throw new Error('Keep the opening hand first.');
       startLibraryReview(state,action.targetPlayer,action.mode,action.count,action.sourceName||'Manual library review');

@@ -75,3 +75,7 @@ Source references and reproducible tests: `tests/mana-draw-fundamentals.test.mjs
 - **Future:** Variants until N creature/Zombie/mana-value matches, cascade/discover, Brainstorm draw 3/put 2 from hand, and automatic source-specific permissions.
 
 Test evidence: `apps/deck-lab/tests/library-selection.test.mjs` and website `tests/library-review-browser.mjs` (390/1440px).
+
+## MECH-018 · Card-specific creature reveals (0.1.11 source candidate)
+
+Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the Laboratory paid-X, Zombie sacrifice, N Zombie matches and random bottom are implemented in candidate source. Test: `apps/deck-lab/tests/library-variants.test.mjs`; browser: `tests/named-creature-reveal-browser.mjs`. Distinguish attempted, tested, merged, production deployed, and device verified. Do not label complete without independent confirmation. Full stack timing, commander replacement choices, all ETB ordering, and Synthetic Destiny's delayed end-step remain open.
