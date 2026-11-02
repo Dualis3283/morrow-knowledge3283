@@ -12,8 +12,8 @@ android {
         applicationId 'dev.morrow.decklab'
         minSdk 26
         targetSdk 35
-        versionCode 13
-        versionName '0.1.12'
+        versionCode 14
+        versionName '0.1.13'
     }
     sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/morrow-assets')
     buildTypes {

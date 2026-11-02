@@ -361,7 +361,7 @@ function renderGame() {
   setText('session-seed', `SEED ${game.seed}`);
   setText('game-title', game.finished ? 'A test, complete.' : 'Your table');
   setText('round-label', `Round ${Math.min(game.round, game.roundLimit || 10)} / ${game.roundLimit || 10}`);
-  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':!own.kept?'Opening hand':'Your turn · main phase');
+  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':game.responseWindow?'Response window · you have priority':!own.kept?'Opening hand':'Your turn · main phase');
   setText('opponent-counts', `${opponent.library.length} in library · ${opponent.hand.length} in hand · ${opponent.graveyard.length} in graveyard`);
   const scripted=opponentDiagnostics(game);
   setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
@@ -423,7 +423,12 @@ function renderGame() {
     button.addEventListener('click', () => showCard(instance, instance.controller || 0, 'stack'));
     $('stack-list').append(button);
   });
-  $('resolve-button').disabled = !stack.length || game.finished || Boolean(game.pendingLibrary);
+  $('resolve-button').disabled = !stack.length || game.finished || Boolean(game.pendingLibrary||game.responseWindow);
+  $('resolve-button').textContent = 'Resolve top · quick pass shortcut';
+  $('open-response-button').disabled=!stack.length||game.finished||Boolean(game.pendingLibrary||game.pendingChoice||game.responseWindow)||game.activePlayer!==0;
+  $('pass-response-button').hidden=!game.responseWindow;
+  $('close-response-button').hidden=!game.responseWindow;
+  $('pass-response-button').disabled=!stack.length||game.finished||Boolean(game.pendingLibrary||game.pendingChoice)||game.responseWindow?.priorityPlayer!==0;
   $('end-turn-button').textContent = game.finished?'Test complete':(game.delayedEndSteps?.length?`End turn → ${game.delayedEndSteps.length} delayed effect${game.delayedEndSteps.length===1?'':'s'}`:'End turn →');
   $('activity-log').replaceChildren(...(game.log || []).slice(-18).reverse().map(item => element('li', '', typeof item === 'string' ? item : JSON.stringify(item))));
   if (game.lastRandom) {
@@ -623,7 +628,15 @@ function showCard(instance, player = 0, zone = 'preview') {
         targetSelect = element('select'); targetSelect.id = 'spell-target';
         const noTarget = element('option', '', 'No target'); noTarget.value = '';
         targetSelect.append(noTarget);
-        game.players.forEach((p, pi) => p.battlefield.forEach(i => {
+        const counterType=({Counterspell:'spell',Negate:'noncreatureSpell',Stifle:'stackAbility',Disallow:'spellOrAbility'})[card.name];
+        if(counterType){
+          for(const stacked of game.stack){
+            const ability=stacked.kind==='trigger'||stacked.kind==='activated';
+            if(counterType==='spell'&&ability||counterType==='noncreatureSpell'&&(ability||isCreature(stacked.card))||counterType==='stackAbility'&&!ability)continue;
+            const option=element('option','',`${ability?'Ability':'Spell'} · ${stacked.card.name}`);
+            option.value=stacked.id;targetSelect.append(option);
+          }
+        }else game.players.forEach((p, pi) => p.battlefield.forEach(i => {
           const option = element('option', '', `${pi === 0 ? 'You' : 'Opponent'} · ${i.card.name}`);
           option.value = i.id; targetSelect.append(option);
         }));
@@ -686,6 +699,11 @@ function showCard(instance, player = 0, zone = 'preview') {
       actions.append(actionButton('Exile under another card…',()=>{openLinkedExileDialog(instance);return null;},{disabled:!ready}));
     }
     if(zone==='stack'&&card.name==='Empty the Laboratory')actions.append(actionButton('Resolve Empty the Laboratory: sacrifice Zombies and reveal',()=>{openEmptyLabDialog(instance);return null;},{disabled:!ready||game.stack.at(-1)?.id!==instance.id}));
+    if(zone==='stack'&&instance.kind==='trigger'&&instance.controller===0){
+      const idx=game.stack.findIndex(x=>x.id===instance.id),above=game.stack[idx+1];
+      if(above?.kind==='trigger'&&above.controller===0&&Number.isInteger(instance.trigger?.batchId)&&instance.trigger.batchId===above.trigger?.batchId)
+        actions.append(actionButton('Move this cast trigger above the next', {type:'promoteCastTrigger',id:instance.id},{disabled:!ready}));
+    }
     if (zone === 'stack' && card.name!=='Empty the Laboratory') actions.append(actionButton('Resolve top spell', {type: 'resolve'}, {primary: true, disabled: !ready || game.stack.at(-1)?.id !== instance.id}));
     if (actions.childNodes.length) content.append(actions);
     const manual = element('details', 'manual-tools');
@@ -1120,6 +1138,9 @@ $('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'l
 $('assist-next').addEventListener('click', () => dispatch({type:'assist',mode:'next'}));
 $('assist-main').addEventListener('click', () => dispatch({type:'assist',mode:'main'}));
 $('undo-action').addEventListener('click', () => { if(!undoHistory.length)return; game=undoHistory.pop(); savedGame=game; persist(); renderGame(); });
+$('open-response-button').addEventListener('click',()=>dispatch({type:'openResponseWindow'}));
+$('pass-response-button').addEventListener('click',()=>dispatch({type:'passResponse'}));
+$('close-response-button').addEventListener('click',()=>dispatch({type:'closeResponseWindow'}));
 $('resolve-button').addEventListener('click', () => dispatch({type: 'resolve'}));
 $('coin-button').addEventListener('click', () => dispatch({type: 'coin'}));
 $('die-button').addEventListener('click', () => dispatch({type: 'die', sides: Number($('die-sides').value)}));
