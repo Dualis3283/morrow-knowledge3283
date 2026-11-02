@@ -154,6 +154,7 @@ const EFFECTS = {
   'Ponder': {effect:'ponder',status:'supported'},
   'Preordain': {effect:'preordain',status:'supported'},
   'Mass Polymorph': {effect:'mass-polymorph',status:'partial'},
+  'Synthetic Destiny': {effect:'synthetic-destiny',status:'partial',auto:false},
   'Harmonize': { effect: 'draw', amount: 3 },
   "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
   'Think Twice': {effect:'draw',amount:1,status:'partial',reason:'Normal cast draws one card; Flashback casting and exile remain manual.'},
@@ -663,7 +664,7 @@ function qualifies(instance,predicate){
   return predicate==='creature'||(predicate==='zombie'&&/\bZombie\b/.test(String(instance.card.type_line||'').split('—').slice(1).join(' ')));
 }
 function startMatchReview(state,player,variant,required,sourceName){
-  if(state.pendingLibrary||!['proteus','mass-polymorph','empty-lab'].includes(variant)||!Number.isInteger(required)||required<0||required>99)throw new Error('Invalid or overlapping reveal.');
+  if(state.pendingLibrary||!['proteus','mass-polymorph','empty-lab','synthetic-destiny'].includes(variant)||!Number.isInteger(required)||required<0||required>1000000)throw new Error('Invalid or overlapping reveal.');
   const typeName=variant==='empty-lab'?'zombie':'creature',seen=[];let matches=0;
   if(required)for(const card of state.players[player].library){seen.push(card);if(qualifies(card,typeName)&&++matches>=required)break;}
   state.pendingLibrary={mode:'matching-reveal',variant,player,sourceName,required,ids:seen.map(x=>x.id),matches:seen.filter(x=>qualifies(x,typeName)).map(x=>x.id),createdTurn:state.turn};
@@ -685,14 +686,19 @@ function commitLibraryReview(state,action){
     const rest=order.filter(id=>!hits.has(id)).map(id=>lookup.get(id));
     for(const card of hitCards)moveTo(state,card,pending.player,'battlefield');
     actual.library.push(...rest);
-    if(pending.variant==='mass-polymorph')shuffle(state,actual.library);
+    if(['mass-polymorph','synthetic-destiny'].includes(pending.variant))shuffle(state,actual.library);
     if(pending.variant==='empty-lab'){
       actual.library.splice(actual.library.length-rest.length,rest.length);
       shuffle(state,rest);actual.library.push(...rest);
     }
     delete state.pendingLibrary;
-    log(state,`${pending.sourceName}: ${hitCards.length} matched creature(s) entered together; ${rest.length} others ${pending.variant==='mass-polymorph'?'shuffled into the library':pending.variant==='proteus'?'placed on bottom in selected order':'randomized on the bottom'}.`);
+    log(state,`${pending.sourceName}: ${hitCards.length} matched creature(s) entered together; ${rest.length} others ${['mass-polymorph','synthetic-destiny'].includes(pending.variant)?'shuffled into the library':pending.variant==='proteus'?'placed on bottom in selected order':'randomized on the bottom'}.`);
     if(hitCards.length)warn(state,'Simultaneous entry was recorded; complex ETB and replacement effects still require manual handling.');
+    if(pending.variant==='synthetic-destiny'&&state.pendingEndStepResume==='user'){
+      delete state.pendingEndStepResume;
+      log(state,'Synthetic Destiny delayed end-step trigger has resolved; continuing the turn-end procedure.');
+      endTurn(state);
+    }
     return;
   }
   if(typeof action.shuffle!=='boolean')throw new Error('Choose whether to shuffle.');
@@ -757,6 +763,15 @@ function resolve(state) {
           token.isToken=true;moveTo(state,token,player,'battlefield');
         }
         log(state,`${named(instance.card)} creates ${count} ${adapter.token.name} token(s).`);
+        break;
+      }
+      case 'synthetic-destiny': {
+        const creatures=state.players[player].battlefield.filter(x=>isCreature(x));
+        const count=creatures.length;
+        for(const victim of creatures){const loc=find(state,victim.id);if(loc){remove(state,loc);moveTo(state,victim,victim.owner,'exile');}}
+        state.delayedEndSteps ||= [];
+        state.delayedEndSteps.push({kind:'synthetic-destiny',sourceId:instance.id,controller:player,required:count,createdTurn:state.turn});
+        log(state,`Synthetic Destiny: exiled ${count} creature(s); next end-step trigger scheduled. Exiled tokens counted, commander exile choice requires manual review.`);
         break;
       }
       case 'mass-polymorph': {
@@ -1011,7 +1026,7 @@ function autoTurn(state,player) {
     audit.publicActions.push({turn:state.turn,kind:next.type,label:next.label});
   }
   audit.unknownHandCount=state.players[player].hand.filter(x=>!type(x.card,'Land')&&!profile(x.card).auto).length;
-  if(state.stack.length||state.pendingChoice) {
+  if(state.stack.length||state.pendingChoice||state.pendingLibrary) {
     audit.halted=true;state.pendingOpponent={reason:'Unsupported stack or choice requires manual resolution.'};
     warn(state,'Scripted opponent paused on an unresolved effect; inspect and adjudicate before continuing.');
     return false;
@@ -1025,12 +1040,23 @@ function autoTurn(state,player) {
   return true;
 }
 function endCurrent(state) {
+  while((state.delayedEndSteps||[]).some(x=>x.createdTurn<=state.turn)){
+    const index=state.delayedEndSteps.findIndex(x=>x.createdTurn<=state.turn),event=state.delayedEndSteps.splice(index,1)[0];
+    startMatchReview(state,event.controller,'synthetic-destiny',event.required,'Synthetic Destiny · next end step');
+    log(state,`Synthetic Destiny delayed trigger from ${event.sourceId} resolves at beginning of this end step. No cards were revealed before this step.`);
+    if(state.activePlayer===0&&event.controller===0){state.pendingEndStepResume='user';return false;}
+    if(event.controller===0)warn(state,'Human-controlled delayed reveal at opponent end step uses deterministic allocation because interactive opponent end-step priority is not modeled.');
+    const pending=state.pendingLibrary;
+    commitLibraryReview(state,{order:pending.ids.slice(),destinations:{},shuffle:false});
+    log(state,'Scripted end-step reveal: deterministic recorded order and mandatory library shuffle, no speculative strategic selection.');
+  }
   const p = state.players[state.activePlayer];
   if (!p.landPlayed) stat(state, state.activePlayer, 'missedLandDrops');
   p.manaPool = pool();
   for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; delete instance.temporaryHaste; delete instance.manualMana; }
   const row = state.roundStats.find(x => x.round === state.round);
   if (row) for (let i = 0; i < 2; i++) row.players[i].lifeRemaining = state.players[i].life;
+  return true;
 }
 function finishRound(state) {
   if (state.round >= state.roundLimit) { state.finished = true; state.phase = 'finished'; state.finishReason = 'Round limit reached'; log(state, `${state.roundLimit}-round test complete.`); return false; }
@@ -1039,7 +1065,7 @@ function finishRound(state) {
 function endTurn(state) {
   if (state.phase !== 'main' || state.activePlayer !== 0) throw new Error('Keep an opening hand before ending your turn.');
   if (state.stack.length) throw new Error('Resolve or manually move every stack card before ending the turn.');
-  endCurrent(state);
+  if(!endCurrent(state))return;
   if (state.startingPlayer === 0) {
     beginTurn(state, 1); if(!autoTurn(state, 1))return; endCurrent(state);
     if (state.finished || !finishRound(state)) return;

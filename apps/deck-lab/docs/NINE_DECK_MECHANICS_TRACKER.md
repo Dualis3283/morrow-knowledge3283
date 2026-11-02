@@ -79,3 +79,10 @@ Test evidence: `apps/deck-lab/tests/library-selection.test.mjs` and website `tes
 ## MECH-018 · Card-specific creature reveals (0.1.11 source candidate)
 
 Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the Laboratory paid-X, Zombie sacrifice, N Zombie matches and random bottom are implemented in candidate source. Test: `apps/deck-lab/tests/library-variants.test.mjs`; browser: `tests/named-creature-reveal-browser.mjs`. Distinguish attempted, tested, merged, production deployed, and device verified. Do not label complete without independent confirmation. Full stack timing, commander replacement choices, all ETB ordering, and Synthetic Destiny's delayed end-step remain open.
+
+## MECH-019 · Synthetic Destiny delayed next-end-step reveal (0.1.12 candidate)
+
+- Named `{4}{U}{U}` paid instant: exile controlled creatures now, count tokens, create persisted delayed reveal **at next end step**, search until N creature cards, simultaneous battlefield entry and mandatory whole-library shuffle.
+- User review is saved and blocks turn progression until confirmation; scripted opponent resolves deterministic library selection. Multiple effects processed serially. Supported source/tests `web/engine.mjs`, `tests/synthetic-destiny.test.mjs`, site browser `tests/synthetic-destiny-browser.mjs`.
+- Gates: engine tested locally; GitHub CI, Android APK package, cloud production deployment and live readback **pending independent verification at this checkpoint**.
+- Open: full stack priority/responses, commander exile zone-choice, simultaneous ETB/replacement ordering, cross-turn instant casting and battlefield ability ordering.
