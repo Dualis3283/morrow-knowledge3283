@@ -74,3 +74,7 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 @media(max-width:450px){.payment-actions .button{flex-basis:100%;}.cast-dialog{padding:.75rem;}}
 
 .cast-drop-zone[hidden] {display:none;}
+
+.loyalty-badge{background:#6d5495;color:#fff;white-space:nowrap;font-weight:700;}
+.loyalty-status{font-weight:750;}
+.loyalty-note{font-size:.85rem;max-width:36rem;line-height:1.4;color:#e6d3b2;}

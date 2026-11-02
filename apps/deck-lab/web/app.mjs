@@ -1,8 +1,8 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, simulate, upgradeGame, suggestions, castOptions, tapOptions} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, upgradeGame, suggestions, castOptions, tapOptions, loyaltyOptions} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
-const STORE = 'morrow-deck-lab-v1';
+const STORE = 'morrow-deck-simulator-web-v1';
 const defaults = demoDecks.map((deck, index) => ({...deck, id: `sample-${index}`, sample: true}));
 let decks = defaults.slice();
 let game = null;
@@ -20,6 +20,8 @@ let inspected = null;
 let appConfig = {};
 let undoHistory = [];
 let casting = null;
+let activeTest = null;
+let nextTestId = 0;
 
 function element(tag, className, content) {
   const node = document.createElement(tag);
@@ -123,7 +125,7 @@ function dispatch(action, {close = false} = {}) {
   try {
     const previous=game;
     game = act(game, action);
-    undoHistory.push(previous); if(undoHistory.length>24) undoHistory.shift();
+    undoHistory.push(previous); if (undoHistory.length > 24) undoHistory.shift();
     savedGame = game;
     persist();
     renderGame();
@@ -198,7 +200,8 @@ function openManaChoice(instance) {
   if(source.options.length===1){dispatch({type:'tap',id:instance.id});return;}
   $('mana-choice-title').textContent=`Tap ${instance.card.name} for mana`;
   $('mana-choice-list').replaceChildren(...source.options.map((option,index)=>{
-    const button=element('button','button',`Add ${manaText(option)}${source.activationGeneric?` (costs ${source.activationGeneric} mana)`:''}`);
+    const pain=source.optionDamage?.[index]||0;
+    const button=element('button','button',`Add ${manaText(option)}${pain?` · ${pain} damage to you`:''}${source.activationGeneric?` (costs ${source.activationGeneric} mana)`:''}`);
     button.type='button';button.addEventListener('click',()=>{if(dispatch({type:'tap',id:instance.id,choiceIndex:index}))$('mana-choice-dialog').close();});return button;
   }));
   $('mana-choice-dialog').showModal();
@@ -221,11 +224,11 @@ function openCastDialog(id,targetId='') {
     label.append(toggle,element('span','',source.name));row.append(label);
     if(source.options.length>1){
       const picker=document.createElement('select');picker.setAttribute('aria-label',`Mana from ${source.name}`);picker.dataset.sourceId=source.id;
-      source.options.forEach((choice,i)=>{const option=element('option','',manaText(choice));option.value=i;picker.append(option);});
+      source.options.forEach((choice,i)=>{const pain=source.optionDamage?.[i]||0;const option=element('option','',`${manaText(choice)}${pain?` · ${pain} damage`:''}`);option.value=i;picker.append(option);});
       picker.value=String(casting.choices[source.id]??0);
       picker.addEventListener('change',()=>{casting.choices[source.id]=Number(picker.value);updateCastQuote();});
       row.append(picker);
-    }else row.append(element('small','',manaText(source.options[0])));
+    }else row.append(element('small','',`${manaText(source.options[0])}${source.optionDamage?.[0]?` · ${source.optionDamage[0]} damage`:''}`));
     if(source.activationGeneric)row.append(element('small','',`Activation costs ${source.activationGeneric} mana`));
     sourceBox.append(row);
   }
@@ -235,9 +238,10 @@ function updateCastQuote(){
   if(!casting || !game)return;
   const quote=castOptions(game,0,casting.id,{sourceIds:[...casting.selected],sourceChoices:casting.choices});
   $('cast-payment-pool').textContent=`Already floating: ${manaText(quote.pool)}. Only checked untapped sources are available. Tap modes can be changed.`;
-  $('cast-payment-status').textContent=quote.canCast?`Ready: ${quote.plan.steps.map(step=>`${lookup(step.id)?.instance?.card.name || 'Source'} (${manaText(step.mana)})`).join(', ')||'pay from floating pool'}; ${quote.reason}`:quote.reason;
+  $('cast-payment-status').textContent=quote.canCast?`Ready: ${quote.plan.steps.map(step=>`${lookup(step.id)?.instance?.card.name || 'Source'} (${manaText(step.mana)}${step.damage?` · ${step.damage} damage to you`:''})`).join(', ')||'pay from floating pool'}; ${quote.reason}`:quote.reason;
   $('cast-pay-button').disabled=!quote.canCast;
 }
+function isPlaneswalker(card){return /\bPlaneswalker\b/i.test(card?.type_line||'');}
 function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = false, quantity} = {}) {
   const card = instance.card || instance;
   const tile = element('button', `card-tile${land ? ' land-card' : ''}${instance.tapped ? ' tapped' : ''}${instance.attacking ? ' attacking' : ''}${bottomIds.has(instance.id) && zone === 'hand' ? ' selected' : ''}`);
@@ -273,6 +277,7 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   const badges = element('span', 'card-badges');
   if (isCommanderInstance(instance)) badges.append(element('span', 'card-badge commander-badge', 'CMD'));
   if (Number(instance.counters)) badges.append(element('span', 'card-badge', `${Number(instance.counters) > 0 ? '+' : ''}${instance.counters}`));
+  if(zone==='battlefield' && isPlaneswalker(card)) badges.append(element('span','card-badge loyalty-badge',`LOY ${instance.loyalty ?? card.loyalty ?? 0}${instance.loyaltyActivatedTurn===game?.turn?' · USED':''}`));
   if (instance.damage) badges.append(element('span', 'card-badge', `${instance.damage} dmg`));
   if (instance.attacking) badges.append(element('span', 'card-badge', 'ATK'));
   if (quantity > 1) badges.append(element('span', 'card-badge', `×${quantity}`));
@@ -432,6 +437,7 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (card.power !== undefined) stats.append(element('span', '', `${card.power} / ${card.toughness}`));
   if (zone !== 'preview') stats.append(element('span', '', zone === 'stack' ? 'On the stack' : `${player === 0 ? 'Your' : 'Opponent'} ${zone}`));
   if (instance.counters) stats.append(element('span', '', `${instance.counters} +1/+1 counters`));
+  if (isPlaneswalker(card)) stats.append(element('span','loyalty-status',zone==='battlefield'?`Loyalty ${instance.loyalty ?? card.loyalty ?? '?'} · printed ${card.loyalty ?? '?'}${instance.loyaltyActivatedTurn===game?.turn?' · ability used this turn':''}`:`Printed loyalty ${card.loyalty??'?'}`));
   info.append(stats, element('p', 'card-oracle', card.oracle_text || card.card_faces?.map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n') || 'No rules text.'));
   if (zone === 'battlefield' && game) {
     const threat = scoreThreat(instance, game.players[player].battlefield);
@@ -507,7 +513,17 @@ function showCard(instance, player = 0, zone = 'preview') {
     if (zone === 'battlefield') {
       actions.append(actionButton(instance.tapped ? 'Untap card' : tapOptions(game,player,instance.id)?'Tap for mana':'Tap card', () => {if(player===0 && !instance.tapped && tapOptions(game,player,instance.id)){openManaChoice(instance);return null;}return {type:'tap',id:instance.id};}, {disabled: !ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
-      actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
+      if(isPlaneswalker(card)){
+        const options=loyaltyOptions(card);
+        info.append(element('p','loyalty-note','Loyalty costs and once-per-turn use are tracked. Apply each loyalty ability’s effect manually; this is not a full Oracle interpreter.'));
+        for(const option of options){
+          const blocked=player!==game.activePlayer || game.phase!=='main' || game.stack.length>0 || instance.loyaltyActivatedTurn===game.turn || (instance.loyalty??0)+option.delta<0;
+          actions.append(actionButton(`Activate ${option.label} loyalty`,{type:'activateLoyalty',id:instance.id,player,delta:option.delta},{disabled:!ready||blocked}));
+        }
+        actions.append(actionButton('Manual +1 loyalty',{type:'loyaltyAdjust',id:instance.id,delta:1},{disabled:!ready}),actionButton('Manual −1 loyalty',{type:'loyaltyAdjust',id:instance.id,delta:-1},{disabled:!ready||!instance.loyalty}));
+      }else{
+        actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
+      }
     }
     if (zone === 'stack') actions.append(actionButton('Resolve top spell', {type: 'resolve'}, {primary: true, disabled: !ready || game.stack.at(-1)?.id !== instance.id}));
     if (actions.childNodes.length) content.append(actions);
@@ -578,7 +594,6 @@ function renderDeckLibrary() {
     if (deck.importErrors?.length || deck.importDiagnostics?.some(row => ['failed', 'error', 'pending'].includes(row.status))) {
       const issues = element('button', 'button', 'Import issues');
       issues.addEventListener('click', () => {
-        if (importController) { toast('Finish or cancel the current lookup before reviewing a saved report.'); return; }
         $('deck-text').value = deck.text || ''; $('deck-name').value = deck.name;
         importResult = null; $('save-deck-button').hidden = true;
         renderImportDiagnostics(deck.importDiagnostics || [], deck.importErrors || [], deck.importStats || {});
@@ -587,6 +602,7 @@ function renderDeckLibrary() {
       });
       actions.append(issues);
     }
+
     if (!deck.sample) {
       const remove = element('button', 'button', 'Remove'); remove.setAttribute('aria-label', `Remove ${deck.name} from this device`);
       remove.addEventListener('click', () => {
@@ -616,7 +632,7 @@ async function loadDatedDeck(which) {
     $('deck-text').value = await response.text();
     $('deck-name').value = name;
     importResult = null; $('save-deck-button').hidden = true;
-    setText('import-status', 'Dated simulator deck loaded. Look up cards through the website resolver and Scryfall to refresh their metadata. Many effects need manual resolution.');
+    setText('import-status', 'Dated simulator deck loaded. Find cards on Scryfall to refresh its metadata. Many effects need manual resolution.');
     $('deck-text').focus();
   } catch (error) { toast(error.message); }
 }
@@ -682,7 +698,7 @@ async function importDeck() {
   const inputName = $('deck-name').value.trim() || 'Untitled deck';
   setText('import-status', 'Looking up cards in batches…');
   try {
-    const resolvedResult = await resolveDeck(text, {resolverEndpoint: 'https://david-walsh.pages.dev/api/simulator-cards', timeoutMs: 60000, timeoutMs: 60000, signal: importController.signal, onProgress: progress => {
+    const resolvedResult = await resolveDeck(text, {resolverEndpoint: '/api/simulator-cards', timeoutMs: 60000, signal: importController.signal, onProgress: progress => {
       if (typeof progress !== 'object' || !progress) return;
       if (Array.isArray(progress.diagnostics)) renderImportDiagnostics(progress.diagnostics, [], {requestCount: progress.requestCount});
       const done = progress.completed ?? 0, total = progress.total ?? parsed.entries.length;
@@ -778,16 +794,59 @@ function renderReport() {
   ]);
   else preflight();
 }
+function setTestBusy(busy) {
+  for (const id of ['run-test-button', 'test-deck', 'test-opponent', 'test-seed', 'test-rounds']) $(id).disabled = busy;
+  $('cancel-test-button').hidden = !busy;
+  $('test-progress').hidden = !busy;
+  $('results-panel').setAttribute('aria-busy', String(busy));
+}
+function runTestInWorker(options) {
+  return new Promise((resolve, reject) => {
+    const jobId = `deck-test-${++nextTestId}`;
+    let worker;
+    let settled = false;
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      worker?.terminate();
+      if (activeTest?.jobId === jobId) activeTest = null;
+      if (error) reject(error); else resolve(result);
+    };
+    try {
+      worker = new Worker(new URL('./simulation-worker.mjs', import.meta.url), {type: 'module'});
+      activeTest = {jobId, cancel: () => finish(new DOMException('Test canceled.', 'AbortError'))};
+      worker.addEventListener('message', event => {
+        const message = event.data;
+        if (message?.jobId !== jobId) return;
+        if (message.type === 'progress') {
+          const completed = Number(message.completed), total = Number(message.total);
+          if (Number.isInteger(completed) && Number.isInteger(total) && completed >= 0 && completed <= total && total > 0) {
+            $('test-progress').max = total;
+            $('test-progress').value = completed;
+            setText('test-status', `Completed ${completed} of ${total} seeded tests in this browser…`);
+          }
+        } else if (message.type === 'result') finish(null, message.report);
+        else if (message.type === 'error') finish(new Error(message.message || 'The test could not finish.'));
+      });
+      worker.addEventListener('error', () => finish(new Error('The test worker could not start. Use a current browser or try the Android app.')));
+      worker.addEventListener('messageerror', () => finish(new Error('The browser could not read the test result.')));
+      worker.postMessage({type: 'run', jobId, options});
+    } catch (error) { finish(error); }
+  });
+}
 async function runTests() {
+  if (activeTest) { toast('A test is already running. Open Results to cancel it.'); return; }
   const own = getDeck($('test-deck').value), opponent = getDeck($('test-opponent').value);
   const config = readConfig();
   const rounds = Number($('test-rounds').value), seed = $('test-seed').value.trim() || 'morrow-01';
-  $('run-test-button').disabled = true;
-  setText('test-status', 'Running 100 seeded opening tests on this device…');
+  report = null;
+  $('results-content').hidden = true;
+  setTestBusy(true);
+  $('test-progress').value = 0;
+  setText('test-status', 'Starting 100 seeded opening tests in this browser…');
   preflight();
-  await new Promise(resolve => setTimeout(resolve, 50));
   try {
-    report = simulate({deck: expandDeck(own.entries), opponentDeck: expandDeck(opponent.entries), commander: commander(own), opponentCommander: commander(opponent), seed, rounds, life: config.life, onPlay: config.onPlay, runs: 100});
+    report = await runTestInWorker({deck: expandDeck(own.entries), opponentDeck: expandDeck(opponent.entries), commander: commander(own), opponentCommander: commander(opponent), seed, rounds, life: config.life, onPlay: config.onPlay, runs: 100});
     for (const [label, source] of [['Your deck', own], ['Opponent deck', opponent]]) {
       if (source.importErrors?.length) report.notes.push(`${label} is a partial import: ${source.importErrors.length} unresolved source line(s) are absent. Only its ${mainCount(source)} resolved main-deck cards were tested.`);
     }
@@ -795,8 +854,10 @@ async function runTests() {
     renderReport(); persist();
     setText('test-status', '100 tests complete. Review coverage alongside the results; damage depends on supported effects and the opponent policy.');
   } catch (error) {
-    setText('test-status', `The test could not finish: ${error.message || 'check the selected decks'}.`);
-  } finally { $('run-test-button').disabled = false; }
+    report = null;
+    persist();
+    setText('test-status', error.name === 'AbortError' ? 'Test canceled. No partial results were saved.' : `The test could not finish: ${error.message || 'check the selected decks'}.`);
+  } finally { setTestBusy(false); }
 }
 async function exportReport() {
   setText('export-title', 'Your test report');
@@ -874,6 +935,8 @@ for (const id of ['deck-text', 'deck-name']) $(id).addEventListener('input', () 
 $('close-preview').addEventListener('click', () => { $('deck-preview').hidden = true; });
 $('preflight-button').addEventListener('click', preflight);
 $('run-test-button').addEventListener('click', runTests);
+$('cancel-test-button').addEventListener('click', () => activeTest?.cancel());
+window.addEventListener('pagehide', () => activeTest?.cancel());
 $('game-sim-button').addEventListener('click', () => {
   const config = game?.uiConfig || readConfig();
   $('test-deck').value = decks.some(deck => deck.id === config.deck) ? config.deck : $('player-deck').value;
@@ -906,7 +969,7 @@ for (const id of ['test-deck', 'test-opponent', 'test-seed', 'test-rounds']) $(i
 $('card-dialog').addEventListener('close', () => { inspected = null; });
 
 const fixtureTools = element('div', 'fixture-tools');
-fixtureTools.append(element('p', 'tiny', 'From your simulator archive · dated 1 November 2026. These lists include effects that need manual resolution.'));
+fixtureTools.append(element('p', 'tiny', 'Archived example lists · dated 1 November 2026. These lists include effects that need manual resolution.'));
 for (const [key, title] of [['ovika', 'Load dated Ovika list'], ['karn', 'Load dated Karn list']]) { const button = element('button', 'text-button', `${title} →`); button.addEventListener('click', () => loadDatedDeck(key)); fixtureTools.append(button); }
 $('deck-text').after(fixtureTools);
 
