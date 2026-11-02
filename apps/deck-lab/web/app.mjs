@@ -20,6 +20,7 @@ let inspected = null;
 let appConfig = {};
 let undoHistory = [];
 let casting = null;
+let manualManaSourceId = null;
 let activeTest = null;
 let nextTestId = 0;
 
@@ -201,10 +202,19 @@ function openManaChoice(instance) {
   $('mana-choice-title').textContent=`Tap ${instance.card.name} for mana`;
   $('mana-choice-list').replaceChildren(...source.options.map((option,index)=>{
     const pain=source.optionDamage?.[index]||0;
-    const button=element('button','button',`Add ${manaText(option)}${pain?` · ${pain} damage to you`:''}${source.activationGeneric?` (costs ${source.activationGeneric} mana)`:''}`);
+    const gain=source.optionLifeGain?.[index]||0;
+    const activation=source.optionActivationGeneric?.[index]??source.activationGeneric??0;
+    const button=element('button','button',`Add ${manaText(option)}${pain?` · ${pain} damage to you`:''}${gain?` · gain ${gain} life`:''}${activation?` (costs ${activation} mana)`:''}`);
     button.type='button';button.addEventListener('click',()=>{if(dispatch({type:'tap',id:instance.id,choiceIndex:index}))$('mana-choice-dialog').close();});return button;
   }));
   $('mana-choice-dialog').showModal();
+}
+function openManualMana(instance){
+  if($('card-dialog').open)$('card-dialog').close();
+  manualManaSourceId=instance.id;
+  $('manual-mana-title').textContent=`Manual mana from ${instance.card.name}`;
+  $('manual-mana-color').value='C';$('manual-mana-amount').value='1';
+  $('manual-mana-dialog').showModal();
 }
 function openCastDialog(id,targetId='') {
   if(!game)return;
@@ -224,7 +234,7 @@ function openCastDialog(id,targetId='') {
     label.append(toggle,element('span','',source.name));row.append(label);
     if(source.options.length>1){
       const picker=document.createElement('select');picker.setAttribute('aria-label',`Mana from ${source.name}`);picker.dataset.sourceId=source.id;
-      source.options.forEach((choice,i)=>{const pain=source.optionDamage?.[i]||0;const option=element('option','',`${manaText(choice)}${pain?` · ${pain} damage`:''}`);option.value=i;picker.append(option);});
+      source.options.forEach((choice,i)=>{const pain=source.optionDamage?.[i]||0;const gain=source.optionLifeGain?.[i]||0;const activation=source.optionActivationGeneric?.[i]??source.activationGeneric??0;const option=element('option','',`${manaText(choice)}${pain?` · ${pain} damage`:''}${gain?` · gain ${gain} life`:''}${activation?` · activation {${activation}}`:''}`);option.value=i;picker.append(option);});
       picker.value=String(casting.choices[source.id]??0);
       picker.addEventListener('change',()=>{casting.choices[source.id]=Number(picker.value);updateCastQuote();});
       row.append(picker);
@@ -348,6 +358,8 @@ function renderGame() {
   $('player-hand').replaceChildren(...own.hand.map(instance => cardTile(instance, {player: 0, zone: 'hand'})));
   if (!own.hand.length) $('player-hand').append(element('p', 'empty-zone', 'Your hand is empty.'));
   setText('mana-pool-status',`Floating mana: ${manaText(own.manaPool)} · Highlighted cards have payable costs`);
+  const readySources=own.battlefield.filter(x=>!x.tapped&&tapOptions(game,0,x.id)?.options?.length&&!(isCreature(x.card)&&x.enteredTurn>=game.turn));
+  setText('mana-sources-status',`Mana ready (${readySources.length}): ${readySources.map(x=>x.card.name).join(', ')||'none'} · Tap a source, or open a card to inspect mana options.`);
   setText('hand-count', own.hand.length);
   setText('library-count', own.library.length);
   setText('graveyard-count', own.graveyard.length);
@@ -366,6 +378,7 @@ function renderGame() {
   $('undo-action').disabled=!undoHistory.length;
   setText('assist-preview', first ? `${first.label} · ${first.why}${first.sourceNames.length ? ` · Auto-tap: ${first.sourceNames.join(', ')}` : ''}` : 'No payable supported action. Inspect a card, adjust the table manually or end your turn.');
   $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || Boolean(game.pendingChoice);
+  $('draw-card-button').disabled=!own.kept||game.finished||!own.library.length;
   $('combat-button').disabled = game.finished || !attackers.length || game.combatDone;
   $('mulligan-button').disabled = own.mulligans >= 7;
   const bottoms = Math.min(own.mulligans || 0, own.hand.length);
@@ -528,6 +541,8 @@ function showCard(instance, player = 0, zone = 'preview') {
     }
     if (zone === 'battlefield') {
       actions.append(actionButton(instance.tapped ? 'Untap card' : tapOptions(game,player,instance.id)?'Tap for mana':'Tap card', () => {if(player===0 && !instance.tapped && tapOptions(game,player,instance.id)){openManaChoice(instance);return null;}return {type:'tap',id:instance.id};}, {disabled: !ready}));
+      if(player===0&&!instance.tapped&&(isLand(card)||/\{T\}[^\n]{0,70}(?:Add|mana)/i.test(card.oracle_text||'')))
+        actions.append(actionButton('Tap and assign mana manually',()=>{openManualMana(instance);return null;},{disabled:!ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
       if(player===0 && card.name==='Shorikai, Genesis Engine') actions.append(actionButton('Activate Shorikai: draw 2, discard 1, Pilot',{type:'activateShorikai',id:instance.id},{disabled:!ready||instance.tapped||game.activePlayer!==0||game.stack.length>0,primary:true}));
       if(isPlaneswalker(card)){
@@ -923,6 +938,13 @@ $('cast-pay-button').addEventListener('click',()=>{
   if(dispatch(action)){$('cast-dialog').close();casting=null;}
 });
 $('resume-opponent-button').addEventListener('click',()=>dispatch({type:'resumeOpponent'}));
+$('manual-mana-cancel').addEventListener('click',()=>{$('manual-mana-dialog').close();manualManaSourceId=null;});
+$('manual-mana-confirm').addEventListener('click',()=>{
+  if(!manualManaSourceId)return;
+  const success=dispatch({type:'manualSourceMana',player:0,id:manualManaSourceId,color:$('manual-mana-color').value,amount:Number($('manual-mana-amount').value)});
+  if(success){$('manual-mana-dialog').close();manualManaSourceId=null;}
+});
+$('draw-card-button').addEventListener('click',()=>dispatch({type:'drawCard',player:0,count:1}));
 $('end-turn-button').addEventListener('click', () => dispatch({type: 'endTurn'}));
 $('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'land'}));
 $('assist-next').addEventListener('click', () => dispatch({type:'assist',mode:'next'}));
