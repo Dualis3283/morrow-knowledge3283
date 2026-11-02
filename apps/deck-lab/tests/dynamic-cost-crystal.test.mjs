@@ -95,10 +95,15 @@ test('Crystal activated ability checks source-specific links, actual 4BB payment
  assert(!s.players[1].exile.some(x=>x.id==='victim'));
 });
 test('Crystal activated ability cannot reanimate a different Crystal linked card or ignore required six mana',()=>{
- let s=table();s.players[0].battlefield.push(card(crystal,'c1'),card(crystal,'c2'),...Array.from({length:5},(_,n)=>card(swamp,'s'+n)));
+ let s=table();s.players[0].battlefield.push(card(crystal,'c1'),...Array.from({length:5},(_,n)=>card(swamp,'s'+n)));
+ s.players[0].hand.push(card(crystal,'c2'));
  s.players[1].battlefield.push(card(bear,'victim',1));
  s=act(s,{type:'move',id:'victim',player:1,zone:'graveyard'});
+ s=act(s,{type:'move',id:'c1',player:0,zone:'hand'});
+ s=act(s,{type:'move',id:'c2',player:0,zone:'battlefield'});
  assert.throws(()=>act(s,{type:'activateDarknessCrystal',id:'c2',targetId:'victim'}),/exact Darkness Crystal/);
+ s=act(s,{type:'move',id:'c2',player:0,zone:'hand'});
+ s=act(s,{type:'move',id:'c1',player:0,zone:'battlefield'});
  assert.throws(()=>act(s,{type:'activateDarknessCrystal',id:'c1',targetId:'victim'}),/Pay \{4\}\{B\}\{B\}/);
 });
 test('Cloud Key chosen type is reset on leaving battlefield and requires new selection after returning',()=>{

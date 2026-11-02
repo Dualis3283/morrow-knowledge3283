@@ -116,3 +116,11 @@ Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the 
 - Generic manual `createTokenCopy` (target battlefield permanent, optional source, 1–20 tokens, chosen controller) creates `isToken` cards carrying `copiedFrom` and `createdBy` metadata; token badge, inspector provenance and source follow-back; survives save/load. Manual actions do not claim verified printed effect.
 - 12 new engine tests, mobile/desktop browser tests. Remaining: other named copy cards, as-enters choices/copy layers, DFCs, legend-rule and broad simultaneous trigger APNAP.
 - Lifecycle: local work complete; GitHub PR, QA, Android, merge and production readback independent gates.
+
+## MECH-024 · Named token doublers, Reflections spell copies and legend rule (0.1.17 candidate)
+
+- `tokenCount` replacement applies named doubled token creation across scripted token spells/triggers, Necroduality and explicit manual copy, with multiplicative stacking and hard 128-token event cap.
+- `Reflections of Littjara` records chosen subtype; copying a creature **spell** triggers on cast and resolves into a token permanent, **not created** for token doubling rules.
+- Human-controlled legendary duplicates pause game for a saved ID-specific choice; scripted opponent keeps deterministically.
+- Tests `tests/token-multipliers-legends.test.mjs` and website `tests/token-doublers-legends-browser.mjs`; independent CI/Android/merge/production verification still required.
+- Open: Doubling Season counter replacement, actual as-enters timing, other token doublers, generalized spell copies, legend-rule copyable layers, APNAP/cross-player simultaneous events.

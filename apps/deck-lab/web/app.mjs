@@ -312,6 +312,7 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   const badges = element('span', 'card-badges');
   if (isCommanderInstance(instance)) badges.append(element('span', 'card-badge commander-badge', 'CMD'));
   if(instance.isToken)badges.append(element('span','card-badge','TOKEN'));
+  if(instance.spellCopyNotCreated)badges.append(element('span','card-badge','SPELL COPY'));
   if(instance.isToken&&instance.copiedFrom)tile.setAttribute('aria-label',`${card.name}, token copy of ${instance.copiedFrom.name}, created by ${instance.createdBy?.sourceName||'manual action'}. View card and actions.`);
   if (Number(instance.counters)) badges.append(element('span', 'card-badge', `${Number(instance.counters) > 0 ? '+' : ''}${instance.counters}`));
   if(zone==='battlefield' && isPlaneswalker(card)) badges.append(element('span','card-badge loyalty-badge',`LOY ${instance.loyalty ?? card.loyalty ?? 0}${instance.loyaltyActivatedTurn===game?.turn?' · USED':''}`));
@@ -451,6 +452,7 @@ function renderGame() {
     if(!discardDialog.open)discardDialog.showModal();
   }else if(discardDialog.open)discardDialog.close();
   renderLibraryAllocation();
+  renderLegendChoice();
 
 }
 function openLaboratoryCastDialog(spell){
@@ -469,6 +471,28 @@ function openEmptyLabDialog(spell){
   }
   $('empty-laboratory-summary').textContent=`X=${spell.paidX}. Choose ${Math.min(spell.paidX,list.children.length)} of ${list.children.length} available Zombies to sacrifice. They go to graveyard before revealing.`;
   $('empty-laboratory-dialog').showModal();
+}
+function renderLegendChoice(){
+  if(!game)return;
+  let dialog=$('legend-choice-dialog');
+  const pending=game.pendingLegend;
+  if(!pending){if(dialog?.open)dialog.close();return;}
+  if(!dialog){
+    dialog=document.createElement('dialog');dialog.id='legend-choice-dialog';dialog.className='card-dialog legend-choice-dialog';
+    dialog.addEventListener('cancel',event=>event.preventDefault());
+    const title=element('h2','', 'Legend rule — choose one');title.id='legend-choice-title';
+    const description=element('p','tiny','You may control only one legendary permanent with this name. Select the one to keep; the rest go to their owners’ graveyards (tokens cease to exist).');
+    const buttons=element('div','card-action-list');buttons.id='legend-choice-options';
+    dialog.setAttribute('aria-labelledby','legend-choice-title');dialog.append(title,description,buttons);
+    document.body.append(dialog);
+  }
+  $('legend-choice-title').textContent=`Legend rule · ${pending.name}`;
+  $('legend-choice-options').replaceChildren(...pending.ids.map(id=>{
+    const instance=game.players[pending.player].battlefield.find(x=>x.id===id);
+    const button=element('button','button wide',`Keep ${instance?.card.name||pending.name} · ${instance?.isToken?'TOKEN COPY':'ORIGINAL'} · ${id}`);
+    button.type='button';button.addEventListener('click',()=>dispatch({type:'chooseLegendToKeep',id,player:pending.player}));return button;
+  }));
+  if(!dialog.open)dialog.showModal();
 }
 function renderLibraryAllocation(){
   if(!game)return;
@@ -572,8 +596,10 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (zone !== 'preview') stats.append(element('span', '', zone === 'stack' ? 'On the stack' : `${player === 0 ? 'Your' : 'Opponent'} ${zone}`));
   if (instance.counters) stats.append(element('span', '', `${instance.counters} +1/+1 counters`));
   if(instance.isToken)stats.append(element('span','','Token permanent'));
+  if(instance.spellCopyNotCreated)stats.append(element('span','','Resolved spell-copy token — not created, so token doublers do not apply'));
   if(instance.copiedFrom)stats.append(element('span','',`Copy of ${instance.copiedFrom.name} (${instance.copiedFrom.id||'snapshot'})`));
   if(instance.createdBy)stats.append(element('span','',`Created by ${instance.createdBy.sourceName}${instance.createdBy.sourceId?` (${instance.createdBy.sourceId})`:''} · ${instance.createdBy.mode}`));
+  if(card.name==='Reflections of Littjara'&&zone==='battlefield')stats.append(element('span','',`Chosen creature type: ${instance.chosenCreatureType||'not yet chosen'}`));
   if(card.name==='Cloud Key'&&zone==='battlefield')stats.append(element('span','',`Cost type: ${instance.costChosenType||'not yet chosen'}`));
   if(card.name==='Semblance Anvil'&&zone==='battlefield')stats.append(element('span','',`Imprint: ${instance.imprintCardTypes?.join(' / ')|| (instance.imprintResolved?'declined':'awaiting selection')}`));
   if(zone==='exile'&&instance.exiledBy)stats.append(element('span','linked-exile-label',`Exiled by ${instance.exiledBy.sourceName}`));
@@ -725,6 +751,12 @@ function showCard(instance, player = 0, zone = 'preview') {
       editor.append(target,source,control,count);
       editor.append(actionButton('Create linked token copy',()=>({type:'createTokenCopy',targetId:target.value,...(source.value?{sourceId:source.value}:{}),player:Number(control.value),count:Number(count.value)}),{disabled:!ready||!game.players[0].kept}));
       actions.append(editor);
+    }
+    if(zone==='battlefield'&&player===0&&card.name==='Reflections of Littjara'&&!instance.chosenCreatureType){
+      const subtype=element('input');subtype.type='text';subtype.value='Zombie';subtype.placeholder='Zombie, Elf, Wizard…';
+      subtype.setAttribute('aria-label','Reflections chosen creature subtype');
+      actions.append(element('p','tiny','Choose a real creature subtype as Reflections enters. Matching creature spells receive a separate spell-copy trigger. This is not a token-creation effect.'),subtype);
+      actions.append(actionButton('Set Reflections creature type',()=>({type:'chooseReflectionsType',id:instance.id,chosenType:subtype.value.trim()}),{disabled:!ready}));
     }
     if(zone==='battlefield'&&player===0&&card.name==='Cloud Key'&&!instance.costChosenType){
       const select=element('select');select.setAttribute('aria-label','Cloud Key chosen spell type');
