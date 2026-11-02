@@ -569,6 +569,8 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (card.power !== undefined) stats.append(element('span', '', `${card.power} / ${card.toughness}`));
   if (zone !== 'preview') stats.append(element('span', '', zone === 'stack' ? 'On the stack' : `${player === 0 ? 'Your' : 'Opponent'} ${zone}`));
   if (instance.counters) stats.append(element('span', '', `${instance.counters} +1/+1 counters`));
+  if(card.name==='Cloud Key'&&zone==='battlefield')stats.append(element('span','',`Cost type: ${instance.costChosenType||'not yet chosen'}`));
+  if(card.name==='Semblance Anvil'&&zone==='battlefield')stats.append(element('span','',`Imprint: ${instance.imprintCardTypes?.join(' / ')|| (instance.imprintResolved?'declined':'awaiting selection')}`));
   if(zone==='exile'&&instance.exiledBy)stats.append(element('span','linked-exile-label',`Exiled by ${instance.exiledBy.sourceName}`));
   if (isPlaneswalker(card)) stats.append(element('span','loyalty-status',zone==='battlefield'?`Loyalty ${instance.loyalty ?? card.loyalty ?? '?'} · printed ${card.loyalty ?? '?'}${instance.loyaltyActivatedTurn===game?.turn?' · ability used this turn':''}`:`Printed loyalty ${card.loyalty??'?'}`));
   info.append(stats, element('p', 'card-oracle', card.oracle_text || card.card_faces?.map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n') || 'No rules text.'));
@@ -623,7 +625,7 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (zone !== 'preview' && game) {
     const actions = element('div', 'card-action-list');
     const ready = game.players[0].kept && !game.finished;
-    if ((player===0 && (zone==='hand'||zone==='command')) || (zone==='exile'&&instance.exiledBy)) {
+    if ((player===0 && (zone==='hand'||zone==='command')) || (zone==='exile'&&instance.exiledBy?.sourceName!=='The Darkness Crystal'&&instance.exiledBy)) {
       let targetSelect;
       if (!isLand(card)) {
         const targetLabel = element('label', '', 'Target, if this spell needs one');
@@ -689,12 +691,36 @@ function showCard(instance, player = 0, zone = 'preview') {
         actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
       }
     }
+    if(zone==='battlefield'&&player===0&&card.name==='Cloud Key'&&!instance.costChosenType){
+      const select=element('select');select.setAttribute('aria-label','Cloud Key chosen spell type');
+      for(const kind of ['Artifact','Creature','Enchantment','Instant','Sorcery']){const option=element('option','',kind);option.value=kind;select.append(option);}
+      actions.append(element('p','tiny','Choose the spell type as Cloud Key enters. The choice cannot be changed later.'),select);
+      actions.append(actionButton('Set Cloud Key spell type',()=>({type:'chooseCloudKeyType',id:instance.id,chosenType:select.value}),{disabled:!ready}));
+    }
+    if(zone==='battlefield'&&player===0&&card.name==='Semblance Anvil'&&!instance.imprintResolved){
+      const select=element('select');select.setAttribute('aria-label','Nonland hand card to imprint with Semblance Anvil');
+      for(const c of game.players[0].hand.filter(x=>!isLand(x.card))){const option=element('option','',c.card.name);option.value=c.id;select.append(option);}
+      actions.append(element('p','tiny','Imprint a nonland card from your hand. Sharing more than one card type still gives just {2} off; once chosen this cannot be changed.'),select);
+      actions.append(actionButton('Imprint selected card',()=>({type:'imprintSemblanceAnvil',id:instance.id,cardId:select.value}),{disabled:!ready||!select.options.length}));
+      actions.append(actionButton('Decline imprint',{type:'declineSemblanceAnvil',id:instance.id},{disabled:!ready}));
+    }
+    if(zone==='battlefield'&&player===0&&card.name==='The Darkness Crystal'){
+      const linked=linkedExiles(game,instance.id).filter(e=>{
+        const found=lookup(e.id);return found?.zone==='exile'&&/\bCreature\b/.test(found.instance.card.type_line||'');
+      });
+      const select=element('select');select.setAttribute('aria-label','Creature exiled by this Darkness Crystal');
+      for(const e of linked){const option=element('option','',`${e.name} · ${e.owner===0?'your':'opponent'} exile`);option.value=e.id;select.append(option);}
+      actions.append(element('p','tiny','Activate by paying {4}{B}{B} and tapping this Crystal. This puts its specifically exiled creature onto your battlefield tapped with two +1/+1 counters. Response timing is still a practice shortcut.'),select);
+      actions.append(actionButton('Activate Crystal: return linked creature',()=>({type:'activateDarknessCrystal',id:instance.id,targetId:select.value}),{disabled:!ready||instance.tapped||!select.options.length||game.activePlayer!==0||game.stack.length>0}));
+    }
     if(zone==='exile'&&instance.exiledBy){
-      actions.append(element('p','tiny',`Linked exile: ${instance.exiledBy.sourceName} · source ${instance.exiledBy.sourceId}. The simulator does not infer that source's casting permission.`));
-      if(!isLand(card))actions.append(actionButton('Cast without paying mana (manual permission)',()=>({type:'castLinkedExile',id:instance.id,player:0,withoutPaying:true,...(targetSelect?.value?{targetId:targetSelect.value}:{})}),{disabled:!ready||game.activePlayer!==0||game.phase!=='main'}));
-      if(/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
+      actions.append(element('p','tiny',instance.exiledBy.sourceName==='The Darkness Crystal' ?
+        `Exiled with The Darkness Crystal (${instance.exiledBy.sourceId}). It does not grant a casting permission: activate that exact Crystal on the battlefield to return this creature, paying {4}{B}{B} and tapping it.` :
+        `Linked exile: ${instance.exiledBy.sourceName} · source ${instance.exiledBy.sourceId}. The simulator does not infer that source's casting permission.`));
+      if(instance.exiledBy.sourceName!=='The Darkness Crystal'&&!isLand(card))actions.append(actionButton('Cast without paying mana (manual permission)',()=>({type:'castLinkedExile',id:instance.id,player:0,withoutPaying:true,...(targetSelect?.value?{targetId:targetSelect.value}:{})}),{disabled:!ready||game.activePlayer!==0||game.phase!=='main'}));
+      if(instance.exiledBy.sourceName!=='The Darkness Crystal' && /(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
         actions.append(actionButton('Put onto your battlefield (manual, not cast)',{type:'returnLinkedExile',id:instance.id,player:0,zone:'battlefield'},{disabled:!ready}));
-      if(instance.owner!==0 && /(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
+      if(instance.exiledBy.sourceName!=='The Darkness Crystal' && instance.owner!==0 && /(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
         actions.append(actionButton('Put onto owner’s battlefield (manual, not cast)',{type:'returnLinkedExile',id:instance.id,player:instance.owner,zone:'battlefield'},{disabled:!ready}));
       actions.append(actionButton('Return to owner’s hand (manual)',{type:'returnLinkedExile',id:instance.id,player:0,zone:'hand'},{disabled:!ready}));
     }

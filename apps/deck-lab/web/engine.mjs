@@ -172,6 +172,19 @@ function applicableReduction(card,kind){
   if(kind==='artifact')return type(card,'Artifact');
   return kind==='historic'&&(type(card,'Legendary')||type(card,'Artifact')||type(card,'Saga'));
 }
+const CHOSEN_CARD_TYPES=['Artifact','Creature','Enchantment','Instant','Sorcery'];
+const STANDARD_CARD_TYPES=['Artifact','Battle','Creature','Enchantment','Instant','Kindred','Planeswalker','Sorcery'];
+function cardTypes(card){
+  const line=String(card.type_line||'').split('—')[0];
+  return new Set(STANDARD_CARD_TYPES.filter(t=>line.split(/[^A-Za-z]+/).some(word=>word.toLowerCase()===t.toLowerCase())));
+}
+function dynamicReduction(source,spell){
+  if(named(source.card)==='Cloud Key'&&CHOSEN_CARD_TYPES.includes(source.costChosenType))
+    return cardTypes(spell).has(source.costChosenType)?1:0;
+  if(named(source.card)==='Semblance Anvil'&&source.imprintCardTypes?.length)
+    return source.imprintCardTypes.some(t=>cardTypes(spell).has(t))?2:0;
+  return 0;
+}
 export function spellCostQuote(state,player,card,extraGeneric=0,{isSpell=true}={}){
   const printed=cost(card);
   if(!printed)return null;
@@ -180,6 +193,8 @@ export function spellCostQuote(state,player,card,extraGeneric=0,{isSpell=true}={
   if(isSpell)for(const source of state.players[player].battlefield){
     const rule=STATIC_COST_REDUCERS[named(source.card)];
     if(rule&&applicableReduction(card,rule.kind))modifiers.push({sourceId:source.id,sourceName:named(source.card),generic:rule.generic});
+    const dynamic=dynamicReduction(source,card);
+    if(dynamic)modifiers.push({sourceId:source.id,sourceName:named(source.card),generic:dynamic});
   }
   const reduced=Math.min(raw,modifiers.reduce((sum,m)=>sum+m.generic,0));
   return {printed:{...printed},increase,reduced,modifiers,wanted:{...printed,generic:raw-reduced}};
@@ -229,6 +244,7 @@ function profile(card) {
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
   if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
   if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
+  if(['Cloud Key','Semblance Anvil'].includes(named(card)))return {status:'partial',auto:true,reason:'Type choice or imprint must be explicitly assigned on battlefield before reducing eligible spells; other effects not modeled.'};
   if(STATIC_COST_REDUCERS[named(card)])return {status:'partial',auto:true,reason:`Static spell cost reduction supported (${STATIC_COST_REDUCERS[named(card)].generic} generic per eligible spell). Other abilities and continuous effects on this card are not automated.`};
   if (named(card) === 'Fellwar Stone') return {status:'partial',reason:'Dynamic opponent-land colors evaluated at play time; other conditional effects are not inferred.',auto:true};
   if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
@@ -321,6 +337,7 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
       log(state, `Practice choice: ${named(instance.card)} returns from the graveyard to ${state.players[owner].name}'s command zone (return on death enabled).`);
     }
   }
+  if(zone!=='battlefield'&&['Cloud Key','Semblance Anvil'].includes(named(instance.card))){delete instance.costChosenType;delete instance.imprintResolved;delete instance.imprintCardTypes;delete instance.imprintCardId;}
   if (zone !== 'exile') delete instance.exiledBy;
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
   if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; delete instance.loyalty; delete instance.loyaltyActivatedTurn; }
@@ -416,9 +433,8 @@ function cleanupDead(state) {
     }
     if (!isCreature(instance)) continue;
     if (toughness(instance) <= 0 || (!has(instance, 'indestructible') && (instance.damage >= toughness(instance) || instance.deathtouchDamage))) {
-      queueDeathDrawInteractions(state,p,instance);
-      const location = find(state, instance.id); remove(state, location); log(state, `${named(instance.card)} dies.`);
-      moveTo(state, instance, instance.owner ?? p, 'graveyard');
+      const location = find(state, instance.id); remove(state, location);
+      departureToGraveyard(state,instance,p);
     }
   }
 }
@@ -478,6 +494,7 @@ function payment(state, player, card, extraGeneric=0, filter=null, {isSpell=true
 export function castOptions(state,player,id,filter=null) {
   const where=find(state,id);
   if(!where || !(['hand','command'].includes(where.zone)&&where.player===player || where.zone==='exile'&&where.instance.exiledBy))return {canCast:false,reason:'Card is not in a castable hand, command or explicitly linked exile zone.',sources:[],pool:pool()};
+  if(where.zone==='exile'&&where.instance.exiledBy?.sourceName==='The Darkness Crystal')return {canCast:false,reason:'The Darkness Crystal does not grant casting permission; activate the specific source instead.',sources:[],pool:{...state.players[player].manaPool}};
   const card=castingCard(where.instance),land=type(card,'Land');
   const ready=state.phase==='main' && state.activePlayer===player && !state.finished && (!state.responseWindow||state.responseWindow.priorityPlayer===player);
   const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
@@ -541,6 +558,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
     throw new Error('Choose a card in your hand, command zone, or explicitly linked exile.');
   if (fromLinkedExile && (location.zone!=='exile' || !location.instance.exiledBy))
     throw new Error('This card is not in an explicitly linked exile zone. Unlinked exiled cards have no cast permission.');
+  if(fromLinkedExile&&location.instance.exiledBy?.sourceName==='The Darkness Crystal')throw new Error('The Darkness Crystal cannot cast its exiled cards; use its paid tap activation.');
   if (withoutPaying && !fromLinkedExile)throw new Error('A free cast requires a manually linked exiled card.');
   const instance = location.instance, card = castingCard(instance), adapter = profile(instance.card);
   const commandCast = location.zone === 'command';
@@ -645,6 +663,21 @@ function queueCreatureEntryInteractions(state, controller, entering) {
     pushInteraction(state,controller,source,'gatekeeper-damage',1);
     log(state,`Molten Gatekeeper trigger: ${named(entering.card)} entered under your control; 1 damage to opponent on resolution.`);
   }
+}
+function departureToGraveyard(state,instance,controller,{keepCommanderInGraveyard=false}={}){
+  const crystal=state.players[1-controller].battlefield.find(x=>named(x.card)==='The Darkness Crystal');
+  if(isCreature(instance)&&!instance.isToken&&crystal){
+    // Exiling instead of dying suppresses death triggers.
+    const owner=instance.owner;
+    instance.exiledBy={sourceId:crystal.id,sourceName:'The Darkness Crystal',sourceOwner:crystal.controller,exileTurn:state.turn};
+    moveTo(state,instance,owner,'exile');
+    state.players[crystal.controller].life+=2;
+    log(state,`The Darkness Crystal (${crystal.id}) replaces death: ${named(instance.card)} exiled from opposing controller's battlefield; ${state.players[crystal.controller].name} gains 2 life. No death trigger.`);
+    return 'exile';
+  }
+  if(isCreature(instance))queueDeathDrawInteractions(state,controller,instance);
+  moveTo(state,instance,instance.owner,'graveyard',{keepCommanderInGraveyard});
+  return 'graveyard';
 }
 function queueDeathDrawInteractions(state, controller, leaving) {
   if(!isCreature(leaving))return;
@@ -885,7 +918,7 @@ function resolve(state) {
       case 'bounce': remove(state, target); moveTo(state, target.instance, target.instance.owner, 'hand'); break;
       case 'destroy':
         if (has(target.instance, 'indestructible')) log(state, `${named(target.instance.card)} is indestructible.`);
-        else { if(isCreature(target.instance))queueDeathDrawInteractions(state,target.player,target.instance);remove(state, target); moveTo(state, target.instance, target.instance.owner, 'graveyard'); }
+        else {const controller=target.player;remove(state,target);departureToGraveyard(state,target.instance,controller);}
         break;
       case 'exile': {
         const gain = power(target.instance), owner = target.instance.owner, controller = target.player;
@@ -1220,6 +1253,56 @@ function apply(state, action) {
     case 'keep':
       if (state.phase !== 'opening') throw new Error('Opening hand already kept.');
       keep(state, 0, action.bottomIds || []); startKeptGame(state); break;
+    case 'chooseCloudKeyType': {
+      const source=find(state,action.id);
+      if(!source||source.zone!=='battlefield'||source.player!==player||named(source.instance.card)!=='Cloud Key')throw new Error('Choose a Cloud Key you control.');
+      if(source.instance.costChosenType)throw new Error('Cloud Key type already chosen; it cannot be changed.');
+      if(!CHOSEN_CARD_TYPES.includes(action.chosenType))throw new Error('Choose artifact, creature, enchantment, instant or sorcery.');
+      source.instance.costChosenType=action.chosenType;
+      log(state,`Cloud Key (${source.instance.id}) choice recorded: ${action.chosenType}. That type's spells cost {1} less to cast.`);
+      break;
+    }
+    case 'imprintSemblanceAnvil': {
+      const source=find(state,action.id),candidate=find(state,action.cardId);
+      if(!source||source.zone!=='battlefield'||source.player!==player||named(source.instance.card)!=='Semblance Anvil'||source.instance.imprintResolved)throw new Error('Choose an unresolved Semblance Anvil imprint.');
+      if(!candidate||candidate.zone!=='hand'||candidate.player!==player||type(candidate.instance.card,'Land'))throw new Error('Imprint a nonland card from your hand.');
+      const types=[...cardTypes(candidate.instance.card)];
+      if(!types.length)throw new Error('Unrecognized card types are not eligible for the bounded imprint adapter.');
+      const chosen=remove(state,candidate);
+      chosen.exiledBy={sourceId:source.instance.id,sourceName:'Semblance Anvil',sourceOwner:player,exileTurn:state.turn};
+      moveTo(state,chosen,chosen.owner,'exile');
+      source.instance.imprintResolved=true;
+      source.instance.imprintCardTypes=types;
+      source.instance.imprintCardId=chosen.id;
+      log(state,`Semblance Anvil (${source.instance.id}) imprints ${named(chosen.card)}; shares ${types.join(', ')}. Spells with a shared card type cost {2} less.`);
+      break;
+    }
+    case 'declineSemblanceAnvil': {
+      const source=find(state,action.id);
+      if(!source||source.zone!=='battlefield'||source.player!==player||named(source.instance.card)!=='Semblance Anvil'||source.instance.imprintResolved)throw new Error('Choose an unresolved Semblance Anvil.');
+      source.instance.imprintResolved=true;
+      log(state,`Semblance Anvil (${source.instance.id}): imprint declined, no discount.`);
+      break;
+    }
+    case 'activateDarknessCrystal': {
+      if(state.finished||state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice||state.pendingLibrary)
+        throw new Error('This bounded Crystal activation resolves only in your main phase with empty stack.');
+      const source=find(state,action.id),target=find(state,action.targetId);
+      if(!source||source.zone!=='battlefield'||source.player!==player||named(source.instance.card)!=='The Darkness Crystal'||source.instance.tapped)throw new Error('Choose your untapped Darkness Crystal.');
+      if(!target||target.zone!=='exile'||!isCreature(target.instance)||target.instance.exiledBy?.sourceId!==source.instance.id||target.instance.exiledBy?.sourceName!=='The Darkness Crystal')
+        throw new Error('Choose a creature card exiled by this exact Darkness Crystal.');
+      const sources=state.players[player].battlefield.filter(x=>x.id!==source.instance.id).map(x=>x.id);
+      const paid=payment(state,player,{name:'Darkness Crystal activation',type_line:'Activated Ability',mana_cost:'{4}{B}{B}',cmc:6},0,{sourceIds:sources},{isSpell:false});
+      if(!paid)throw new Error('Pay {4}{B}{B} and tap the Crystal to return a linked exiled creature.');
+      for(const step of paid.steps){const mana=find(state,step.id)?.instance;if(!mana||mana.tapped)throw new Error('Mana source unavailable.');mana.tapped=true;if(step.damage)state.players[player].life-=step.damage;if(step.lifeGain)state.players[player].life+=step.lifeGain;}
+      state.players[player].manaPool=paid.pool;
+      source.instance.tapped=true;
+      const card=remove(state,target);
+      moveTo(state,card,player,'battlefield');
+      card.counters=2;card.tapped=true;
+      log(state,`The Darkness Crystal (${source.instance.id}): put ${named(card.card)} onto your battlefield tapped with two additional +1/+1 counters, from linked exile. Immediate resolution shortcut: stack responses not modeled.`);
+      break;
+    }
     case 'activateProteusStaff': {
       if(state.finished||state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice)throw new Error('Activate Proteus Staff in your main phase with an empty stack.');
       const staff=find(state,action.id),target=find(state,action.targetId);
@@ -1258,7 +1341,7 @@ function apply(state, action) {
       const availableZombies=state.players[where.player].battlefield.filter(x=>qualifies(x,'zombie'));
       if(action.sacrificeIds.length!==Math.min(where.instance.paidX,availableZombies.length))throw new Error('Sacrifice X Zombies, or all available Zombies if fewer than X.');
       for(const id of action.sacrificeIds){const loc=find(state,id);if(!loc||loc.zone!=='battlefield'||loc.player!==where.player||!qualifies(loc.instance,'zombie'))throw new Error('Choose only Zombies you control.');}
-      for(const id of action.sacrificeIds){const loc=find(state,id),victim=remove(state,loc);queueDeathDrawInteractions(state,where.player,victim);moveTo(state,victim,victim.owner,'graveyard');}
+      for(const id of action.sacrificeIds){const loc=find(state,id),victim=remove(state,loc);departureToGraveyard(state,victim,where.player);}
       const spell=remove(state,where);moveTo(state,spell,spell.owner,'graveyard');
       startMatchReview(state,where.player,'empty-lab',action.sacrificeIds.length,'Empty the Laboratory');
       log(state,`Empty the Laboratory: ${action.sacrificeIds.length} Zombie(s) sacrificed after casting for X=${spell.paidX}.`);
@@ -1517,8 +1600,11 @@ function apply(state, action) {
       if (!ZONES.includes(action.zone)) throw new Error('Choose a supported destination zone.');
       const location = find(state, action.id); if (!location) throw new Error('Card not found.');
       if (location.instance.kind === 'trigger') throw new Error('Resolve the triggered ability from the stack instead of moving it to a card zone.');
-      if(location.zone==='battlefield'&&action.zone==='graveyard'&&isCreature(location.instance))queueDeathDrawInteractions(state,location.player,location.instance);
-      const instance = remove(state, location); moveTo(state, instance, player, action.zone, {keepCommanderInGraveyard: action.keepCommanderInGraveyard === true});
+      const fromBattlefield=location.zone==='battlefield'&&action.zone==='graveyard'&&isCreature(location.instance);
+      const originController=location.player;
+      const instance=remove(state,location);
+      if(fromBattlefield)departureToGraveyard(state,instance,originController,{keepCommanderInGraveyard:action.keepCommanderInGraveyard===true});
+      else moveTo(state,instance,player,action.zone,{keepCommanderInGraveyard:action.keepCommanderInGraveyard===true});
       const destination = find(state, instance.id);
       log(state, destination ? `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[destination.player].name}'s ${destination.zone}; effects and costs are user-resolved.` : `Manual override: ${named(instance.card)} leaves ${location.zone} and ceases to exist; effects and costs are user-resolved.`); break;
     }
