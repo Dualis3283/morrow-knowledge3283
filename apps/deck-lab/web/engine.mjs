@@ -242,6 +242,7 @@ function profile(card) {
   if(EFFECTS[card.name])return {...EFFECTS[card.name],status:EFFECTS[card.name].status||'supported',reason:EFFECTS[card.name].status==='partial'?'Named reveal; other ETB replacements remain manual.':'Explicit named effect adapter.',auto:EFFECTS[card.name].effect!=='mass-polymorph'};
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if(named(card)==='Necroduality')return {status:'partial',auto:true,reason:'Non-token Zombie entering under your control queues one copy trigger per Necroduality; supported copyable card attributes only. Complex copied/as-enters abilities, legend rule and replacement layers remain manual.'};
   if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
   if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
   if(['Cloud Key','Semblance Anvil'].includes(named(card)))return {status:'partial',auto:true,reason:'Type choice or imprint must be explicitly assigned on battlefield before reducing eligible spells; other effects not modeled.'};
@@ -648,7 +649,35 @@ function queueCastInteractions(state, player, spell) {
     log(state,`Ovika trigger from ${source.id}: ${named(spell)} mana value ${manaValue}; trigger placed above spell.`);
   }
 }
+// Copyable printed card attributes, not transient permanent state. This is a bounded
+// token-copy model: characteristic-defining/continuous layers and some copied DFC faces
+// remain manual; every token records its source for independent inspection.
+function createTokenCopy(state,player,copyCard,origin={},source=null,mode='manual'){
+  const card=clone(copyCard);
+  const token=fresh(card,player,`copy-token-${state.nextTokenId++}`);
+  token.isToken=true;
+  token.copiedFrom={id:origin.id||null,name:origin.name||named(card)};
+  token.createdBy=source?{sourceId:source.id,sourceName:source.name,mode}:{sourceId:null,sourceName:'Manual token copy',mode};
+  token.tapped=false;
+  moveTo(state,token,player,'battlefield');
+  log(state,`${mode==='automatic'?'Token-copy trigger':'Manual token copy'}: ${named(card)} token ${token.id} enters for ${state.players[player].name}${source?` from ${source.name} (${source.id})`:''}; copied from ${token.copiedFrom.name} (${token.copiedFrom.id||'snapshot'}), without inherited counters/tapped state.`);
+  if(card.card_faces?.length||/enters (?:the battlefield )?(?:tapped|with)|as .* enters/i.test(String(card.oracle_text||'')))
+    warn(state,`${named(card)} token copy: verify printed as-enters, ETB replacement/choice or double-faced copy details manually.`);
+  return token;
+}
 function queueCreatureEntryInteractions(state, controller, entering) {
+  // Necroduality checks the arriving permanent itself, not its owner. Tokens do
+  // not qualify; snapshot printed characteristics now for last-known-information
+  // resolution even if this creature leaves before the trigger resolves.
+  if(!entering.isToken&&isCreature(entering)&&/\bZombie\b/.test(String(entering.card.type_line||'').split('—').slice(1).join(' '))){
+    for(const source of state.players[controller].battlefield.filter(x=>x.id!==entering.id&&named(x.card)==='Necroduality')){
+      const triggerId=`p${controller}-trigger-${state.nextTriggerId++}`;
+      state.stack.push({id:triggerId,kind:'trigger',sourceId:source.id,owner:controller,controller,
+        card:{name:`Necroduality — copy ${named(entering.card)}`,type_line:'Triggered Ability',cmc:0,oracle_text:'Create a token copy of the nontoken Zombie that entered.'},
+        trigger:{adapter:'necroduality-copy',copyCard:clone(entering.card),copiedFromId:entering.id,copiedFromName:named(entering.card),sourceId:source.id,sourceName:named(source.card)}});
+      log(state,`Necroduality (${source.id}) trigger placed on stack when nontoken Zombie ${named(entering.card)} (${entering.id}) enters. Resolve or counter the trigger; no token created yet.`);
+    }
+  }
   // Enduring Innocence only triggers once each turn, even when many small tokens enter.
   if(power(entering)<=2){
     for(const source of state.players[controller].battlefield.filter(x=>x.id!==entering.id&&named(x.card)==='Enduring Innocence')){
@@ -695,6 +724,14 @@ function resolveInteraction(state, instance) {
   if (trigger?.adapter === 'loyalty-manual') {
     state.stack.pop();
     log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
+    return true;
+  }
+  if(trigger?.adapter==='necroduality-copy'){
+    state.stack.pop();
+    createTokenCopy(state,instance.controller,trigger.copyCard,
+      {id:trigger.copiedFromId,name:trigger.copiedFromName},
+      {id:trigger.sourceId,name:trigger.sourceName},'automatic');
+    if(instance.controller===1)state.opponentAudit.triggerResolutions++;
     return true;
   }
   if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage','thopter-token','cast-draw','shorikai-activate','death-draw','death-draw-life','death-draw-damage'].includes(trigger?.adapter)) return false;
@@ -1477,6 +1514,23 @@ function apply(state, action) {
       log(state,`Manual mana override: ${own.name} taps ${named(x.instance.card)} and declares ${amount}${color}. Verify the printed activation cost and restrictions; not auto-validated.`);
       warn(state,`${named(x.instance.card)}: mana was supplied by explicit manual override, not an automated rule.`);
       break;
+    }
+    case 'createTokenCopy': {
+      if(state.finished||!state.players[0].kept)throw new Error('Keep the table before creating manual token copies.');
+      const target=find(state,action.targetId),source=action.sourceId?find(state,action.sourceId):null;
+      const quantity=action.count??1;
+      if(!target||target.zone!=='battlefield'||!['Creature','Artifact','Enchantment','Planeswalker','Land','Battle'].some(t=>type(target.instance.card,t)))
+        throw new Error('Choose an existing battlefield permanent to copy.');
+      if(action.sourceId&&(!source||!['battlefield','stack'].includes(source.zone)||source.instance.kind==='trigger'))
+        throw new Error('Choose a source permanent/spell on the battlefield or stack, or leave source unlinked.');
+      if(!Number.isInteger(quantity)||quantity<1||quantity>20)throw new Error('Choose 1–20 manual token copies.');
+      if(![0,1].includes(player))throw new Error('Choose token controller.');
+      const snapshot=clone(target.instance.card);
+      const origin={id:target.instance.id,name:named(target.instance.card)};
+      const linked=source?{id:source.instance.id,name:named(source.instance.card)}:null;
+      for(let i=0;i<quantity;i++)createTokenCopy(state,player,snapshot,origin,linked,'manual');
+      log(state,`Manual token-copy allocation: ${quantity} copy/copies of ${origin.name}; no printed source ability, targeting, cost or legal trigger condition inferred.`);
+      cleanupDead(state);break;
     }
     case 'mill': {
       if(state.finished||!state.players[0].kept)throw new Error('Finish opening the table before milling.');

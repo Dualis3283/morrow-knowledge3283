@@ -311,6 +311,8 @@ function cardTile(instance, {player = 0, zone = 'hand', land = false, preview = 
   tile.append(element('span', 'card-caption', card.name));
   const badges = element('span', 'card-badges');
   if (isCommanderInstance(instance)) badges.append(element('span', 'card-badge commander-badge', 'CMD'));
+  if(instance.isToken)badges.append(element('span','card-badge','TOKEN'));
+  if(instance.isToken&&instance.copiedFrom)tile.setAttribute('aria-label',`${card.name}, token copy of ${instance.copiedFrom.name}, created by ${instance.createdBy?.sourceName||'manual action'}. View card and actions.`);
   if (Number(instance.counters)) badges.append(element('span', 'card-badge', `${Number(instance.counters) > 0 ? '+' : ''}${instance.counters}`));
   if(zone==='battlefield' && isPlaneswalker(card)) badges.append(element('span','card-badge loyalty-badge',`LOY ${instance.loyalty ?? card.loyalty ?? 0}${instance.loyaltyActivatedTurn===game?.turn?' · USED':''}`));
   if (instance.damage) badges.append(element('span', 'card-badge', `${instance.damage} dmg`));
@@ -569,6 +571,9 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (card.power !== undefined) stats.append(element('span', '', `${card.power} / ${card.toughness}`));
   if (zone !== 'preview') stats.append(element('span', '', zone === 'stack' ? 'On the stack' : `${player === 0 ? 'Your' : 'Opponent'} ${zone}`));
   if (instance.counters) stats.append(element('span', '', `${instance.counters} +1/+1 counters`));
+  if(instance.isToken)stats.append(element('span','','Token permanent'));
+  if(instance.copiedFrom)stats.append(element('span','',`Copy of ${instance.copiedFrom.name} (${instance.copiedFrom.id||'snapshot'})`));
+  if(instance.createdBy)stats.append(element('span','',`Created by ${instance.createdBy.sourceName}${instance.createdBy.sourceId?` (${instance.createdBy.sourceId})`:''} · ${instance.createdBy.mode}`));
   if(card.name==='Cloud Key'&&zone==='battlefield')stats.append(element('span','',`Cost type: ${instance.costChosenType||'not yet chosen'}`));
   if(card.name==='Semblance Anvil'&&zone==='battlefield')stats.append(element('span','',`Imprint: ${instance.imprintCardTypes?.join(' / ')|| (instance.imprintResolved?'declined':'awaiting selection')}`));
   if(zone==='exile'&&instance.exiledBy)stats.append(element('span','linked-exile-label',`Exiled by ${instance.exiledBy.sourceName}`));
@@ -622,6 +627,11 @@ function showCard(instance, player = 0, zone = 'preview') {
     content.append(section);
   }
   content.append(details);
+  if(instance.createdBy?.sourceId){
+    const button=element('button','button compact',`Inspect token source: ${instance.createdBy.sourceName}`);
+    button.addEventListener('click',()=>{const source=lookup(instance.createdBy.sourceId);if(source)showCard(source.instance,source.player,source.zone);else toast('The original token-creation source is no longer present. The link remains in the token record.');});
+    content.append(button);
+  }
   if (zone !== 'preview' && game) {
     const actions = element('div', 'card-action-list');
     const ready = game.players[0].kept && !game.finished;
@@ -690,6 +700,31 @@ function showCard(instance, player = 0, zone = 'preview') {
       }else{
         actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
       }
+    }
+    if(zone==='battlefield'){
+      // Source and copied target are independent. The inspected card is the
+      // sensible default, but any battlefield permanent may be chosen.
+      const editor=element('details','manual-tools token-copy-editor');
+      editor.append(element('summary','','Create token copy…'));
+      editor.append(element('p','tiny','Manually adjudicate any copy effect: choose the permanent, an optional source and its controller. The created copy is marked TOKEN and retains both provenance links. No source permission is inferred.'));
+      const target=element('select');target.setAttribute('aria-label','Permanent to copy');
+      for(const [pi,p] of game.players.entries())for(const x of p.battlefield){
+        const opt=element('option','',`${pi===0?'Your':'Opponent'} · ${x.card.name}${x.isToken?' (token)':''}`);
+        opt.value=x.id;target.append(opt);
+      }
+      target.value=instance.id;
+      const source=element('select');source.setAttribute('aria-label','Source card for token creation (optional)');
+      const none=element('option','','No source — manual ruling');none.value='';source.append(none);
+      for(const [pi,p] of game.players.entries())for(const x of p.battlefield){const opt=element('option','',`${pi===0?'Your':'Opponent'} · ${x.card.name}`);opt.value=x.id;source.append(opt);}
+      for(const x of game.stack.filter(x=>x.kind!=='trigger')){const opt=element('option','',`Stack · ${x.card.name}`);opt.value=x.id;source.append(opt);}
+      if(card.name==='Necroduality')source.value=instance.id;
+      else {const nec=game.players[0].battlefield.find(x=>x.card.name==='Necroduality');if(nec)source.value=nec.id;}
+      const control=element('select');control.setAttribute('aria-label','Token controller');
+      for(const [pi,name] of ['You','Scripted opponent'].entries()){const opt=element('option','',name);opt.value=String(pi);control.append(opt);}control.value=String(player);
+      const count=element('input');count.type='number';count.min='1';count.max='20';count.step='1';count.value='1';count.setAttribute('aria-label','Number of token copies');
+      editor.append(target,source,control,count);
+      editor.append(actionButton('Create linked token copy',()=>({type:'createTokenCopy',targetId:target.value,...(source.value?{sourceId:source.value}:{}),player:Number(control.value),count:Number(count.value)}),{disabled:!ready||!game.players[0].kept}));
+      actions.append(editor);
     }
     if(zone==='battlefield'&&player===0&&card.name==='Cloud Key'&&!instance.costChosenType){
       const select=element('select');select.setAttribute('aria-label','Cloud Key chosen spell type');
