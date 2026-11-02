@@ -41,6 +41,7 @@ function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
     'Mind Stone': { options: [mono('C')], partial: true },
     'Thought Vessel': { options: [mono('C')], partial: true },
     'Hedron Archive': { options: [mono('C', 2)], partial: true },
+    'Meticulous Commons': { options: [mono('W'), mono('B')], entryCondition: 'controlPlaneswalker' },
     'Llanowar Elves': { options: [mono('G')] },
     'Elvish Mystic': { options: [mono('G')] },
     'Fyndhorn Elves': { options: [mono('G')] },
@@ -64,20 +65,25 @@ function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
   let oracle = text(card).replace(/\([^)]*\)/g, '').trim();
   const lines = oracle.split('\n').map(line => line.trim()).filter(Boolean);
   let entersTapped = false;
+  let entryCondition = null;
+  if (type(card, 'Land') && lines.length === 2 && /^This land enters tapped unless you control a planeswalker\.$/i.test(lines[0])) {
+    entryCondition = 'controlPlaneswalker';
+    oracle = lines[1];
+  }
   if (lines.length === 2 && / enters (?:the battlefield )?tapped\.$/i.test(lines[0])) {
     const subject = lines[0].replace(/ enters (?:the battlefield )?tapped\.$/i, '');
     if ([named(card).toLowerCase(), 'this land', 'this artifact', 'this permanent'].includes(subject.toLowerCase())) { entersTapped = true; oracle = lines[1]; }
   }
   const match = oracle.match(/^\{T\}: Add (.+)\.$/);
   if (match) {
-    if (match[1] === 'one mana of any color') return { options: COLORS.filter(color => color !== 'C').map(color => mono(color)), entersTapped };
+    if (match[1] === 'one mana of any color') return { options: COLORS.filter(color => color !== 'C').map(color => mono(color)), entersTapped, entryCondition };
     const alternatives = match[1].split(/,\s*(?:or\s+)?|\s+or\s+/).filter(Boolean);
     if (alternatives.every(value => /^(?:\{[WUBRGC]\})+$/.test(value))) return {
       options: alternatives.map(value => {
         const option = {};
         for (const token of value.matchAll(/\{([WUBRGC])\}/g)) option[token[1]] = (option[token[1]] || 0) + 1;
         return option;
-      }), entersTapped,
+      }), entersTapped, entryCondition,
     };
   }
   return null;
@@ -346,7 +352,12 @@ export function tapOptions(state,player,id){
  const source=manaSource(x.instance.card,state,player);
  return source?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,options:source.options}:null;
 }
-function entersTapped(card, adapter) {
+function entersTapped(card, adapter, state = null, player = 0) {
+  // Check existing permanents BEFORE the new land enters; an opponent's walker is irrelevant.
+  if (adapter.source?.entryCondition === 'controlPlaneswalker') {
+    if (!state?.players?.[player]) return true; // Conservative when evaluating outside a table.
+    return !state.players[player].battlefield.some(permanent => type(permanent.card, 'Planeswalker'));
+  }
   const oracle = text(card);
   if (/\benters (?:the battlefield )?tapped\b/i.test(oracle)) return true;
   return Boolean(adapter.source?.entersTapped);
@@ -377,10 +388,10 @@ function play(state, player, id, targetId, argumentsPayment=null) {
     if (state.stack.length) throw new Error('Resolve the stack before playing a land.');
     if (state.players[player].landPlayed) throw new Error('Only one land drop is supported each turn.');
     // Playing a land never requires resolving its activated mana text. Unknown abilities remain inert.
-    remove(state, location); instance.tapped = entersTapped(card, adapter); moveTo(state, instance, player, 'battlefield');
+    remove(state, location); instance.tapped = entersTapped(card, adapter, state, player); moveTo(state, instance, player, 'battlefield');
     state.players[player].landPlayed = true; stat(state, player, 'landsPlayed'); log(state, `${state.players[player].name} plays ${named(card)}${instance.tapped ? ' tapped' : ''}.`);
     if (!manaSource(card)) warn(state, `${named(card)} land played; unmodeled mana/activation abilities require manual intervention.`);
-    if (/\b(?:unless|you may pay|you may reveal)\b/i.test(text(card)) && /enters/i.test(text(card))) warn(state, `${named(card)} enters tapped conservatively; optional entry cost or condition not automated.`);
+    if (!adapter.source?.entryCondition && /\b(?:unless|you may pay|you may reveal)\b/i.test(text(card)) && /enters/i.test(text(card))) warn(state, `${named(card)} enters tapped conservatively; optional entry cost or condition not automated.`);
     return;
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
@@ -613,7 +624,7 @@ export function suggestions(state, player=0) {
   const actions=[];
   if (!p.landPlayed) {
     const lands=p.hand.filter(x=>type(x.card,'Land'));
-    lands.sort((a,b)=>Number(Boolean(manaSource(b.card)))-Number(Boolean(manaSource(a.card))) || Number(entersTapped(b.card,profile(b.card)))-Number(entersTapped(a.card,profile(a.card))));
+    lands.sort((a,b)=>Number(Boolean(manaSource(b.card)))-Number(Boolean(manaSource(a.card))) || Number(entersTapped(b.card,profile(b.card),state,player))-Number(entersTapped(a.card,profile(a.card),state,player)));
     for (const instance of lands) actions.push({type:'play',id:instance.id,label:`Play ${named(instance.card)}`,why:`Normal land drop${manaSource(instance.card)?'; mana source recognized':'; mana ability may require manual input'}.`,sourceNames:[],land:true});
   }
   const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && named(x.card)==='Ovika, Enigma Goliath' && profile(x.card).auto)];

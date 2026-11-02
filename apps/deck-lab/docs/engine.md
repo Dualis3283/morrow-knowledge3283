@@ -88,3 +88,14 @@ Named, audited interaction adapters (not freeform Oracle interpretation): [Ovika
 
 **Deliberate limits:** This remains bounded deterministic practice, not all Magic rules. Conditional mana rocks, mana replacement effects, complex stack priority, unmodeled cards and commander decisions require manual adjudication. The casting dialog currently previews payment, not an arbitrarily general target-picking interface. Browser/device QA is required before calling the release complete.
 
+
+
+## Meticulous Commons recognition — 0.1.5
+
+**Observed regression (0.1.4):** importing Meticulous Commons correctly put it on the battlefield but the simulator returned `tapOptions=null`; tapping manually produced no mana. The card's printed Oracle text is `This land enters tapped unless you control a planeswalker. {T}: Add {W} or {B}.` Its conditional entry clause and mana ability did not match the previous narrow, unconditional land parser.
+
+**Fix:** explicit, card-name-verified mana adapter for Meticulous Commons with `{W}` or `{B}`, plus a conservative reusable two-line Oracle parser for the same supported planeswalker condition. `entersTapped` evaluates the *controller's own* existing battlefield before the land enters; an opponent's planeswalker does not qualify. No planeswalker means enters tapped until normally untapped, with the mana ability still registered on the card. Existing source-picker UI offers exactly two colored options and the casting payment planner sees them. An unfamiliar conditional land still requires manual handling.
+
+**Proof:** five deterministic regression tests cover colored choices, no extra/blue mana, tapped entry, untapping and spending black, owned planeswalker entering untapped, opponent planeswalker not qualifying, and unrelated lands not being inferred. The extended desktop/mobile browser test validates the tap-for-mana choice dialog and downstream spell payment. Both website and Android use byte-identical engine source; Android version 0.1.5 debug candidate uses version code 6. Independent CI, production and physical-device verification are separate gates.
+
+**Reference:** https://mtg.wtf/card/fra/184/Meticulous-Commons
