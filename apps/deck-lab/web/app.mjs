@@ -361,7 +361,7 @@ function renderGame() {
   setText('session-seed', `SEED ${game.seed}`);
   setText('game-title', game.finished ? 'A test, complete.' : 'Your table');
   setText('round-label', `Round ${Math.min(game.round, game.roundLimit || 10)} / ${game.roundLimit || 10}`);
-  setText('phase-label', game.finished ? 'Test complete' : (!own.kept ? 'Opening hand' : 'Your turn · main phase'));
+  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':!own.kept?'Opening hand':'Your turn · main phase');
   setText('opponent-counts', `${opponent.library.length} in library · ${opponent.hand.length} in hand · ${opponent.graveyard.length} in graveyard`);
   const scripted=opponentDiagnostics(game);
   setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
@@ -424,7 +424,7 @@ function renderGame() {
     $('stack-list').append(button);
   });
   $('resolve-button').disabled = !stack.length || game.finished || Boolean(game.pendingLibrary);
-  $('end-turn-button').textContent = game.finished ? 'Test complete' : 'End turn →';
+  $('end-turn-button').textContent = game.finished?'Test complete':(game.delayedEndSteps?.length?`End turn → ${game.delayedEndSteps.length} delayed effect${game.delayedEndSteps.length===1?'':'s'}`:'End turn →');
   $('activity-log').replaceChildren(...(game.log || []).slice(-18).reverse().map(item => element('li', '', typeof item === 'string' ? item : JSON.stringify(item))));
   if (game.lastRandom) {
     const r = game.lastRandom;
@@ -470,7 +470,7 @@ function renderLibraryAllocation(){
     libraryDraft={player:pending.player,mode:pending.mode,ids:pending.ids.slice(),order:pending.ids.slice(),destinations,shuffle:false};
   }
   $('library-allocation-title').textContent=pending.mode==='matching-reveal'?`${pending.sourceName} · reveal ${pending.required} ${pending.variant==='empty-lab'?'Zombie':'creature'}(s)` : pending.mode==='ponder'?'Ponder · order top three':pending.mode==='preordain'?'Preordain · scry two':pending.mode==='reveal-nonland'?'Reveal until first nonland':'Review and allocate cards';
-  $('library-allocation-desc').textContent=pending.mode==='matching-reveal'?`Found ${(pending.matches||[]).length} matching creatures in ${pending.ids.length} revealed card(s). Matches enter together. Others: ${pending.variant==='proteus'?'bottom in chosen order':pending.variant==='mass-polymorph'?'shuffle into library':'bottom in randomized order'}. This action uses fixed card rules.`:pending.mode==='ponder'?'Reorder the cards (top first), optionally shuffle the entire library, then draw one.':pending.mode==='preordain'?'Keep cards on top or put them on the bottom in your chosen order; then draw one.':pending.mode==='reveal-nonland'?'Land cards before the first nonland go to the bottom. Choose what happens to the first nonland, subject to the actual card’s text.':'Move cards up/down to order them, and choose a destination for each. This is an explicit manual allocation.';
+  $('library-allocation-desc').textContent=pending.mode==='matching-reveal'?`Found ${(pending.matches||[]).length} matching creatures in ${pending.ids.length} revealed card(s). Matches enter together. Others: ${pending.variant==='proteus'?'bottom in chosen order':['mass-polymorph','synthetic-destiny'].includes(pending.variant)?'shuffle into library':'bottom in randomized order'}. This action uses fixed card rules.`:pending.mode==='ponder'?'Reorder the cards (top first), optionally shuffle the entire library, then draw one.':pending.mode==='preordain'?'Keep cards on top or put them on the bottom in your chosen order; then draw one.':pending.mode==='reveal-nonland'?'Land cards before the first nonland go to the bottom. Choose what happens to the first nonland, subject to the actual card’s text.':'Move cards up/down to order them, and choose a destination for each. This is an explicit manual allocation.';
   $('library-allocation-count').textContent=`${pending.ids.length} card(s)`;
   const shuffle=$('library-allocation-shuffle');shuffle.closest('label').hidden=!['ponder','look'].includes(pending.mode);shuffle.checked=libraryDraft.shuffle;
   $('library-allocation-cancel').hidden=!['look','reveal-nonland'].includes(pending.mode);
@@ -494,7 +494,7 @@ function renderLibraryAllocation(){
     controls.append(up,down);
     const dest=element('select');dest.setAttribute('aria-label',`Destination for ${instance.card.name}`);
     const isRevealLand=pending.mode==='reveal-nonland'&&(id!==pending.ids.at(-1)||!pending.revealFound);
-    const modes=pending.mode==='matching-reveal'?[(pending.matches||[]).includes(id)?'battlefield':pending.variant==='mass-polymorph'?'shuffle into library':'bottom']:pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:isRevealLand?['bottom']:['top','bottom','hand','graveyard','exile','battlefield'];
+    const modes=pending.mode==='matching-reveal'?[(pending.matches||[]).includes(id)?'battlefield':['mass-polymorph','synthetic-destiny'].includes(pending.variant)?'shuffle into library':'bottom']:pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:isRevealLand?['bottom']:['top','bottom','hand','graveyard','exile','battlefield'];
     for(const name of modes){
       if(name==='battlefield'&&!/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(instance.card.type_line||instance.card.card_faces?.[0]?.type_line||''))continue;
       const option=element('option','',name[0].toUpperCase()+name.slice(1));option.value=name;dest.append(option);
@@ -511,7 +511,7 @@ function renderLibraryAllocation(){
 function renderLibrarySummary(){
   if(!libraryDraft)return;
   const counts={};for(const id of libraryDraft.order){const dest=libraryDraft.destinations[id]||(libraryDraft.mode==='reveal-nonland'?'bottom':'top');counts[dest]=(counts[dest]||0)+1;}
-  $('library-allocation-summary').textContent=game.pendingLibrary?.mode==='matching-reveal'?`Revealed ${libraryDraft.order.length}. ${(game.pendingLibrary.matches||[]).length} match(es) enter together; remaining cards ${game.pendingLibrary.variant==='proteus'?'go bottom in chosen order':game.pendingLibrary.variant==='mass-polymorph'?'shuffle into library':'go bottom in random order'}.`: `Top-to-bottom order as displayed. ${Object.entries(counts).map(([k,n])=>`${n} ${k}`).join(' · ')||'No cards revealed'}${libraryDraft.shuffle?' · shuffle entire library':''}${['ponder','preordain'].includes(libraryDraft.mode)?' · then draw 1':''}.`;
+  $('library-allocation-summary').textContent=game.pendingLibrary?.mode==='matching-reveal'?`Revealed ${libraryDraft.order.length}. ${(game.pendingLibrary.matches||[]).length} match(es) enter together; remaining cards ${game.pendingLibrary.variant==='proteus'?'go bottom in chosen order':['mass-polymorph','synthetic-destiny'].includes(game.pendingLibrary.variant)?'shuffle into library':'go bottom in random order'}.`: `Top-to-bottom order as displayed. ${Object.entries(counts).map(([k,n])=>`${n} ${k}`).join(' · ')||'No cards revealed'}${libraryDraft.shuffle?' · shuffle entire library':''}${['ponder','preordain'].includes(libraryDraft.mode)?' · then draw 1':''}.`;
 }
 function lookup(id) {
   if (!game) return null;
