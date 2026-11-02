@@ -1,5 +1,5 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, upgradeGame, suggestions, castOptions, tapOptions, loyaltyOptions, opponentDiagnostics} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, upgradeGame, suggestions, castOptions, tapOptions, loyaltyOptions, opponentDiagnostics, linkedExiles} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'morrow-deck-simulator-web-v1';
@@ -21,6 +21,7 @@ let appConfig = {};
 let undoHistory = [];
 let casting = null;
 let manualManaSourceId = null;
+let linkedExileTargetId=null;
 let activeTest = null;
 let nextTestId = 0;
 
@@ -216,12 +217,32 @@ function openManualMana(instance){
   $('manual-mana-color').value='C';$('manual-mana-amount').value='1';
   $('manual-mana-dialog').showModal();
 }
+function openLinkedExileDialog(instance){
+  if($('card-dialog').open)$('card-dialog').close();
+  linkedExileTargetId=instance.id;
+  const choices=[...game.players.flatMap((p,owner)=>p.battlefield.map(x=>({instance:x,owner,zone:'battlefield'}))),
+    ...game.stack.filter(x=>x.kind!=='trigger').map(x=>({instance:x,owner:x.controller,zone:'stack'}))].filter(x=>x.instance.id!==instance.id);
+  const select=$('linked-exile-source');select.replaceChildren();
+  for(const x of choices){const option=element('option','',`${x.owner===0?'You':'Opponent'} · ${x.instance.card.name} · ${x.zone}`);option.value=x.instance.id;select.append(option);}
+  $('linked-exile-title').textContent=`Exile ${instance.card.name} under…`;
+  $('linked-exile-dialog').showModal();
+}
+function openMillCards(){
+  if(!game)return;
+  $('mill-cards-player').value='0';$('mill-cards-count').value='3';
+  updateMillPreview();$('mill-cards-dialog').showModal();
+}
+function updateMillPreview(){
+  if(!game)return;
+  const target=Number($('mill-cards-player').value),count=Number($('mill-cards-count').value);
+  $('mill-cards-preview').textContent=`${game.players[target].library.length} cards remain. ${Number.isInteger(count)&&count>=1&&count<=99?`Will mill up to ${Math.min(count,game.players[target].library.length)} cards.`:'Choose between 1 and 99 cards.'}`;
+}
 function openCastDialog(id,targetId='') {
   if(!game)return;
   const where=lookup(id);
-  if(!where || !['hand','command'].includes(where.zone) || where.player!==0)return;
+  if(!where || !((['hand','command'].includes(where.zone)&&where.player===0)||(where.zone==='exile'&&where.instance.exiledBy)))return;
   const quote=castOptions(game,0,id);
-  if(quote.land){if($('card-dialog').open)$('card-dialog').close();dispatch({type:'play',id});return;}
+  if(quote.land){if($('card-dialog').open)$('card-dialog').close();dispatch(where.zone==='exile'?{type:'castLinkedExile',id,withoutPaying:false}:{type:'play',id});return;}
   if($('card-dialog').open)$('card-dialog').close();
   casting={id,targetId,selected:new Set(quote.plan?.sourceIds||[]),choices:Object.fromEntries((quote.plan?.steps||[]).map(step=>[step.id,step.index]))};
   $('cast-dialog-title').textContent=`Cast ${quote.cardName} · ${quote.cost || '{0}'}${quote.tax?` + {${quote.tax}} tax`:''}`;
@@ -466,6 +487,7 @@ function showCard(instance, player = 0, zone = 'preview') {
   if (card.power !== undefined) stats.append(element('span', '', `${card.power} / ${card.toughness}`));
   if (zone !== 'preview') stats.append(element('span', '', zone === 'stack' ? 'On the stack' : `${player === 0 ? 'Your' : 'Opponent'} ${zone}`));
   if (instance.counters) stats.append(element('span', '', `${instance.counters} +1/+1 counters`));
+  if(zone==='exile'&&instance.exiledBy)stats.append(element('span','linked-exile-label',`Exiled by ${instance.exiledBy.sourceName}`));
   if (isPlaneswalker(card)) stats.append(element('span','loyalty-status',zone==='battlefield'?`Loyalty ${instance.loyalty ?? card.loyalty ?? '?'} · printed ${card.loyalty ?? '?'}${instance.loyaltyActivatedTurn===game?.turn?' · ability used this turn':''}`:`Printed loyalty ${card.loyalty??'?'}`));
   info.append(stats, element('p', 'card-oracle', card.oracle_text || card.card_faces?.map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n') || 'No rules text.'));
   if (zone === 'battlefield' && game) {
@@ -503,11 +525,23 @@ function showCard(instance, player = 0, zone = 'preview') {
     });
     art.append(flip, element('p', 'card-artist', 'Face preview only. Transforming or playing a back face requires manual rules handling.'));
   }
+  const linkedCards=linkedExiles(game||{players:[{exile:[]},{exile:[]}]},instance.id);
+  if(linkedCards.length){
+    const section=element('section','linked-exile-section');
+    section.append(element('h3','',`Exiled with ${card.name} (${linkedCards.length})`));
+    section.append(element('p','tiny','Each link follows the exiled card, even if the original source leaves the battlefield. Returning or casting remains a manual permission.'));
+    for(const linked of linkedCards){
+      const button=element('button','button wide compact',`${linked.name} · ${linked.owner===0?'Your exile':'Opponent exile'} · inspect/recast`);
+      button.addEventListener('click',()=>{const match=lookup(linked.id);if(match)showCard(match.instance,match.player,match.zone);});
+      section.append(button);
+    }
+    content.append(section);
+  }
   content.append(details);
   if (zone !== 'preview' && game) {
     const actions = element('div', 'card-action-list');
     const ready = game.players[0].kept && !game.finished;
-    if (player === 0 && (zone === 'hand' || zone === 'command')) {
+    if ((player===0 && (zone==='hand'||zone==='command')) || (zone==='exile'&&instance.exiledBy)) {
       let targetSelect;
       if (!isLand(card)) {
         const targetLabel = element('label', '', 'Target, if this spell needs one');
@@ -521,7 +555,7 @@ function showCard(instance, player = 0, zone = 'preview') {
         }));
         info.append(targetLabel, targetSelect);
       }
-      actions.append(actionButton(zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => {openCastDialog(instance.id,targetSelect?.value||'');return null;}, {primary: true, disabled: !ready}));
+      actions.append(actionButton(zone==='exile' ? isLand(card)?'Play linked exiled land (manual permission)':'Cast linked exiled card · pay mana' : zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => {openCastDialog(instance.id,targetSelect?.value||'');return null;}, {primary: true, disabled: !ready}));
     }
     const isCommander = isCommanderInstance(instance);
     const owner = Number.isInteger(instance.owner) ? instance.owner : player;
@@ -557,6 +591,18 @@ function showCard(instance, player = 0, zone = 'preview') {
         actions.append(actionButton('+1/+1 counter', {type: 'counter', id: instance.id, delta: 1}, {disabled: !ready, close: false}), actionButton('Remove counter', {type: 'counter', id: instance.id, delta: -1}, {disabled: !ready || !instance.counters, close: false}));
       }
     }
+    if(zone==='exile'&&instance.exiledBy){
+      actions.append(element('p','tiny',`Linked exile: ${instance.exiledBy.sourceName} · source ${instance.exiledBy.sourceId}. The simulator does not infer that source's casting permission.`));
+      if(!isLand(card))actions.append(actionButton('Cast without paying mana (manual permission)',()=>({type:'castLinkedExile',id:instance.id,player:0,withoutPaying:true,...(targetSelect?.value?{targetId:targetSelect.value}:{})}),{disabled:!ready||game.activePlayer!==0||game.phase!=='main'}));
+      if(/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
+        actions.append(actionButton('Put onto your battlefield (manual, not cast)',{type:'returnLinkedExile',id:instance.id,player:0,zone:'battlefield'},{disabled:!ready}));
+      if(instance.owner!==0 && /(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
+        actions.append(actionButton('Put onto owner’s battlefield (manual, not cast)',{type:'returnLinkedExile',id:instance.id,player:instance.owner,zone:'battlefield'},{disabled:!ready}));
+      actions.append(actionButton('Return to owner’s hand (manual)',{type:'returnLinkedExile',id:instance.id,player:0,zone:'hand'},{disabled:!ready}));
+    }
+    if(['battlefield','graveyard','stack'].includes(zone)&&!instance.isToken&&instance.kind!=='trigger'&&game.players.flatMap(p=>p.battlefield).concat(game.stack.filter(x=>x.kind!=='trigger')).some(x=>x.id!==instance.id)){
+      actions.append(actionButton('Exile under another card…',()=>{openLinkedExileDialog(instance);return null;},{disabled:!ready}));
+    }
     if (zone === 'stack') actions.append(actionButton('Resolve top spell', {type: 'resolve'}, {primary: true, disabled: !ready || game.stack.at(-1)?.id !== instance.id}));
     if (actions.childNodes.length) content.append(actions);
     const manual = element('details', 'manual-tools');
@@ -577,17 +623,17 @@ function showCard(instance, player = 0, zone = 'preview') {
   }
   if (!$('card-dialog').open) $('card-dialog').showModal();
 }
-function showPile(zone) {
+function showPile(zone,owner=0) {
   if (!game) return;
-  setText('pile-title', zone === 'command' ? 'Your command zone' : `Your ${zone}`);
-  const cards = game.players[0][zone] || [];
+  setText('pile-title', zone === 'command' ? 'Your command zone' : `${owner===0?'Your':'Opponent'} ${zone}`);
+  const cards = game.players[owner][zone] || [];
   const container = $('pile-cards');
   container.replaceChildren(...cards.map(instance => {
-    const tile = cardTile(instance, {zone, player: 0});
+    const tile = cardTile(instance, {zone, player: owner});
     tile.addEventListener('click', () => $('pile-dialog').close());
     return tile;
   }));
-  if (!cards.length) container.append(element('p', 'pile-empty', `No cards in your ${zone} zone.`));
+  if (!cards.length) container.append(element('p', 'pile-empty', `No cards in ${owner===0?'your':'the opponent’s'} ${zone} zone.`));
   if (zone === 'library') {
     container.replaceChildren(element('p', 'pile-empty', `${cards.length} cards remain. The library order stays hidden during your test.`));
   }
@@ -934,7 +980,8 @@ for(const id of ['cast-drop-zone','player-battlefield-zone','player-land-zone'])
 $('cast-cancel').addEventListener('click',()=>$('cast-dialog').close());
 $('cast-pay-button').addEventListener('click',()=>{
   if(!casting)return;
-  const action={type:'play',id:casting.id,sourceIds:[...casting.selected],sourceChoices:{...casting.choices},...(casting.targetId?{targetId:casting.targetId}:{})};
+  const fromExile=lookup(casting.id)?.zone==='exile';
+  const action={type:fromExile?'castLinkedExile':'play',id:casting.id,...(fromExile?{withoutPaying:false}:{}),sourceIds:[...casting.selected],sourceChoices:{...casting.choices},...(casting.targetId?{targetId:casting.targetId}:{})};
   if(dispatch(action)){$('cast-dialog').close();casting=null;}
 });
 $('resume-opponent-button').addEventListener('click',()=>dispatch({type:'resumeOpponent'}));
@@ -944,6 +991,21 @@ $('manual-mana-confirm').addEventListener('click',()=>{
   const success=dispatch({type:'manualSourceMana',player:0,id:manualManaSourceId,color:$('manual-mana-color').value,amount:Number($('manual-mana-amount').value)});
   if(success){$('manual-mana-dialog').close();manualManaSourceId=null;}
 });
+$('mill-cards-button').addEventListener('click',openMillCards);
+$('mill-cards-cancel').addEventListener('click',()=>$('mill-cards-dialog').close());
+for(const id of ['mill-cards-player','mill-cards-count'])$(id).addEventListener('change',updateMillPreview);
+$('mill-cards-count').addEventListener('input',updateMillPreview);
+$('mill-cards-confirm').addEventListener('click',()=>{
+ const count=Number($('mill-cards-count').value),targetPlayer=Number($('mill-cards-player').value);
+ if(dispatch({type:'mill',targetPlayer,count}))$('mill-cards-dialog').close();
+});
+$('linked-exile-cancel').addEventListener('click',()=>{$('linked-exile-dialog').close();linkedExileTargetId=null;});
+$('linked-exile-confirm').addEventListener('click',()=>{
+ if(!linkedExileTargetId)return;
+ if(dispatch({type:'exileLinked',id:linkedExileTargetId,sourceId:$('linked-exile-source').value})){$('linked-exile-dialog').close();linkedExileTargetId=null;}
+});
+$('opponent-graveyard-button').addEventListener('click',()=>showPile('graveyard',1));
+$('opponent-exile-button').addEventListener('click',()=>showPile('exile',1));
 $('draw-card-button').addEventListener('click',()=>dispatch({type:'drawCard',player:0,count:1}));
 $('end-turn-button').addEventListener('click', () => dispatch({type: 'endTurn'}));
 $('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'land'}));

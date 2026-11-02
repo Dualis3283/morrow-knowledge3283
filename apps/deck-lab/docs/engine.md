@@ -145,3 +145,21 @@ Named, audited interaction adapters (not freeform Oracle interpretation): [Ovika
 **Evidence:** 15 additional deterministic mana/draw regression cases using published Scryfall Oracle-derived card records from the nine-deck audit, plus desktop/mobile Playwright flows for Prismatic Lens cost/land source checks, hand growth via Draw card and manual mana override. All earlier regression tests continue. Web and Android engine/app content must remain byte-identical. Build, CI, production and physical-device verification are separate gates.
 
 **Remaining boundaries:** multimode filter lands with colored activation costs, ETB replacement/choice (bounce lands, Lotus Field sacrifices), Varying mana spending restrictions, generic/complex draw replacement effects and most bespoke triggered effects, Room/DFC/Adventure/Prepare handling, arbitrary spell targets and full planeswalker effects remain manual. Do not infer full Oracle correctness from this release.
+
+
+## Manual milling and source-linked exile — candidate 0.1.9 (2 November 2026)
+
+### Context and scope
+The nine Commander decks include mill-to-graveyard, abilities that exile a creature or other permanent under a particular card, and some permissions to cast or otherwise replay exiled cards. Generic zone moves were losing the association with the exiling source and did not provide a source-specific recast workflow. These are deliberately **manual** adjudication controls, not a new inferred rules interpreter.
+
+### Added manual actions and evidence
+- **Mill cards…**: select your library or the scripted opponent's and an integer 1–99. Cards move from the library's existing top order into their **owner's graveyard**. Mill counts are tracked separately from draws and logged with the milled card names. Milling a library empty is not an automatic loss. Other triggered/replacement abilities are not inferred.
+- **Exile under another card…**: select a face-up card on the battlefield, in a graveyard or on the stack, then identify the permanent or spell on the battlefield/stack that caused its exile. This records persistent `exiledBy = {sourceId, sourceName, sourceOwner, exileTurn}` on the exiled card in its **owner's exile zone**. Tokens cannot be linked; moving a linked card out of exile clears the association. Commanders may require a user-adjudicated command-zone choice.
+- The card inspector for the source shows **Exiled with this card** and buttons to inspect each linked exiled card. The opponent's graveyard and exile zones are accessible without disclosing their hand/library. Links survive save/reload and the original source leaving play, although this **does not** imply casting permission persists.
+- Linked cards offer **cast with normal mana payment** (uses existing tap sources, printed cost, stack and cast triggers), **cast without paying mana** (an explicitly logged manual permission), **put permanent onto your/owner's battlefield without casting**, and **return to owner's hand**, with no inferred permission or free/alternate-cost rule. Playing an exiled land requires an available land drop. Unknown spell effects still require manual stack movement after casting.
+- This work uses the same pure shared engine on website and Android, saves all link metadata with the local table, records every manual action in turn notes and remains reversible via the existing Undo history.
+
+### Tests and limitations
+Nine deterministic engine regression tests cover own/opponent mills, empty library without automatic loss, mill→grave→linked-exile, ownership/controller separation, link persistence across save and source departure, paying to cast, deliberately free cast, manual permanent return, unlinked exile denial, token protection, land-drop rules and stack source handling. The website Playwright test at 390px and 1440px covers mill opponent→open opponent graveyard→link to source→inspect source's exiled cards→return permanent and ordinary paid cast.
+
+**Not automated:** legal source target choices, trigger/replacement events, opponent rules choices, cast permissions/limits, alternate faces, free-cast X/alternate costs, imprint timing and source-specific token copy effects. State records may support future adapters. Browser, Android candidate build, CI, deployment and physical-device testing are independent lifecycle gates.
