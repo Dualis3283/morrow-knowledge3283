@@ -109,3 +109,10 @@ Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the 
 - The Darkness Crystal replaces non-token opposing creature deaths with owner exile, linked to specific Crystal, +2 life. Actual paid 4BB and tap return creature from precisely linked exile tapped under your control with +2 +1/+1 counters. Death queue suppressed on replaced deaths.
 - Evidence files `tests/dynamic-cost-crystal.test.mjs`, `tests/dynamic-cost-crystal-browser.mjs`, docs RELEASE_0.1.15.md. Verify independent source→CI→APK→merge→Cloudflare→HTTP/hash gates.
 - Unimplemented: simultaneous Crystal+creature board wipes and competing replacements, commander exile decisions, true as-enters/ETB priority decisions and activated ability responses, full generalized alternative/variable costs and APNAP event batches.
+
+## MECH-023 · Necroduality and source-linked token copies (0.1.16 candidate)
+
+- Named Necroduality paid 3U enchantment casts/resolves normally. Every nontoken Zombie entry under controller queues source-specific stack trigger; one per live Necroduality. Counterable, resolves after Zombie/source leave, creates printed-base token copy once, no recursion from tokens.
+- Generic manual `createTokenCopy` (target battlefield permanent, optional source, 1–20 tokens, chosen controller) creates `isToken` cards carrying `copiedFrom` and `createdBy` metadata; token badge, inspector provenance and source follow-back; survives save/load. Manual actions do not claim verified printed effect.
+- 12 new engine tests, mobile/desktop browser tests. Remaining: other named copy cards, as-enters choices/copy layers, DFCs, legend-rule and broad simultaneous trigger APNAP.
+- Lifecycle: local work complete; GitHub PR, QA, Android, merge and production readback independent gates.
