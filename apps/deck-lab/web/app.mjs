@@ -994,6 +994,7 @@ $('manual-mana-confirm').addEventListener('click',()=>{
 $('mill-cards-button').addEventListener('click',openMillCards);
 $('mill-cards-cancel').addEventListener('click',()=>$('mill-cards-dialog').close());
 for(const id of ['mill-cards-player','mill-cards-count'])$(id).addEventListener('change',updateMillPreview);
+$('mill-cards-count').addEventListener('input',updateMillPreview);
 $('mill-cards-confirm').addEventListener('click',()=>{
  const count=Number($('mill-cards-count').value),targetPlayer=Number($('mill-cards-player').value);
  if(dispatch({type:'mill',targetPlayer,count}))$('mill-cards-dialog').close();
