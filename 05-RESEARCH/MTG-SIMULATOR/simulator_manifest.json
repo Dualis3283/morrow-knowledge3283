@@ -1,0 +1,29 @@
+{
+  "version": "2026-11-01-v1",
+  "status": "locally_rerun_identical_outputs_pending_independent_rules_review",
+  "simulations": [
+    {
+      "id": "MTG-SIM-OVIKA-GOLDFISH-2026-11-01-v1",
+      "source": "ovika_goldfish.py",
+      "sha256": "83de981d06c0f7837bb5caba956e4fff0aca13f86837dfde6f6f77abac3923de",
+      "runs": 100,
+      "seed": 20261101,
+      "turn_limit": 12
+    },
+    {
+      "id": "MTG-SIM-OVIKA-KARN-DUEL-2026-11-01-v1",
+      "source": "ovika_vs_karn_heuristic.py",
+      "sha256": "069b53d9f5b8599c29af1beb29f9fa5c070c9ff5082df6d4bbaa3aeecd0ed57f",
+      "runs": 100,
+      "seed": 20261101,
+      "turn_limit": 15,
+      "starting_life": 40,
+      "commander_damage_limit": 21,
+      "outcomes": {
+        "Karn": 56,
+        "Ovika": 43,
+        "Unresolved": 1
+      }
+    }
+  ]
+}
