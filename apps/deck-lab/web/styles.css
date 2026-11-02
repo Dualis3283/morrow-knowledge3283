@@ -117,3 +117,6 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 .empty-laboratory-zombies{display:grid;gap:.35rem;max-height:45vh;overflow-y:auto;}
 .empty-lab-option{display:flex;gap:.55rem;align-items:center;padding:.45rem;border:1px solid var(--border,rgba(193,168,125,.28));border-radius:.5rem;min-height:44px;}
 .empty-lab-option input{width:22px;height:22px;}
+
+/* Explicit stack response controls are touch-sized and not hidden in compact layout. */
+#open-response-button,#pass-response-button,#close-response-button{min-height:44px;margin-top:.35rem;}

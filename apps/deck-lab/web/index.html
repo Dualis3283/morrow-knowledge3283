@@ -12,7 +12,7 @@
 <body>
   <a class="skip-link" href="#main">Skip to play area</a>
   <header class="app-header">
-    <a class="brand" href="#play" aria-label="Morrow Deck Lab home"><span class="brand-mark" aria-hidden="true">M</span><span>Morrow <small>DECK LAB</small></span></a>
+    <a class="brand" href="#play" aria-label="Morrow Deck Lab home"><span class="brand-mark" aria-hidden="true">M</span><span>Morrow <small>DECK LAB</small></span></a><span class="tiny" aria-label="Simulator version">0.1.13 debug</span>
     <span class="header-note"><i aria-hidden="true"></i> Your table. Your pace.</span>
     <button class="icon-button" id="about-button" aria-label="About Deck Lab and supported rules">ⓘ</button>
   </header>
@@ -73,7 +73,7 @@
             <p class="gesture-note">Swipe a battlefield card right to tap or untap. Every gesture also has a button.</p>
           </div>
           <aside class="table-sidebar">
-            <section class="sidebar-section"><div class="section-heading"><h2>The stack</h2><span id="stack-count" class="mini-count">0</span></div><div id="stack-list"></div><button id="resolve-button" class="button wide" disabled>Resolve top spell</button><p class="tiny">Last in, first out. Unsupported effects require manual resolution.</p></section>
+            <section class="sidebar-section"><div class="section-heading"><h2>The stack</h2><span id="stack-count" class="mini-count">0</span></div><div id="stack-list"></div><button id="open-response-button" class="button wide" disabled>Open response window</button><button id="pass-response-button" class="button wide primary" hidden>Pass priority · scripted opponent passes</button><button id="close-response-button" class="button wide" hidden>Close response window</button><button id="resolve-button" class="button wide" disabled>Resolve top spell</button><p class="tiny">Last in, first out. Unsupported effects require manual resolution.</p></section>
             <section class="sidebar-section"><p class="eyebrow">Leave it to chance</p><div class="random-tools"><button id="coin-button" class="button">◐ Flip coin</button><label class="sr-only" for="die-sides">Dice sides</label><select id="die-sides"><option value="6">d6</option><option value="20">d20</option><option value="4">d4</option><option value="8">d8</option><option value="10">d10</option><option value="12">d12</option><option value="100">d100</option></select><button id="die-button" class="button">Roll</button></div><output id="random-result" aria-live="polite">A small chance of something.</output></section>
             <section class="sidebar-section"><div class="section-heading"><h2>Turn notes</h2><span class="tiny">MOST RECENT FIRST</span></div><ol id="activity-log" class="activity-log"></ol></section>
             <section class="sidebar-section"><h2>Test this opening</h2><p class="secondary">Run 100 seeded games against the selected opponent and compare the early rounds.</p><button id="game-sim-button" class="text-button">Run deck test →</button><p id="game-warnings" class="tiny"></p></section>

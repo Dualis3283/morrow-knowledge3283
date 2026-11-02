@@ -86,3 +86,11 @@ Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the 
 - User review is saved and blocks turn progression until confirmation; scripted opponent resolves deterministic library selection. Multiple effects processed serially. Supported source/tests `web/engine.mjs`, `tests/synthetic-destiny.test.mjs`, site browser `tests/synthetic-destiny-browser.mjs`.
 - Gates: engine tested locally; GitHub CI, Android APK package, cloud production deployment and live readback **pending independent verification at this checkpoint**.
 - Open: full stack priority/responses, commander exile zone-choice, simultaneous ETB/replacement ordering, cross-turn instant casting and battlefield ability ordering.
+
+## MECH-020 · Bounded stack response and counterspell targeting (0.1.13 candidate)
+
+- User-main-phase explicit response window, scripted opponent deterministic auto-pass, top-of-stack LIFO resolution, persistent priority state and honest quick-resolve shortcut.
+- Counterspell, Negate, Stifle, Disallow tested as different spell/trigger targets with paid casting and no invented universal effect interpretation.
+- Same-owner same-cast trigger batch IDs enable narrow voluntary ordering, not APNAP or simultaneous cross-player/ETB ordering.
+- Test files `apps/deck-lab/tests/response-priority.test.mjs` and website `tests/stack-response-browser.mjs`.
+- Progress lifecycle: locally tested only until independently verified CI/merge/live. Open follow-ups: opponent turn responses, automatic opponent responses, full APNAP event queue, commander replacement/SBA choices and simultaneous ETB ordering.

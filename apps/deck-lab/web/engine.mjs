@@ -154,6 +154,10 @@ const EFFECTS = {
   'Ponder': {effect:'ponder',status:'supported'},
   'Preordain': {effect:'preordain',status:'supported'},
   'Mass Polymorph': {effect:'mass-polymorph',status:'partial'},
+  'Counterspell': {effect:'counter-stack',target:'spell'},
+  'Negate': {effect:'counter-stack',target:'noncreatureSpell'},
+  'Stifle': {effect:'counter-stack',target:'stackAbility'},
+  'Disallow': {effect:'counter-stack',target:'spellOrAbility'},
   'Synthetic Destiny': {effect:'synthetic-destiny',status:'partial',auto:false},
   'Harmonize': { effect: 'draw', amount: 3 },
   "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
@@ -297,8 +301,10 @@ export function upgradeGame(snapshot) {
     if (typeof player.returnCommanderOnDeath !== 'boolean') player.returnCommanderOnDeath = true;
   }
   state.stack ||= [];
+  if(state.responseWindow&&!state.stack.length)delete state.responseWindow;
   state.nextTriggerId ??= 0;
   state.nextTokenId ??= 0;
+  state.nextTriggerBatchId ??= 0;
   state.opponentAudit ||= {turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]};
   if(state.pendingChoice && state.pendingChoice.player!==0 && state.pendingChoice.player!==1)delete state.pendingChoice;
   for (const player of state.players) for (const permanent of player.battlefield) {
@@ -430,7 +436,7 @@ export function castOptions(state,player,id,filter=null) {
   const where=find(state,id);
   if(!where || !(['hand','command'].includes(where.zone)&&where.player===player || where.zone==='exile'&&where.instance.exiledBy))return {canCast:false,reason:'Card is not in a castable hand, command or explicitly linked exile zone.',sources:[],pool:pool()};
   const card=castingCard(where.instance),land=type(card,'Land');
-  const ready=state.phase==='main' && state.activePlayer===player && !state.finished;
+  const ready=state.phase==='main' && state.activePlayer===player && !state.finished && (!state.responseWindow||state.responseWindow.priorityPlayer===player);
   const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
   const tax=where.zone==='command' ? 2*(where.instance.commanderCasts||0):0;
   const sources=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
@@ -461,6 +467,15 @@ function entersTapped(card, adapter, state = null, player = 0) {
   return Boolean(adapter.source?.entersTapped);
 }
 function validTarget(state, caster, targetId, descriptor) {
+  if(['spell','noncreatureSpell','stackAbility','spellOrAbility'].includes(descriptor)){
+    const found=state.stack.find(x=>x.id===targetId);
+    if(!found)return false;
+    const ability=found.kind==='trigger'||found.kind==='activated';
+    if(descriptor==='stackAbility')return ability;
+    if(descriptor==='spell')return !ability;
+    if(descriptor==='noncreatureSpell')return !ability&&!isCreature(found);
+    return true;
+  }
   if (!targetId) return descriptor === 'creatureOrPlayer';
   const target = find(state, targetId);
   if (!target || target.zone !== 'battlefield') return false;
@@ -474,7 +489,8 @@ function validTarget(state, caster, targetId, descriptor) {
   return true;
 }
 function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExile=false, withoutPaying=false}={}) {
-  if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('Cards may be played only during your active main phase.');
+  if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('This bounded simulator supports casting during the active main phase only; cross-turn priority is not modeled.');
+  if(state.responseWindow&&state.responseWindow.priorityPlayer!==player)throw new Error('This player does not currently have priority.');
   const location = find(state, id);
   if (!location || (!fromLinkedExile && (location.player !== player || !['hand','command'].includes(location.zone))))
     throw new Error('Choose a card in your hand, command zone, or explicitly linked exile.');
@@ -523,6 +539,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
   remove(state, location); if(fromLinkedExile)delete instance.exiledBy; instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
+  if(state.responseWindow){state.responseWindow.priorityPlayer=player;state.responseWindow.passes=0;log(state,'Response window: casting a spell resets consecutive passes; its cast triggers are placed above it.');}
   log(state, `${state.players[player].name} casts ${named(instance.card)}${exileSource?` from exile linked to ${exileSource.sourceName} (${exileSource.sourceId})${withoutPaying?' without paying mana (explicit manual permission)':' using normal mana payment (manual casting permission)'}`:''}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
   queueCastInteractions(state, player, card);
   finishIfLethal(state);
@@ -530,29 +547,30 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 // Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.
-function pushInteraction(state, controller, source, adapter, count) {
+function pushInteraction(state, controller, source, adapter, count, batchId=null) {
   state.stack.push({id:`p${controller}-trigger-${state.nextTriggerId++}`,owner:controller,controller,
     kind:'trigger',sourceId:source.id,card:{name:`${named(source.card)} — ${adapter}`,type_line:'Triggered Ability',cmc:0,oracle_text:'Named supported trigger; see activity log.'},
-    trigger:{adapter,count}});
+    trigger:{adapter,count,batchId}});
 }
 function queueCastInteractions(state, player, spell) {
   if (type(spell,'Land')) return;
+  const batchId=state.nextTriggerBatchId++; 
   const sources = state.players[player].battlefield.filter(x => ['Ovika, Enigma Goliath','Third Path Iconoclast','Sai, Master Thopterist','Sram, Senior Edificer','Etherium Spinner','Whirlwind of Thought'].includes(named(x.card)));
   for (const source of sources) {
     const sourceName=named(source.card);
     const isArtifact=type(spell,'Artifact'),isNoncreature=!type(spell,'Creature');
     const isQualifiedSram = type(spell,'Aura') || type(spell,'Equipment') || type(spell,'Vehicle');
     if (sourceName === 'Sai, Master Thopterist' && isArtifact || sourceName === 'Etherium Spinner' && Number(spell.cmc)>=4 && !/\{[XYZ]\}/.test(String(spell.mana_cost||''))) {
-      pushInteraction(state,player,source,'thopter-token',1);
+      pushInteraction(state,player,source,'thopter-token',1,batchId);
       log(state,`${sourceName} trigger: create one 1/1 flying Thopter artifact creature on resolution.`);continue;
     }
     if (sourceName === 'Sram, Senior Edificer' && isQualifiedSram || sourceName === 'Whirlwind of Thought' && isNoncreature) {
-      pushInteraction(state,player,source,'cast-draw',1);
+      pushInteraction(state,player,source,'cast-draw',1,batchId);
       log(state,`${sourceName} trigger: draw one card on resolution.`);continue;
     }
     if (!isNoncreature)continue;
     if (named(source.card) === 'Third Path Iconoclast') {
-      pushInteraction(state,player,source,'iconoclast-soldier',1);
+      pushInteraction(state,player,source,'iconoclast-soldier',1,batchId);
       log(state,`Third Path Iconoclast trigger: one 1/1 colorless Soldier artifact creature on resolving.`);
       continue;
     }
@@ -560,7 +578,7 @@ function queueCastInteractions(state, player, spell) {
     if (!Number.isInteger(manaValue) || manaValue < 0 || manaValue > 40 || spell.card_faces?.length || /\{X\}/i.test(String(spell.mana_cost || ''))) {
       warn(state,`Ovika trigger for ${named(spell)} requires manual X/face mana-value resolution.`); continue;
     }
-    pushInteraction(state,player,source,'ovika-goblins',manaValue);
+    pushInteraction(state,player,source,'ovika-goblins',manaValue,batchId);
     log(state,`Ovika trigger from ${source.id}: ${named(spell)} mana value ${manaValue}; trigger placed above spell.`);
   }
 }
@@ -755,6 +773,21 @@ function resolve(state) {
     if (adapter.status === 'partial') { const message = `${named(instance.card)} enters; unimplemented Oracle abilities are not applied.`; log(state, message); warn(state, message); }
   } else {
     switch (adapter.effect) {
+      case 'counter-stack': {
+        const original=state.stack.find(x=>x.id===instance.targetId);
+        if(!original||!validTarget(state,player,original.id,adapter.target)){
+          log(state,`${named(instance.card)}: target is no longer legal; it fails to counter anything.`);
+          break;
+        }
+        state.stack.splice(state.stack.indexOf(original),1);
+        if(original.kind==='trigger'||original.kind==='activated')
+          log(state,`${named(instance.card)} counters ${named(original.card)} (ability ceases to exist).`);
+        else{
+          moveTo(state,original,original.owner,'graveyard');
+          log(state,`${named(instance.card)} counters ${named(original.card)}; spell put into owner's graveyard. Command-zone choice may apply manually.`);
+        }
+        break;
+      }
       case 'tokens': {
         const count=adapter.count;
         if (!Number.isInteger(count)||count<0||count>40) throw new Error('Unsupported token count.');
@@ -1064,7 +1097,7 @@ function finishRound(state) {
 }
 function endTurn(state) {
   if (state.phase !== 'main' || state.activePlayer !== 0) throw new Error('Keep an opening hand before ending your turn.');
-  if (state.stack.length) throw new Error('Resolve or manually move every stack card before ending the turn.');
+  if (state.stack.length||state.responseWindow) throw new Error('Close the response window and resolve stack objects before ending the turn.');
   if(!endCurrent(state))return;
   if (state.startingPlayer === 0) {
     beginTurn(state, 1); if(!autoTurn(state, 1))return; endCurrent(state);
@@ -1088,7 +1121,7 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   const state = {
     players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander', true)] : [], commanderId: [commander, opponentCommander][p] ? `p${p}-commander` : null, returnCommanderOnDeath: true, passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
     stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
-    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0, opponentAudit:{turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]},
+    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0, nextTriggerBatchId: 0, opponentAudit:{turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]},
   };
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }
   if (opponentDeck.length) autoKeep(state, 1); else { state.players[1].kept = true; warn(state, 'Opponent has no deck: passive goldfish practice; no opposing draws or actions.'); }
@@ -1169,7 +1202,48 @@ function apply(state, action) {
       delete state.pendingLibrary;break;
     }
     case 'play': play(state, player, action.id, action.targetId, action.sourceIds ? {sourceIds:action.sourceIds,sourceChoices:action.sourceChoices||{}} : null); break;
-    case 'resolve': resolve(state); break;
+    case 'promoteCastTrigger':{
+      const index=state.stack.findIndex(x=>x.id===action.id),trigger=state.stack[index],above=state.stack[index+1];
+      if(!trigger||!above||trigger.kind!=='trigger'||above.kind!=='trigger'||trigger.controller!==0||above.controller!==0||!Number.isInteger(trigger.trigger?.batchId)||trigger.trigger?.batchId!==above.trigger?.batchId)
+        throw new Error('Only adjacent triggers you control from the same cast event may be reordered.');
+      [state.stack[index],state.stack[index+1]]=[above,trigger];
+      log(state,`Trigger order changed: ${named(trigger.card)} will resolve before ${named(above.card)}. Same-event, single-controller ordering only.`);
+      break;
+    }
+    case 'openResponseWindow':{
+      if(state.finished||state.phase!=='main'||state.activePlayer!==0||!state.stack.length||state.pendingChoice||state.pendingLibrary)
+        throw new Error('Open a response window on an unresolved stack during your main phase.');
+      if(state.responseWindow)throw new Error('Response window already open.');
+      state.responseWindow={priorityPlayer:0,passes:0};
+      log(state,'Response window opened: you have priority. The scripted opponent has no supported response policy and will pass deterministically.');
+      break;
+    }
+    case 'passResponse':{
+      if(!state.responseWindow||!state.stack.length||state.pendingChoice||state.pendingLibrary)
+        throw new Error('Open a response window with a nonempty stack.');
+      if(player!==state.responseWindow.priorityPlayer||player!==0)throw new Error('Only your currently held priority may be passed in this bounded response window.');
+      const top=state.stack.at(-1),adapter=profile(top.card);
+      if((top.kind!=='trigger'&&(!adapter.auto||adapter.status==='manual'))||(top.trigger?.adapter==='loyalty-manual'))
+        throw new Error('Top of stack needs explicit manual effect adjudication before both players can pass.');
+      log(state,`You pass priority; scripted opponent passes. Two consecutive passes resolve ${named(top.card)}.`);
+      resolve(state);
+      if(state.responseWindow){
+        if(state.stack.length&&!state.pendingChoice&&!state.pendingLibrary){
+          state.responseWindow.priorityPlayer=0;state.responseWindow.passes=0;
+          log(state,`You regain priority with ${state.stack.length} object(s) remaining on the stack.`);
+        }else{delete state.responseWindow;log(state,'Response window closed (stack empty or a choice requires adjudication).');}
+      }
+      break;
+    }
+    case 'closeResponseWindow':{
+      if(!state.responseWindow)throw new Error('No response window is open.');
+      delete state.responseWindow;log(state,'Response window closed; quick Resolve shortcut remains available.');break;
+    }
+    case 'resolve': {
+      if(state.responseWindow)throw new Error('Use Pass priority and the scripted opponent pass to resolve in the active response window.');
+      if(state.stack.length)log(state,'Quick Resolve: implicitly assumes both players pass; not a full priority simulation.');
+      resolve(state);break;
+    }
     case 'tap': {
       const location = find(state, action.id);
       if (!location || location.zone !== 'battlefield') throw new Error('Choose a battlefield card.');
