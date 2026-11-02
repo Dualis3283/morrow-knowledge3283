@@ -67,3 +67,11 @@ Source references and reproducible tests: `tests/mana-draw-fundamentals.test.mjs
 - **MECH-014 / P0:** Manual mill to player's graveyard (1–99 from library top, own/opponent, separate from draw).
 - **MECH-015 / P0:** Source-linked exile (source card instance ID, owner, face-up exile record) plus manual paid/free recast and manual battlefield/hand return.
 - **Evidence:** `apps/deck-lab/tests/manual-mill-linked-exile.test.mjs`; browser `tests/manual-mill-exile-browser.mjs` on mobile/desktop. Scope: manual, not full Oracle permission enforcement. The merge, CI, live readback and Android-device gates are **pending** until individually verified.
+
+## Library review and ordered reveal — candidate 0.1.10
+
+- **MECH-016/P0:** Named Ponder three-card look, reorder, optional shuffle and then one real draw; Preordain two-card scry top/bottom then draw. Scripted opponent deterministic bounded choice. Source implemented; test/CI/release gates separate.
+- **MECH-017/P0:** Manual library look at top N and reveal until first nonland; visual card tray, explicit ordered per-card destinations, confirmation; state/snapshot integrity and ownership.
+- **Future:** Variants until N creature/Zombie/mana-value matches, cascade/discover, Brainstorm draw 3/put 2 from hand, and automatic source-specific permissions.
+
+Test evidence: `apps/deck-lab/tests/library-selection.test.mjs` and website `tests/library-review-browser.mjs` (390/1440px).

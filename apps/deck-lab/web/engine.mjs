@@ -151,6 +151,8 @@ const EFFECTS = {
   'Midnight Haunting': {effect:'tokens',count:2,token:{name:'Spirit',type_line:'Token Creature — Spirit',power:'1',toughness:'1',colors:['W'],keywords:['flying']}},
   'Giant Growth': { effect: 'pump', amount: 3, target: 'creature' },
   'Divination': { effect: 'draw', amount: 2 },
+  'Ponder': {effect:'ponder',status:'supported'},
+  'Preordain': {effect:'preordain',status:'supported'},
   'Harmonize': { effect: 'draw', amount: 3 },
   "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
   'Think Twice': {effect:'draw',amount:1,status:'partial',reason:'Normal cast draws one card; Flashback casting and exile remain manual.'},
@@ -640,6 +642,64 @@ function searchBasic(state, player, destination) {
   if (index < 0) return null;
   const instance = library.splice(index, 1)[0]; instance.tapped = destination === 'battlefield'; moveTo(state, instance, player, destination); return instance;
 }
+// A pending library review stores only the visible IDs. Do not mutate library or reveal
+// other cards until the explicit allocation is accepted. This survives JSON save/reload.
+function startLibraryReview(state,player,mode,count=3,sourceName='Manual review') {
+  if(state.pendingLibrary||state.pendingChoice)throw new Error('Complete the pending selection first.');
+  if(![0,1].includes(player)||!['look','ponder','preordain','reveal-nonland'].includes(mode))throw new Error('Unsupported library review mode.');
+  if(mode==='look'&&(!Number.isInteger(count)||count<1||count>10))throw new Error('Look at between 1 and 10 cards.');
+  const cards=state.players[player].library;
+  const selected=mode==='reveal-nonland'?(()=>{const out=[];for(const item of cards){out.push(item);if(!type(item.card,'Land'))break;}return out;})()
+    : cards.slice(0,mode==='ponder'?3:mode==='preordain'?2:count);
+  const ids=selected.map(x=>x.id);
+  state.pendingLibrary={mode,player,sourceName,ids,topOrder:ids.slice(),revealFound:mode==='reveal-nonland'&&selected.length>0&&!type(selected.at(-1).card,'Land'),createdTurn:state.turn};
+  log(state,`${sourceName}: ${mode==='reveal-nonland'?`reveal ${ids.length} card(s) until first nonland or end`: `look at top ${ids.length} card(s)`}; awaiting ordered allocation.`);
+}
+function commitLibraryReview(state,action){
+  const pending=state.pendingLibrary;if(!pending)throw new Error('No library selection is awaiting allocation.');
+  const actual=state.players[pending.player],original=pending.ids,order=action.order;
+  if(!Array.isArray(order)||order.length!==original.length||new Set(order).size!==order.length||order.some(id=>!original.includes(id)))
+    throw new Error('Choose exactly the revealed cards, each once, in your preferred order.');
+  if(actual.library.slice(0,original.length).map(x=>x.id).join('|')!==original.join('|'))throw new Error('Library changed during selection; undo and reopen.');
+  if(typeof action.shuffle!=='boolean')throw new Error('Choose whether to shuffle.');
+  if(action.shuffle&&pending.mode!=='ponder'&&pending.mode!=='look')throw new Error('Shuffling is supported only when explicitly chosen for a manual look or Ponder.');
+  const destinations=action.destinations||{};
+  if(!destinations||typeof destinations!=='object'||Array.isArray(destinations))throw new Error('Choose a valid destination for each card.');
+  if(Object.keys(destinations).some(id=>!original.includes(id)))throw new Error('An unknown card was included in the allocation.');
+  const permitted=pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:
+    pending.mode==='reveal-nonland'?['top','bottom','hand','graveyard','exile','battlefield']:['top','bottom','hand','graveyard','exile','battlefield'];
+  const destinationFor=id=>destinations[id]|| (pending.mode==='reveal-nonland'?'bottom':'top');
+  for(const id of order){
+    const dest=destinationFor(id);if(!permitted.includes(dest))throw new Error(`Destination ${dest} is not valid for this review.`);
+    if(pending.mode==='reveal-nonland'){
+      const isHit=id===original.at(-1)&&pending.revealFound;
+      if(!isHit&&dest!=='bottom')throw new Error('Cards before the first nonland must be placed on the bottom in this bounded reveal workflow.');
+    }
+    if(dest==='battlefield'){
+      const card=actual.library.find(x=>x.id===id)?.card;
+      if(!card || !/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(card.type_line||card.card_faces?.[0]?.type_line||''))
+        throw new Error('Only permanent cards can be manually placed onto the battlefield.');
+    }
+  }
+  // The player can only select one hit in reveal mode; all other cards go bottom.
+  const taken=actual.library.splice(0,original.length);const byId=new Map(taken.map(c=>[c.id,c]));
+  const top=[],bottom=[],transferred=[];
+  for(const id of order){
+    const instance=byId.get(id),dest=destinationFor(id);
+    if(dest==='top')top.push(instance);
+    else if(dest==='bottom')bottom.push(instance);
+    else {moveTo(state,instance,pending.player,dest);transferred.push(`${named(instance.card)} → ${dest}`);}
+  }
+  actual.library.unshift(...top);actual.library.push(...bottom);
+  if(action.shuffle)shuffle(state,actual.library);
+  delete state.pendingLibrary;
+  log(state,`${pending.sourceName}: allocated ${order.length} card(s): ${top.length} top, ${bottom.length} bottom${transferred.length?`, ${transferred.join('; ')}`:''}${action.shuffle?'; shuffled library':''}.`);
+  if(pending.mode==='ponder'||pending.mode==='preordain'){
+    draw(state,pending.player,1);
+    log(state,`${pending.sourceName}: draw exactly one card after ${action.shuffle?'shuffling':'arranging'} the library.`);
+  }
+  if(pending.mode==='look'||pending.mode==='reveal-nonland')warn(state,'Manually allocated library cards are not a verified card-specific spell or replacement effect.');
+}
 function resolve(state) {
   const instance = state.stack.at(-1); if (!instance) throw new Error('The stack is empty.');
   if (resolveInteraction(state, instance)) return;
@@ -663,6 +723,22 @@ function resolve(state) {
           token.isToken=true;moveTo(state,token,player,'battlefield');
         }
         log(state,`${named(instance.card)} creates ${count} ${adapter.token.name} token(s).`);
+        break;
+      }
+      case 'ponder':
+      case 'preordain': {
+        const mode=adapter.effect;
+        startLibraryReview(state,player,mode,mode==='ponder'?3:2,named(instance.card));
+        if(player===1){
+          // Deterministic, visible opponent heuristic: retain printed library order;
+          // Preordain bottoms land surplus, not a claim of strategic optimality.
+          const choice=state.pendingLibrary;
+          const destinations={};
+          if(mode==='preordain' && state.players[player].hand.filter(x=>type(x.card,'Land')).length>=4)
+            for(const id of choice.ids){const card=state.players[player].library.find(x=>x.id===id);if(card&&type(card.card,'Land'))destinations[id]='bottom';}
+          commitLibraryReview(state,{order:choice.ids.slice(),destinations,shuffle:false});
+          log(state,`Scripted ${named(instance.card)}: deterministic keep-order${Object.keys(destinations).length?' / bottom surplus lands':''} policy; not an optimal hidden-information claim.`);
+        }
         break;
       }
       case 'draw': draw(state, player, adapter.amount); break;
@@ -799,7 +875,7 @@ function targetFor(state, player, adapter) {
 export function suggestions(state, player=0) {
   if (state.phase !== 'main' || state.activePlayer !== player || state.finished) return [];
   const p=state.players[player];
-  if (state.pendingChoice) return [];
+  if (state.pendingChoice||state.pendingLibrary) return [];
   if (state.stack.length) {
     const top=state.stack.at(-1), adapter=profile(top.card);
     if ((top.kind === 'trigger' && top.trigger?.adapter!=='loyalty-manual') || (adapter.auto && adapter.status !== 'manual'))
@@ -961,6 +1037,7 @@ function apply(state, action) {
   if (!action || !action.type) throw new Error('Choose an action.');
   const player = action.player ?? 0;
   if (![0, 1].includes(player)) throw new Error('Player must be 0 or 1.');
+  if(state.pendingLibrary&&!['commitLibraryReview','cancelLibraryReview'].includes(action.type))throw new Error('Complete the library allocation before taking another action.');
   const activeTypes = ['play', 'attack', 'combat', 'endTurn', 'resolve'];
   if (state.finished && activeTypes.includes(action.type)) throw new Error('This test is finished. Start a new test to continue.');
   switch (action.type) {
@@ -968,6 +1045,17 @@ function apply(state, action) {
     case 'keep':
       if (state.phase !== 'opening') throw new Error('Opening hand already kept.');
       keep(state, 0, action.bottomIds || []); startKeptGame(state); break;
+    case 'startLibraryReview': {
+      if(state.finished||!state.players[0].kept)throw new Error('Keep the opening hand first.');
+      startLibraryReview(state,action.targetPlayer,action.mode,action.count,action.sourceName||'Manual library review');
+      break;
+    }
+    case 'commitLibraryReview':commitLibraryReview(state,action);break;
+    case 'cancelLibraryReview':{
+      if(!state.pendingLibrary||!['look','reveal-nonland'].includes(state.pendingLibrary.mode))throw new Error('This required spell resolution cannot be cancelled; use Undo if necessary.');
+      log(state,`${state.pendingLibrary.sourceName}: manual library review cancelled without moving any cards.`);
+      delete state.pendingLibrary;break;
+    }
     case 'play': play(state, player, action.id, action.targetId, action.sourceIds ? {sourceIds:action.sourceIds,sourceChoices:action.sourceChoices||{}} : null); break;
     case 'resolve': resolve(state); break;
     case 'tap': {

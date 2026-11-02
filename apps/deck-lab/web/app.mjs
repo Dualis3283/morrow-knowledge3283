@@ -22,6 +22,7 @@ let undoHistory = [];
 let casting = null;
 let manualManaSourceId = null;
 let linkedExileTargetId=null;
+let libraryDraft=null;
 let activeTest = null;
 let nextTestId = 0;
 
@@ -366,7 +367,7 @@ function renderGame() {
   setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
   setText('opponent-automation-status',scripted.halted?'Paused: unresolved effects require manual adjudication':`${scripted.unknownHandCount} hand card(s) without complete automated coverage`);
   $('resume-opponent-button').hidden=!game.pendingOpponent;
-  $('resume-opponent-button').disabled=Boolean(game.stack?.length || game.pendingChoice);
+  $('resume-opponent-button').disabled=Boolean(game.stack?.length || game.pendingChoice || game.pendingLibrary);
 
   fillZone('opponent-lands', opponent.battlefield.filter(i => isLand(i.card)), 1, 'The first land is still to come.', true);
   fillZone('opponent-field', opponent.battlefield.filter(i => !isLand(i.card)), 1, 'Watch the opponent’s board develop.');
@@ -398,8 +399,10 @@ function renderGame() {
   $('assist-main').disabled=!first;
   $('undo-action').disabled=!undoHistory.length;
   setText('assist-preview', first ? `${first.label} · ${first.why}${first.sourceNames.length ? ` · Auto-tap: ${first.sourceNames.join(', ')}` : ''}` : 'No payable supported action. Inspect a card, adjust the table manually or end your turn.');
-  $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || Boolean(game.pendingChoice);
-  $('draw-card-button').disabled=!own.kept||game.finished||!own.library.length;
+  $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || Boolean(game.pendingChoice||game.pendingLibrary);
+  $('draw-card-button').disabled=!own.kept||game.finished||!own.library.length||Boolean(game.pendingLibrary);
+  $('review-library-button').disabled=!own.kept||game.finished||Boolean(game.pendingLibrary)||Boolean(game.pendingChoice);
+  $('mill-cards-button').disabled=!own.kept||game.finished||Boolean(game.pendingLibrary);
   $('combat-button').disabled = game.finished || !attackers.length || game.combatDone;
   $('mulligan-button').disabled = own.mulligans >= 7;
   const bottoms = Math.min(own.mulligans || 0, own.hand.length);
@@ -420,7 +423,7 @@ function renderGame() {
     button.addEventListener('click', () => showCard(instance, instance.controller || 0, 'stack'));
     $('stack-list').append(button);
   });
-  $('resolve-button').disabled = !stack.length || game.finished;
+  $('resolve-button').disabled = !stack.length || game.finished || Boolean(game.pendingLibrary);
   $('end-turn-button').textContent = game.finished ? 'Test complete' : 'End turn →';
   $('activity-log').replaceChildren(...(game.log || []).slice(-18).reverse().map(item => element('li', '', typeof item === 'string' ? item : JSON.stringify(item))));
   if (game.lastRandom) {
@@ -437,7 +440,60 @@ function renderGame() {
     }));
     if(!discardDialog.open)discardDialog.showModal();
   }else if(discardDialog.open)discardDialog.close();
+  renderLibraryAllocation();
 
+}
+function renderLibraryAllocation(){
+  if(!game)return;
+  const pending=game.pendingLibrary, dialog=$('library-allocation-dialog');
+  if(!pending){libraryDraft=null;if(dialog.open)dialog.close();return;}
+  if(!libraryDraft||libraryDraft.player!==pending.player||libraryDraft.mode!==pending.mode||libraryDraft.ids.join('|')!==pending.ids.join('|')){
+    const destinations={};
+    if(pending.mode==='reveal-nonland'&&pending.revealFound)destinations[pending.ids.at(-1)]='hand';
+    libraryDraft={player:pending.player,mode:pending.mode,ids:pending.ids.slice(),order:pending.ids.slice(),destinations,shuffle:false};
+  }
+  $('library-allocation-title').textContent=pending.mode==='ponder'?'Ponder · order top three':pending.mode==='preordain'?'Preordain · scry two':pending.mode==='reveal-nonland'?'Reveal until first nonland':'Review and allocate cards';
+  $('library-allocation-desc').textContent=pending.mode==='ponder'?'Reorder the cards (top first), optionally shuffle the entire library, then draw one.':pending.mode==='preordain'?'Keep cards on top or put them on the bottom in your chosen order; then draw one.':pending.mode==='reveal-nonland'?'Land cards before the first nonland go to the bottom. Choose what happens to the first nonland, subject to the actual card’s text.':'Move cards up/down to order them, and choose a destination for each. This is an explicit manual allocation.';
+  $('library-allocation-count').textContent=`${pending.ids.length} card(s)`;
+  const shuffle=$('library-allocation-shuffle');shuffle.closest('label').hidden=!['ponder','look'].includes(pending.mode);shuffle.checked=libraryDraft.shuffle;
+  $('library-allocation-cancel').hidden=!['look','reveal-nonland'].includes(pending.mode);
+  $('library-allocation-confirm').textContent=pending.mode==='ponder'||pending.mode==='preordain'?'Confirm and draw one':'Confirm card allocation';
+  const list=$('library-allocation-cards');list.replaceChildren();
+  for(let i=0;i<libraryDraft.order.length;i++){
+    const id=libraryDraft.order[i],instance=game.players[pending.player].library.find(c=>c.id===id);
+    if(!instance)continue;
+    const item=element('div','library-allocation-card');
+    const preview=element('div','library-allocation-art');
+    const url=imageUrl(instance.card);
+    if(url){const img=element('img');img.src=url;img.alt=`${instance.card.name} artwork`;img.loading='lazy';preview.append(img);}
+    else preview.append(element('span','',instance.card.name));
+    const info=element('div','library-allocation-card-info');
+    info.append(element('strong','',instance.card.name),element('small','',instance.card.type_line||'Card'));
+    const controls=element('div','library-allocation-move');
+    const up=element('button','button compact','↑');up.type='button';up.setAttribute('aria-label',`Move ${instance.card.name} toward library top`);up.disabled=i===0;
+    up.addEventListener('click',()=>{[libraryDraft.order[i-1],libraryDraft.order[i]]=[libraryDraft.order[i],libraryDraft.order[i-1]];renderLibraryAllocation();});
+    const down=element('button','button compact','↓');down.type='button';down.setAttribute('aria-label',`Move ${instance.card.name} toward library bottom`);down.disabled=i===libraryDraft.order.length-1;
+    down.addEventListener('click',()=>{[libraryDraft.order[i],libraryDraft.order[i+1]]=[libraryDraft.order[i+1],libraryDraft.order[i]];renderLibraryAllocation();});
+    controls.append(up,down);
+    const dest=element('select');dest.setAttribute('aria-label',`Destination for ${instance.card.name}`);
+    const isRevealLand=pending.mode==='reveal-nonland'&&(id!==pending.ids.at(-1)||!pending.revealFound);
+    const modes=pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:isRevealLand?['bottom']:['top','bottom','hand','graveyard','exile','battlefield'];
+    for(const name of modes){
+      if(name==='battlefield'&&!/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(instance.card.type_line||instance.card.card_faces?.[0]?.type_line||''))continue;
+      const option=element('option','',name[0].toUpperCase()+name.slice(1));option.value=name;dest.append(option);
+    }
+    dest.value=libraryDraft.destinations[id]|| (pending.mode==='reveal-nonland'?'bottom':'top');
+    dest.addEventListener('change',()=>{libraryDraft.destinations[id]=dest.value;renderLibrarySummary();});
+    const destLabel=element('label','tiny','Destination');destLabel.append(dest);
+    info.append(destLabel);item.append(preview,info,controls);list.append(item);
+  }
+  renderLibrarySummary();
+  if(!dialog.open)dialog.showModal();
+}
+function renderLibrarySummary(){
+  if(!libraryDraft)return;
+  const counts={};for(const id of libraryDraft.order){const dest=libraryDraft.destinations[id]||(libraryDraft.mode==='reveal-nonland'?'bottom':'top');counts[dest]=(counts[dest]||0)+1;}
+  $('library-allocation-summary').textContent=`Top-to-bottom order as displayed. ${Object.entries(counts).map(([k,n])=>`${n} ${k}`).join(' · ')||'No cards revealed'}${libraryDraft.shuffle?' · shuffle entire library':''}${['ponder','preordain'].includes(libraryDraft.mode)?' · then draw 1':''}.`;
 }
 function lookup(id) {
   if (!game) return null;
@@ -991,6 +1047,20 @@ $('manual-mana-confirm').addEventListener('click',()=>{
   const success=dispatch({type:'manualSourceMana',player:0,id:manualManaSourceId,color:$('manual-mana-color').value,amount:Number($('manual-mana-amount').value)});
   if(success){$('manual-mana-dialog').close();manualManaSourceId=null;}
 });
+$('review-library-button').addEventListener('click',()=>{$('library-review-player').value='0';$('library-review-mode').value='look';$('library-review-count').value='3';$('library-review-count').disabled=false;$('library-review-setup-dialog').showModal();});
+$('library-review-mode').addEventListener('change',()=>{$('library-review-count').disabled=$('library-review-mode').value!=='look';});
+$('library-review-setup-cancel').addEventListener('click',()=>$('library-review-setup-dialog').close());
+$('library-review-setup-confirm').addEventListener('click',()=>{
+ const mode=$('library-review-mode').value,targetPlayer=Number($('library-review-player').value),count=Number($('library-review-count').value);
+ if(dispatch({type:'startLibraryReview',mode,targetPlayer,count,sourceName:mode==='look'?'Manual top-of-library look':'Manual reveal until nonland'}))$('library-review-setup-dialog').close();
+});
+$('library-allocation-shuffle').addEventListener('change',v=>{if(libraryDraft){libraryDraft.shuffle=$('library-allocation-shuffle').checked;renderLibrarySummary();}});
+$('library-allocation-confirm').addEventListener('click',()=>{
+ if(!libraryDraft)return;
+ dispatch({type:'commitLibraryReview',player:libraryDraft.player,order:libraryDraft.order.slice(),destinations:{...libraryDraft.destinations},shuffle:libraryDraft.shuffle});
+});
+$('library-allocation-cancel').addEventListener('click',()=>dispatch({type:'cancelLibraryReview'}));
+$('library-allocation-dialog').addEventListener('cancel',event=>{if(game?.pendingLibrary&&!['look','reveal-nonland'].includes(game.pendingLibrary.mode))event.preventDefault();});
 $('mill-cards-button').addEventListener('click',openMillCards);
 $('mill-cards-cancel').addEventListener('click',()=>$('mill-cards-dialog').close());
 for(const id of ['mill-cards-player','mill-cards-count'])$(id).addEventListener('change',updateMillPreview);
