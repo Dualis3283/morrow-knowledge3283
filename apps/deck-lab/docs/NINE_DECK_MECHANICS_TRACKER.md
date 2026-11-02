@@ -53,3 +53,11 @@ A feature remains at its last observed gate; no status can be advanced based on 
 ## Immediate next stages
 
 First: event and replacement staging for token creation, then player-choice and scripted-choice library sequencing. Second: Room and face-specific persistent state, especially Victor, Esika and Ral. Third: copies, proliferate and full loyalty abilities with exceptions. Every stage must be run against the nine named deck fixture sets, with scripted-opponent end-to-end tests and visible manual/blocked counts.
+
+## Reliability regression — 0.1.8 source candidate (2 November 2026)
+
+- **MECH-011 / P0 / source candidate:** real-deck mana-source eligibility, flexible color modes, dynamic lands, conditional activation, colored cost payment. Planned→attempted→implemented in branch; tests, Android bundle, CI, public live readback and physical device remain separate gates.
+- **MECH-012 / P0 / source candidate:** explicit reversible manual Draw card button, named Enduring Innocence, Undead Augur and Midnight Reaper draw triggers. General replacement/draw cards still pending MECH-004.
+- **MECH-013 / P0 / source candidate:** manual mana source override for unimplemented filter-land/rock options, with automatic life/mana logging, no arbitrary Oracle inference.
+
+Source references and reproducible tests: `tests/mana-draw-fundamentals.test.mjs` and `tests/mana-draw-cards.json`; website 390/1440px `tests/mana-draw-browser.mjs`. Do not advance status to live without independent Cloudflare and hash readback.

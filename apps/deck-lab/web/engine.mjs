@@ -26,68 +26,109 @@ function toughness(instance) { return number(instance.card.toughness) + instance
 function fresh(card, player, index, commander = false) { return { id: `p${player}-${index}`, card: clone(card), owner: player, controller: player, tapped: false, counters: 0, damage: 0, enteredTurn: 0, attacking: false, ...(commander ? {isCommander: true, commanderCasts: 0} : {}) }; }
 function mono(color, amount = 1) { return { [color]: amount }; }
 
-function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
-  if (BASE_MANA[named(card)]) return { options: [mono(BASE_MANA[named(card)])] };
-  // Basic land TYPES grant intrinsic tap abilities, including on nonbasic duals/triomes.
-  if (type(card, 'Land') && /—/.test(String(card.type_line || ''))) {
-    const subtypes = String(card.type_line).split('—').slice(1).join(' ');
-    const types = Object.entries(BASE_MANA).filter(([land]) => new RegExp(`\\b${land}\\b`).test(subtypes));
-    if (types.length) return {options: types.map(([,color]) => mono(color))};
-  }
-  const known = {
-    'Sol Ring': { options: [mono('C', 2)] },
-    'Thran Dynamo': { options: [mono('C', 3)] },
-    'Worn Powerstone': { options: [mono('C', 2)], entersTapped: true },
-    'Mind Stone': { options: [mono('C')], partial: true },
-    'Thought Vessel': { options: [mono('C')], partial: true },
-    'Hedron Archive': { options: [mono('C', 2)], partial: true },
-    'Meticulous Commons': { options: [mono('W'), mono('B')], entryCondition: 'controlPlaneswalker' },
-    'Underground River': { options: [mono('C'), mono('U'), mono('B')], optionDamage: [0, 1, 1] },
-    'Llanowar Elves': { options: [mono('G')] },
-    'Elvish Mystic': { options: [mono('G')] },
-    'Fyndhorn Elves': { options: [mono('G')] },
+function manaSource(card, state = null, player = 0, depth = 0) {
+  if (!card) return null;
+  const name=named(card), oracle=text(card);
+  const commanderColors=()=>{
+    const leader=[...ZONES.flatMap(zone=>state?.players?.[player]?.[zone]||[]),...(state?.stack||[])].find(x=>x.isCommander&&x.owner===player);
+    const colors=leader?.card?.color_identity||[];
+    if(colors.length)return colors.filter(c=>COLORS.includes(c)&&c!=='C');
+    // Safe fallback only to printed colored mana symbols on the commander, not its desired spell.
+    const printing=leader?.card?.card_faces?.map(x=>x.mana_cost).join('')||leader?.card?.mana_cost||'';
+    return [...new Set([...printing.matchAll(/\{([WUBRG])\}/g)].map(x=>x[1]))];
   };
-  if (known[named(card)]) return known[named(card)];
-  // Explicit, bounded mana abilities. Colors derive from the user's commander,
-  // never from the controller's desired spell or a blanket produced_mana list.
-  const commanderColors = (state, player) => {
-    const candidate = [...ZONES.flatMap(zone => state?.players?.[player]?.[zone] || []), ...(state?.stack || []).filter(x=>x.isCommander && x.owner===player)].find(x=>x.isCommander && x.owner===player);
-    return (candidate?.card?.color_identity || []).filter(c => COLORS.includes(c) && c !== 'C');
+  const allColors=()=>['W','U','B','R','G'].map(c=>mono(c));
+  if(type(card,'Land')&&depth===0&&state?.players?.[player]?.battlefield?.some(x=>named(x.card)==='Chromatic Lantern')) {
+    const original=manaSource(card,null,player,1);
+    const baseOptions=original?.options||[];
+    return {options:[...baseOptions,...allColors()],optionDamage:[...(original?.optionDamage||baseOptions.map(()=>0)),0,0,0,0,0],partial:true};
+  }
+  const explicit={
+    'Sol Ring':{options:[mono('C',2)]},'Thran Dynamo':{options:[mono('C',3)]},
+    'Mind Stone':{options:[mono('C')],partial:true},'Thought Vessel':{options:[mono('C')],partial:true},
+    'Hedron Archive':{options:[mono('C',2)],partial:true},'Worn Powerstone':{options:[mono('C',2)],entersTapped:true},
+    'Meticulous Commons':{options:[mono('W'),mono('B')],entryCondition:'controlPlaneswalker'},
+    'Underground River':{options:[mono('C'),mono('U'),mono('B')],optionDamage:[0,1,1]},
+    'Temple of the False God':{options:[mono('C',2)],requiresLands:5},
+    'Ancient Tomb':{options:[mono('C',2)],optionDamage:[2]},
+    'Pristine Talisman':{options:[mono('C')],optionLifeGain:[1]},
+    'Prismatic Lens':{options:[mono('C'),...allColors()],optionActivationGeneric:[0,1,1,1,1,1],partial:true},
+    'Birds of Paradise':{options:allColors()},
+    'Llanowar Elves':{options:[mono('G')]},'Elvish Mystic':{options:[mono('G')]},
+    'Fyndhorn Elves':{options:[mono('G')]},'Palladium Myr':{options:[mono('C',2)]},
+    'Myr Convert':{options:allColors(),optionDamage:[2,2,2,2,2]},
+    'Gilded Lotus':{options:['W','U','B','R','G'].map(c=>mono(c,3))},
+    'Chromatic Lantern':{options:allColors(),partial:true},
+    'Cultivator\'s Caravan':{options:allColors(),partial:true},
+    'Phial of Galadriel':{options:allColors(),partial:true},
+    'Decanter of Endless Water':{options:allColors(),partial:true},
+    'Command Tower':{options:commanderColors().map(c=>mono(c))},
+    'Path of Ancestry':{options:commanderColors().map(c=>mono(c)),entersTapped:true,partial:true},
   };
-  if (['Arcane Signet', "Commander's Sphere"].includes(named(card))) {
-    const colors = commanderColors(argumentsState, argumentsPlayer);
-    return colors.length ? {options: colors.map(color=>mono(color)), partial: named(card)==="Commander's Sphere"} : null;
+  const signets={Azorius:'WU',Boros:'WR',Dimir:'UB',Golgari:'BG',Gruul:'RG',Izzet:'UR',Orzhov:'WB',Rakdos:'BR',Selesnya:'WG',Simic:'UG'};
+  const matchSignet=name.match(/^([A-Za-z]+) Signet$/);
+  if(matchSignet&&signets[matchSignet[1]])return {options:[Object.fromEntries([...signets[matchSignet[1]]].map(c=>[c,1]))],activationGeneric:1};
+  if(name==='Arcane Signet'||name==="Commander's Sphere"){
+    const options=commanderColors().map(c=>mono(c));
+    return options.length?{options,partial:name!== 'Arcane Signet'}:null;
   }
-  const signets = {Azorius:'WU',Boros:'WR',Dimir:'UB',Golgari:'BG',Gruul:'RG',Izzet:'UR',Orzhov:'WB',Rakdos:'BR',Selesnya:'WG',Simic:'UG'};
-  const signet = String(named(card)).match(/^([A-Za-z]+) Signet$/);
-  if (signet && signets[signet[1]]) return {options:[Object.fromEntries([...signets[signet[1]]].map(c=>[c,1]))], activationGeneric:1};
-
-  // Only unconditional tap abilities, never infer conditional/sacrifice mana from produced_mana.
-  let oracle = text(card).replace(/\([^)]*\)/g, '').trim();
-  const lines = oracle.split('\n').map(line => line.trim()).filter(Boolean);
-  let entersTapped = false;
-  let entryCondition = null;
-  if (type(card, 'Land') && lines.length === 2 && /^This land enters tapped unless you control a planeswalker\.$/i.test(lines[0])) {
-    entryCondition = 'controlPlaneswalker';
-    oracle = lines[1];
+  if(name==='Temple of the False God'&&state&&state.players[player].battlefield.filter(x=>type(x.card,'Land')).length<5)return null;
+  if(explicit[name])return explicit[name];
+  // Colorless or coloured pain sources: printed options are distinct and the coloured choice costs 1 life.
+  const talisman=name.match(/^Talisman of (Creativity|Dominance|Indulgence|Progress|Resilience|Conviction)$/);
+  const talismanColors={Creativity:'UR',Dominance:'UB',Indulgence:'BR',Progress:'WU',Resilience:'BG',Conviction:'WR'};
+  if(talisman){const colors=[...talismanColors[talisman[1]]];return {options:[mono('C'),...colors.map(c=>mono(c))],optionDamage:[0,1,1]};}
+  const pain=oracle.match(/^\{T\}: Add \{C\}\.\s*\n\{T\}: Add \{([WUBRG])\} or \{([WUBRG])\}\. (?:This land|This artifact) deals 1 damage to you\./);
+  if(pain)return {options:[mono('C'),mono(pain[1]),mono(pain[2])],optionDamage:[0,1,1]};
+  // The named "could produce" cycle is bounded to immediate, printed or intrinsic land options.
+  if(depth<1&&state?.players?.length){
+    if(['Fellwar Stone','Exotic Orchard','Reflecting Pool'].includes(name)){
+      const other=name!=='Reflecting Pool',index=other?1-player:player;
+      const colors=new Set();
+      for(const permanent of state.players[index]?.battlefield||[]){
+        if(!type(permanent.card,'Land')||(!other&&permanent.card===card))continue;
+        const src=manaSource(permanent.card,null,index,depth+1);
+        for(const option of src?.options||[])for(const color of Object.keys(option))if(color!=='C')colors.add(color);
+      }
+      // Reflecting Pool also produces colorless when a printed land could.
+      if(!other)for(const permanent of state.players[index]?.battlefield||[]){
+        if(!type(permanent.card,'Land'))continue;
+        if(manaSource(permanent.card,null,index,depth+1)?.options?.some(x=>x.C))colors.add('C');
+      }
+      const options=[...colors].map(c=>mono(c));return options.length?{options,partial:true}:null;
+    }
   }
-  if (lines.length === 2 && / enters (?:the battlefield )?tapped\.$/i.test(lines[0])) {
-    const subject = lines[0].replace(/ enters (?:the battlefield )?tapped\.$/i, '');
-    if ([named(card).toLowerCase(), 'this land', 'this artifact', 'this permanent'].includes(subject.toLowerCase())) { entersTapped = true; oracle = lines[1]; }
+  // Native basic land types always grant intrinsic mana regardless of other Oracle abilities.
+  if(BASE_MANA[name])return {options:[mono(BASE_MANA[name])]};
+  if(type(card,'Land')&&card.type_line?.includes('—')){
+    const subtype=card.type_line.split('—').slice(1).join(' ');
+    const options=Object.entries(BASE_MANA).filter(([land])=>subtype.split(/\s+/).includes(land)).map(([,c])=>mono(c));
+    if(options.length)return {options};
   }
-  const match = oracle.match(/^\{T\}: Add (.+)\.$/);
-  if (match) {
-    if (match[1] === 'one mana of any color') return { options: COLORS.filter(color => color !== 'C').map(color => mono(color)), entersTapped, entryCondition };
-    const alternatives = match[1].split(/,\s*(?:or\s+)?|\s+or\s+/).filter(Boolean);
-    if (alternatives.every(value => /^(?:\{[WUBRGC]\})+$/.test(value))) return {
-      options: alternatives.map(value => {
-        const option = {};
-        for (const token of value.matchAll(/\{([WUBRGC])\}/g)) option[token[1]] = (option[token[1]] || 0) + 1;
-        return option;
-      }), entersTapped, entryCondition,
-    };
+  // Chromatic Lantern grants this additional mana ability to EVERY land you control.
+  // Parse each standalone, unconditional tap ability, not the whole multi-line Oracle field.
+  const modes=[];const damage=[];const lifeGain=[];let entersTapped=/\b(?:this land|this artifact|this permanent) enters tapped\./i.test(oracle);
+  for(const line of oracle.split('\n')){
+    const activation=line.trim().match(/^\{T\}: Add (.+?)\.(.*)$/i);
+    if(!activation)continue;
+    const addition=activation[1].trim(),following=activation[2]||'';
+    let options=[];
+    if(addition==='one mana of any color')options=allColors();
+    else if(addition==='two mana of any one color')options=['W','U','B','R','G'].map(c=>mono(c,2));
+    else if(addition==='three mana of any one color')options=['W','U','B','R','G'].map(c=>mono(c,3));
+    else {
+      const variants=addition.split(/\s+or\s+|,\s*(?:or\s+)?/);
+      if(variants.every(v=>/^(?:\{[WUBRGC]\})+$/.test(v)))options=variants.map(v=>{
+        const out={};for(const m of v.matchAll(/\{([WUBRGC])\}/g))out[m[1]]=(out[m[1]]||0)+1;return out;
+      });
+    }
+    if(!options.length)continue;
+    if(/\b(?:spend this mana only|activate only if)\b/i.test(following))continue;
+    const d=/(?:deals? (\d+) damage to you|Pay (\d+) life)/i.exec(following);
+    const g=/You gain (\d+) life/i.exec(following);
+    for(const option of options){modes.push(option);damage.push(d?Number(d[1]||d[2]):0);lifeGain.push(g?Number(g[1]):0);}
   }
-  return null;
+  return modes.length?{options:modes,optionDamage:damage,optionLifeGain:lifeGain,entersTapped,partial:oracle.trim().split('\n').some(line=>{const l=line.trim();return !(/^\{T\}: Add .+\./.test(l)||/^(?:This land|This artifact|[A-Za-z '’,-]+) enters tapped\.$/.test(l));})}:null;
 }
 function cost(card) {
   const raw = String(card.mana_cost || '');
@@ -112,6 +153,7 @@ const EFFECTS = {
   'Divination': { effect: 'draw', amount: 2 },
   'Harmonize': { effect: 'draw', amount: 3 },
   "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
+  'Think Twice': {effect:'draw',amount:1,status:'partial',reason:'Normal cast draws one card; Flashback casting and exile remain manual.'},
   'Unsummon': { effect: 'bounce', target: 'creature' },
   'Murder': { effect: 'destroy', target: 'creature' },
   'Doom Blade': { effect: 'destroy', target: 'nonblackCreature' },
@@ -136,8 +178,12 @@ function profile(card) {
   if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if (named(card) === 'Fellwar Stone') return {status:'partial',reason:'Dynamic opponent-land colors evaluated at play time; other conditional effects are not inferred.',auto:true};
   if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
   if (named(card) === "Commander's Sphere") return {status:'partial',reason:'Commander identity mana supported; sacrifice draw mode is manual.',auto:true};
+  if (named(card) === 'Enduring Innocence') return {status:'partial',reason:'Other friendly creature with power at most 2 entering triggers draw once per turn; dying/rebirth layer not automated.',auto:true};
+  if (named(card) === 'Undead Augur') return {status:'partial',reason:'Own Zombie death draws one and loses one life; other death abilities manual.',auto:true};
+  if (named(card) === 'Midnight Reaper') return {status:'partial',reason:'Own nontoken creature death causes draw one and self damage one; other effects manual.',auto:true};
   if (named(card) === 'Sai, Master Thopterist') return {status:'partial',reason:'Artifact-spell Thopter cast trigger automated; sacrifice-two-artifacts draw ability manual.',auto:true};
   if (named(card) === 'Sram, Senior Edificer') return {status:'partial',reason:'Aura, Equipment and Vehicle spell-cast draw trigger automated.',auto:true};
   if (named(card) === 'Etherium Spinner') return {status:'partial',reason:'Mana-value-four-or-more cast trigger creates Thopters; other effects manual.',auto:true};
@@ -314,6 +360,7 @@ function cleanupDead(state) {
     }
     if (!isCreature(instance)) continue;
     if (toughness(instance) <= 0 || (!has(instance, 'indestructible') && (instance.damage >= toughness(instance) || instance.deathtouchDamage))) {
+      queueDeathDrawInteractions(state,p,instance);
       const location = find(state, instance.id); remove(state, location); log(state, `${named(instance.card)} dies.`);
       moveTo(state, instance, instance.owner ?? p, 'graveyard');
     }
@@ -340,9 +387,9 @@ function payment(state, player, card, extraGeneric=0, filter=null) {
   const constraints=filter?.sourceIds ? new Set(filter.sourceIds) : null;
   const available=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
     .map(x=>({instance:x,...(manaSource(x.card,state,player)||{})}))
-    .filter(x=>x.options && (!constraints || constraints.has(x.instance.id)));
+    .filter(x=>x.options?.length && (!constraints || constraints.has(x.instance.id)));
   const choiceFilter=filter?.sourceChoices || {};
-  const sources=available.map(x=>({...x, options:x.options.map((mana,i)=>({mana,index:i})).filter(option=>choiceFilter[x.instance.id]===undefined || option.index===Number(choiceFilter[x.instance.id]))})).filter(x=>x.options.length);
+  const sources=available.map(x=>({...x, options:x.options.map((mana,i)=>({mana,index:i,activationGeneric:x.optionActivationGeneric?.[i]??x.activationGeneric??0})).filter(option=>choiceFilter[x.instance.id]===undefined || option.index===Number(choiceFilter[x.instance.id]))})).filter(x=>x.options.length);
   const visited=new Set();
   function search(pending, remaining, steps) {
     if (canCover(pending,wanted)) return {pool:spendPool(pending,wanted),sourceIds:steps.map(x=>x.id),steps};
@@ -353,17 +400,18 @@ function payment(state, player, card, extraGeneric=0, filter=null) {
     if(visited.has(key))return null;visited.add(key);
     const missing=COLORS.filter(c=>wanted[c]>pending[c]);
     const options=remaining.flatMap((x,index)=>x.options.map(({mana,index:optionIndex})=>({x,index,mana,optionIndex})))
-      .filter(({x,mana})=>!(x.activationGeneric && manaPoolValue(pending)<x.activationGeneric) && (!missing.length || missing.some(c=>mana[c]) || remaining.some(source=>source.activationGeneric && source.options.some(o=>missing.some(c=>o.mana[c])))));
+      .filter(({x,mana,optionIndex})=>!((x.optionActivationGeneric?.[optionIndex]??x.activationGeneric??0) && manaPoolValue(pending)<(x.optionActivationGeneric?.[optionIndex]??x.activationGeneric??0)) && (!missing.length || missing.some(c=>mana[c]) || remaining.some(source=>source.options.some(o=>o.activationGeneric>0 && missing.some(c=>o.mana[c])))));
     options.sort((a,b)=>a.x.options.length-b.x.options.length || manaPoolValue(b.mana)-manaPoolValue(a.mana));
     for(const {x,index,mana,optionIndex} of options){
       const next={...pending};
-      if(x.activationGeneric){
-        let activation=x.activationGeneric;
+      const activationGeneric=x.optionActivationGeneric?.[optionIndex]??x.activationGeneric??0;
+      if(activationGeneric){
+        let activation=activationGeneric;
         for(const c of ['C','W','U','B','R','G']){const n=Math.min(activation,next[c]);next[c]-=n;activation-=n;}
         if(activation)continue;
       }
       for(const c of COLORS)next[c]+=(mana[c]||0);
-      const result=search(next,remaining.filter((_,i)=>i!==index),[...steps,{id:x.instance.id,index:optionIndex,mana,activationGeneric:x.activationGeneric||0,damage:x.optionDamage?.[optionIndex]||0}]);
+      const result=search(next,remaining.filter((_,i)=>i!==index),[...steps,{id:x.instance.id,index:optionIndex,mana,activationGeneric,damage:x.optionDamage?.[optionIndex]||0,lifeGain:x.optionLifeGain?.[optionIndex]||0}]);
       if(result)return result;
     }
     return null;
@@ -379,7 +427,7 @@ export function castOptions(state,player,id,filter=null) {
   const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
   const tax=where.zone==='command' ? 2*(where.instance.commanderCasts||0):0;
   const sources=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
-    .map(x=>({id:x.id,name:named(x.card),...manaSource(x.card,state,player)})).filter(x=>x.options);
+    .map(x=>({id:x.id,name:named(x.card),...manaSource(x.card,state,player)})).filter(x=>x.options?.length);
   const plan=land ? null : payment(state,player,card,tax,filter);
   const canCast=ready && !stackBlocked && (land ? !state.players[player].landPlayed : Boolean(plan));
   const reason=!ready?'Keep your hand; casting happens on your turn.':stackBlocked?'Resolve the stack before casting this card.':land?(state.players[player].landPlayed?'Land drop already used.':'Land drop ready.') : !cost(card)?'Unsupported casting cost needs manual handling.':plan?'Mana available. Review sources and confirm.':'Not enough payable mana. Tap a rock or land to float mana, or adjust your selection.';
@@ -389,16 +437,20 @@ export function castOptions(state,player,id,filter=null) {
 export function tapOptions(state,player,id){
  const x=find(state,id);if(!x || x.player!==player || x.zone!=='battlefield')return null;
  const source=manaSource(x.instance.card,state,player);
- return source?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,options:source.options,optionDamage:source.optionDamage||[]}:null;
+ return source?.options?.length?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,optionActivationGeneric:source.optionActivationGeneric||[],options:source.options,optionDamage:source.optionDamage||[],optionLifeGain:source.optionLifeGain||[]}:null;
 }
 function entersTapped(card, adapter, state = null, player = 0) {
-  // Check existing permanents BEFORE the new land enters; an opponent's walker is irrelevant.
-  if (adapter.source?.entryCondition === 'controlPlaneswalker') {
-    if (!state?.players?.[player]) return true; // Conservative when evaluating outside a table.
-    return !state.players[player].battlefield.some(permanent => type(permanent.card, 'Planeswalker'));
-  }
-  const oracle = text(card);
-  if (/\benters (?:the battlefield )?tapped\b/i.test(oracle)) return true;
+  const oracle=text(card), own=state?.players?.[player]?.battlefield||[];
+  if(adapter.source?.entryCondition==='controlPlaneswalker')return !own.some(p=>type(p.card,'Planeswalker'));
+  // Typed duals that inspect basic land count or one of the named basic land types.
+  if(/enters tapped unless you control two or more basic lands/i.test(oracle))
+    return own.filter(x=>type(x.card,'Basic')&&type(x.card,'Land')).length<2;
+  const check=oracle.match(/enters tapped unless you control an? (Plains|Island|Swamp|Mountain|Forest) or an? (Plains|Island|Swamp|Mountain|Forest)/i);
+  if(check)return !own.some(x=>{
+    const land=x.card;return type(land,'Land')&&[check[1],check[2]].some(name=>named(land)===name||(land.type_line||'').split('—').slice(1).join(' ').split(/\s+/).includes(name));
+  });
+  if(/enters tapped unless/i.test(oracle))return true;
+  if(/\benters (?:the battlefield )?tapped\b/i.test(oracle))return true;
   return Boolean(adapter.source?.entersTapped);
 }
 function validTarget(state, caster, targetId, descriptor) {
@@ -443,6 +495,7 @@ function play(state, player, id, targetId, argumentsPayment=null) {
     if(!source || source.tapped) throw new Error('Chosen mana source became unavailable.');
     source.tapped=true;
     if(step.damage) {state.players[player].life-=step.damage;log(state,`${named(source.card)} deals ${step.damage} damage to ${state.players[player].name} for colored mana.`);}
+    if(step.lifeGain){state.players[player].life+=step.lifeGain;log(state,`${named(source.card)} gains ${step.lifeGain} life as a mana ability resolves.`);}
     log(state,`Mana payment: tap ${named(source.card)} for ${Object.entries(step.mana).map(([c,n])=>`${n}${c}`).join(' + ')}${step.activationGeneric?` after paying ${step.activationGeneric} generic to activate`:''}.`);
   }
   state.players[player].manaPool = paid.pool;
@@ -490,10 +543,30 @@ function queueCastInteractions(state, player, spell) {
   }
 }
 function queueCreatureEntryInteractions(state, controller, entering) {
+  // Enduring Innocence only triggers once each turn, even when many small tokens enter.
+  if(power(entering)<=2){
+    for(const source of state.players[controller].battlefield.filter(x=>x.id!==entering.id&&named(x.card)==='Enduring Innocence')){
+      if(source.enduringDrawTriggeredTurn===state.turn)continue;
+      source.enduringDrawTriggeredTurn=state.turn;
+      pushInteraction(state,controller,source,'death-draw',1);
+      log(state,'Enduring Innocence: another creature of power 2 or less entered; draw one card on resolution (once this turn).');
+    }
+  }
   const sources = state.players[controller].battlefield.filter(x => x.id !== entering.id && named(x.card) === 'Molten Gatekeeper');
   for (const source of sources) {
     pushInteraction(state,controller,source,'gatekeeper-damage',1);
     log(state,`Molten Gatekeeper trigger: ${named(entering.card)} entered under your control; 1 damage to opponent on resolution.`);
+  }
+}
+function queueDeathDrawInteractions(state, controller, leaving) {
+  if(!isCreature(leaving))return;
+  const sources=[...state.players[controller].battlefield];
+  if(!sources.some(x=>x.id===leaving.id))sources.push(leaving);
+  for(const source of sources){
+    const name=named(source.card);
+    const zombie=(String(leaving.card.type_line||'').split('—').slice(1).join(' ').split(/\s+/).includes('Zombie'));
+    if(name==='Undead Augur'&&zombie){pushInteraction(state,controller,source,'death-draw-life',1);log(state,'Undead Augur: Zombie died; draw one and lose 1 life on resolution.');}
+    if(name==='Midnight Reaper'&&!leaving.isToken){pushInteraction(state,controller,source,'death-draw-damage',1);log(state,'Midnight Reaper: nontoken creature died; draw one and take 1 damage on resolution.');}
   }
 }
 function resolveInteraction(state, instance) {
@@ -503,10 +576,16 @@ function resolveInteraction(state, instance) {
     log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
     return true;
   }
-  if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage','thopter-token','cast-draw','shorikai-activate'].includes(trigger?.adapter)) return false;
+  if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage','thopter-token','cast-draw','shorikai-activate','death-draw','death-draw-life','death-draw-damage'].includes(trigger?.adapter)) return false;
   state.stack.pop();
   const controller = instance.controller, count = trigger.count;
   if (controller===1) state.opponentAudit.triggerResolutions++;
+  if(['death-draw','death-draw-life','death-draw-damage'].includes(trigger.adapter)){
+    draw(state,controller,1);
+    if(trigger.adapter!=='death-draw'){state.players[controller].life-=1;log(state,`${named(instance.card)}: controller loses 1 life from death trigger.`);finishIfLethal(state);}
+    log(state,`${named(instance.card)} resolves: draw one card.`);
+    return true;
+  }
   if (trigger.adapter === 'cast-draw') {
     draw(state,controller,1);log(state,`${named(instance.card)} resolves: ${state.players[controller].name} draws one card.`);return true;
   }
@@ -576,7 +655,7 @@ function resolve(state) {
       case 'bounce': remove(state, target); moveTo(state, target.instance, target.instance.owner, 'hand'); break;
       case 'destroy':
         if (has(target.instance, 'indestructible')) log(state, `${named(target.instance.card)} is indestructible.`);
-        else { remove(state, target); moveTo(state, target.instance, target.instance.owner, 'graveyard'); }
+        else { if(isCreature(target.instance))queueDeathDrawInteractions(state,target.player,target.instance);remove(state, target); moveTo(state, target.instance, target.instance.owner, 'graveyard'); }
         break;
       case 'exile': {
         const gain = power(target.instance), owner = target.instance.owner, controller = target.player;
@@ -880,18 +959,22 @@ function apply(state, action) {
         if(!option) throw new Error('Select one available mana color or mode.');
         let available={...state.players[location.player].manaPool};
         let activationSpent={};
-        if(source.activationGeneric){
+        const actualGeneric=source.optionActivationGeneric?.[action.choiceIndex??0]??source.activationGeneric??0;
+        if(actualGeneric){
           const before={...available};
-          const costToActivate={generic:source.activationGeneric,...pool()};
+          const costToActivate={generic:actualGeneric,...pool()};
           available=spendPool(available,costToActivate);
-          if(!available)throw new Error(`Tap another mana source first: ${named(instance.card)} needs ${source.activationGeneric} mana to activate.`);
+          if(!available)throw new Error(`Tap another mana source first: ${named(instance.card)} needs ${actualGeneric} mana to activate.`);
           activationSpent=Object.fromEntries(COLORS.filter(c=>before[c]!==available[c]).map(c=>[c,before[c]-available[c]]));
         }
         for(const [color,amount] of Object.entries(option))available[color]+=amount;
+        const activationCost=source.optionActivationGeneric?.[action.choiceIndex??0]??source.activationGeneric??0;
+        const gain=source.optionLifeGain?.[action.choiceIndex??0]||0;
+        if(gain){state.players[location.player].life+=gain;log(state,`${named(instance.card)} gains ${gain} life from its mana ability.`);}
         const pain=source.optionDamage?.[action.choiceIndex??0]||0;
         if(pain){state.players[location.player].life-=pain;log(state,`${named(instance.card)} deals ${pain} damage to ${state.players[location.player].name} for colored mana.`);}
         state.players[location.player].manaPool=available;
-        instance.manualMana={option:action.choiceIndex??0,produced:option,activationSpent,damage:source.optionDamage?.[action.choiceIndex??0]||0};
+        instance.manualMana={option:action.choiceIndex??0,produced:option,activationSpent,damage:source.optionDamage?.[action.choiceIndex??0]||0,lifeGain:gain};
       }else if(instance.tapped && instance.manualMana){
         // Rewind only unspent floating mana; never create negative balances.
         const next={...state.players[location.player].manaPool};
@@ -902,6 +985,7 @@ function apply(state, action) {
         for(const [c,n] of Object.entries(instance.manualMana.activationSpent||{}))next[c]+=n;
         state.players[location.player].manaPool=next;
         if(instance.manualMana.damage)state.players[location.player].life+=instance.manualMana.damage;
+        if(instance.manualMana.lifeGain)state.players[location.player].life-=instance.manualMana.lifeGain;
         delete instance.manualMana;
       }
       instance.tapped=!instance.tapped;
@@ -921,6 +1005,31 @@ function apply(state, action) {
       for (let i=0;i<steps;i++) {if (!assistedStep(state,player,action.mode)) break;applied++;}
       if (!applied) warn(state,'No further fully payable, recognized play; inspect your hand and use manual controls for unmodeled effects.');
       log(state,`Guided ${action.mode} play: ${applied} action(s); no automatic end turn or combat.`); break;
+    }
+    case 'manualSourceMana': {
+      const x=find(state,action.id),amount=action.amount,color=action.color;
+      if(!x||x.zone!=='battlefield'||x.player!==player||x.instance.tapped)
+        throw new Error('Choose an untapped mana-producing permanent you control.');
+      if(!['Land','Artifact','Creature'].some(kind=>type(x.instance.card,kind)))throw new Error('This permanent has no mana-source category.');
+      if(!COLORS.includes(color)||!Number.isInteger(amount)||amount<1||amount>3)
+        throw new Error('Choose one mana color and a quantity between 1 and 3.');
+      if(isCreature(x.instance)&&sickness(state,x.instance))throw new Error('A summoning-sick creature cannot use a tap mana ability.');
+      // Explicit manual override: no Oracle permission is inferred, so this must remain auditable.
+      const own=state.players[player];
+      own.manaPool[color]+=amount;
+      x.instance.manualMana={option:null,produced:{[color]:amount},activationSpent:{},manualOverride:true};
+      x.instance.tapped=true;
+      log(state,`Manual mana override: ${own.name} taps ${named(x.instance.card)} and declares ${amount}${color}. Verify the printed activation cost and restrictions; not auto-validated.`);
+      warn(state,`${named(x.instance.card)}: mana was supplied by explicit manual override, not an automated rule.`);
+      break;
+    }
+    case 'drawCard': {
+      if(state.finished || !state.players[player].kept)throw new Error('Keep the opening hand before drawing.');
+      if(action.count!==undefined && (action.count!==1||!Number.isInteger(action.count)))throw new Error('The manual Draw card control draws exactly one card.');
+      if(state.players[player].library.length===0){draw(state,player,1);break;}
+      draw(state,player,1);
+      log(state,`Manual draw: ${state.players[player].name} draws one card; not attributed to an automated Oracle trigger.`);
+      break;
     }
     case 'activateShorikai': activateShorikai(state,player,action.id);break;
     case 'chooseDiscard': {
@@ -983,6 +1092,7 @@ function apply(state, action) {
       if (!ZONES.includes(action.zone)) throw new Error('Choose a supported destination zone.');
       const location = find(state, action.id); if (!location) throw new Error('Card not found.');
       if (location.instance.kind === 'trigger') throw new Error('Resolve the triggered ability from the stack instead of moving it to a card zone.');
+      if(location.zone==='battlefield'&&action.zone==='graveyard'&&isCreature(location.instance))queueDeathDrawInteractions(state,location.player,location.instance);
       const instance = remove(state, location); moveTo(state, instance, player, action.zone, {keepCommanderInGraveyard: action.keepCommanderInGraveyard === true});
       const destination = find(state, instance.id);
       log(state, destination ? `Manual override: ${named(instance.card)} moved from ${location.zone} to ${state.players[destination.player].name}'s ${destination.zone}; effects and costs are user-resolved.` : `Manual override: ${named(instance.card)} leaves ${location.zone} and ceases to exist; effects and costs are user-resolved.`); break;

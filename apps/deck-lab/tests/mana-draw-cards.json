@@ -1,0 +1,441 @@
+{
+  "Izzet Guildgate": {
+    "name": "Izzet Guildgate",
+    "type_line": "Land — Gate",
+    "oracle_text": "This land enters tapped.\n{T}: Add {U} or {R}.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Prairie Stream": {
+    "name": "Prairie Stream",
+    "type_line": "Land — Plains Island",
+    "oracle_text": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "keywords": []
+  },
+  "Sunken Hollow": {
+    "name": "Sunken Hollow",
+    "type_line": "Land — Island Swamp",
+    "oracle_text": "({T}: Add {U} or {B}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Glacial Fortress": {
+    "name": "Glacial Fortress",
+    "type_line": "Land",
+    "oracle_text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "U",
+      "W"
+    ],
+    "keywords": []
+  },
+  "Meticulous Commons": {
+    "name": "Meticulous Commons",
+    "type_line": "Land",
+    "oracle_text": "This land enters tapped unless you control a planeswalker.\n{T}: Add {W} or {B}.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "keywords": []
+  },
+  "Shivan Reef": {
+    "name": "Shivan Reef",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This land deals 1 damage to you.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Caves of Koilos": {
+    "name": "Caves of Koilos",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "B",
+      "W"
+    ],
+    "keywords": []
+  },
+  "Underground River": {
+    "name": "Underground River",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This land deals 1 damage to you.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Ancient Tomb": {
+    "name": "Ancient Tomb",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add {C}{C}. This land deals 2 damage to you.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Temple of the False God": {
+    "name": "Temple of the False God",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add {C}{C}. Activate only if you control five or more lands.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Command Tower": {
+    "name": "Command Tower",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add one mana of any color in your commander's color identity.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Path of Ancestry": {
+    "name": "Path of Ancestry",
+    "type_line": "Land",
+    "oracle_text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": [
+      "Scry"
+    ]
+  },
+  "Fellwar Stone": {
+    "name": "Fellwar Stone",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add one mana of any color that a land an opponent controls could produce.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Exotic Orchard": {
+    "name": "Exotic Orchard",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add one mana of any color that a land an opponent controls could produce.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Reflecting Pool": {
+    "name": "Reflecting Pool",
+    "type_line": "Land",
+    "oracle_text": "{T}: Add one mana of any type that a land you control could produce.",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Chromatic Lantern": {
+    "name": "Chromatic Lantern",
+    "type_line": "Artifact",
+    "oracle_text": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color.",
+    "mana_cost": "{3}",
+    "cmc": 3.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Prismatic Lens": {
+    "name": "Prismatic Lens",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Pristine Talisman": {
+    "name": "Pristine Talisman",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add {C}. You gain 1 life.",
+    "mana_cost": "{3}",
+    "cmc": 3.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Talisman of Creativity": {
+    "name": "Talisman of Creativity",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This artifact deals 1 damage to you.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Talisman of Dominance": {
+    "name": "Talisman of Dominance",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This artifact deals 1 damage to you.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [
+      "B",
+      "U"
+    ],
+    "keywords": []
+  },
+  "Sky Diamond": {
+    "name": "Sky Diamond",
+    "type_line": "Artifact",
+    "oracle_text": "This artifact enters tapped.\n{T}: Add {U}.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [
+      "U"
+    ],
+    "keywords": []
+  },
+  "Marble Diamond": {
+    "name": "Marble Diamond",
+    "type_line": "Artifact",
+    "oracle_text": "This artifact enters tapped.\n{T}: Add {W}.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [
+      "W"
+    ],
+    "keywords": []
+  },
+  "Gold Myr": {
+    "name": "Gold Myr",
+    "type_line": "Artifact Creature — Myr",
+    "oracle_text": "{T}: Add {W}.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [
+      "W"
+    ],
+    "power": "1",
+    "toughness": "1",
+    "keywords": []
+  },
+  "Birds of Paradise": {
+    "name": "Birds of Paradise",
+    "type_line": "Creature — Bird",
+    "oracle_text": "Flying\n{T}: Add one mana of any color.",
+    "mana_cost": "{G}",
+    "cmc": 1.0,
+    "color_identity": [
+      "G"
+    ],
+    "power": "0",
+    "toughness": "1",
+    "keywords": [
+      "Flying"
+    ]
+  },
+  "Palladium Myr": {
+    "name": "Palladium Myr",
+    "type_line": "Artifact Creature — Myr",
+    "oracle_text": "{T}: Add {C}{C}.",
+    "mana_cost": "{3}",
+    "cmc": 3.0,
+    "color_identity": [],
+    "power": "2",
+    "toughness": "2",
+    "keywords": []
+  },
+  "Gilded Lotus": {
+    "name": "Gilded Lotus",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add three mana of any one color.",
+    "mana_cost": "{5}",
+    "cmc": 5.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Sol Ring": {
+    "name": "Sol Ring",
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Add {C}{C}.",
+    "mana_cost": "{1}",
+    "cmc": 1.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Enduring Innocence": {
+    "name": "Enduring Innocence",
+    "type_line": "Enchantment Creature — Sheep Glimmer",
+    "oracle_text": "Lifelink\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.\nWhen Enduring Innocence dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)",
+    "mana_cost": "{1}{W}{W}",
+    "cmc": 3.0,
+    "color_identity": [
+      "W"
+    ],
+    "power": "2",
+    "toughness": "1",
+    "keywords": [
+      "Lifelink"
+    ]
+  },
+  "Undead Augur": {
+    "name": "Undead Augur",
+    "type_line": "Creature — Zombie Wizard",
+    "oracle_text": "Whenever this creature or another Zombie you control dies, you draw a card and lose 1 life.",
+    "mana_cost": "{B}{B}",
+    "cmc": 2.0,
+    "color_identity": [
+      "B"
+    ],
+    "power": "2",
+    "toughness": "2",
+    "keywords": []
+  },
+  "Midnight Reaper": {
+    "name": "Midnight Reaper",
+    "type_line": "Creature — Zombie Knight",
+    "oracle_text": "Whenever a nontoken creature you control dies, this creature deals 1 damage to you and you draw a card.",
+    "mana_cost": "{2}{B}",
+    "cmc": 3.0,
+    "color_identity": [
+      "B"
+    ],
+    "power": "3",
+    "toughness": "2",
+    "keywords": []
+  },
+  "Sram, Senior Edificer": {
+    "name": "Sram, Senior Edificer",
+    "type_line": "Legendary Creature — Dwarf Advisor",
+    "oracle_text": "Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.",
+    "mana_cost": "{1}{W}",
+    "cmc": 2.0,
+    "color_identity": [
+      "W"
+    ],
+    "power": "2",
+    "toughness": "2",
+    "keywords": []
+  },
+  "Whirlwind of Thought": {
+    "name": "Whirlwind of Thought",
+    "type_line": "Enchantment",
+    "oracle_text": "Whenever you cast a noncreature spell, draw a card.",
+    "mana_cost": "{1}{U}{R}{W}",
+    "cmc": 4.0,
+    "color_identity": [
+      "R",
+      "U",
+      "W"
+    ],
+    "keywords": []
+  },
+  "Thought Vessel": {
+    "name": "Thought Vessel",
+    "type_line": "Artifact",
+    "oracle_text": "You have no maximum hand size.\n{T}: Add {C}.",
+    "mana_cost": "{2}",
+    "cmc": 2.0,
+    "color_identity": [],
+    "keywords": []
+  },
+  "Night's Whisper": {
+    "name": "Night's Whisper",
+    "type_line": "Sorcery",
+    "oracle_text": "You draw two cards and lose 2 life.",
+    "mana_cost": "{1}{B}",
+    "cmc": 2.0,
+    "color_identity": [
+      "B"
+    ],
+    "keywords": []
+  },
+  "Island": {
+    "name": "Island",
+    "type_line": "Basic Land — Island",
+    "oracle_text": "({T}: Add {U}.)",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "U"
+    ],
+    "keywords": []
+  },
+  "Plains": {
+    "name": "Plains",
+    "type_line": "Basic Land — Plains",
+    "oracle_text": "({T}: Add {W}.)",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "W"
+    ],
+    "keywords": []
+  },
+  "Swamp": {
+    "name": "Swamp",
+    "type_line": "Basic Land — Swamp",
+    "oracle_text": "({T}: Add {B}.)",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "B"
+    ],
+    "keywords": []
+  },
+  "Mountain": {
+    "name": "Mountain",
+    "type_line": "Basic Land — Mountain",
+    "oracle_text": "({T}: Add {R}.)",
+    "mana_cost": "",
+    "cmc": 0.0,
+    "color_identity": [
+      "R"
+    ],
+    "keywords": []
+  },
+  "Ovika, Enigma Goliath": {
+    "name": "Ovika, Enigma Goliath",
+    "type_line": "Legendary Creature — Phyrexian Nightmare",
+    "oracle_text": "Flying\nWard—{3}, Pay 3 life.\nWhenever you cast a noncreature spell, create X 1/1 red Phyrexian Goblin creature tokens, where X is the mana value of that spell. They gain haste until end of turn.",
+    "mana_cost": "{5}{U}{R}",
+    "cmc": 7.0,
+    "color_identity": [
+      "R",
+      "U"
+    ],
+    "power": "6",
+    "toughness": "6",
+    "keywords": [
+      "Flying",
+      "Ward"
+    ]
+  }
+}

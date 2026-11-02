@@ -59,5 +59,6 @@ test('No false inference from unrelated conditional lands',()=>{
  state.players[0].hand=[physical(unknown,'unknown')];
  state=act(state,{type:'play',id:'unknown'});
  assert.equal(state.players[0].battlefield[0].tapped,true);
- assert.equal(tapOptions(state,0,'unknown'),null,'unrecognized entry condition and mana text do not get invented permissions');
+ assert.equal(state.players[0].battlefield.find(x=>x.id==='unknown').tapped,true,'unknown entry choice remains conservatively tapped');
+ assert.deepEqual(tapOptions(state,0,'unknown')?.options,[{W:1},{B:1}],'printed independent tap ability can be recognized without interpreting an entry cost');
 });
