@@ -52,7 +52,7 @@
           <div class="table-column">
             <section class="battlefield" aria-label="Battlefield">
               <div class="table-player opponent-player"><div><small>SCRIPTED OPPONENT</small><h2 id="opponent-name">Opponent</h2></div><div class="life-control"><button class="life-button" data-life-player="1" data-life-delta="-1" aria-label="Decrease opponent life">−</button><strong id="opponent-life">40</strong><button class="life-button" data-life-player="1" data-life-delta="1" aria-label="Increase opponent life">+</button></div></div>
-              <div class="opponent-counts" id="opponent-counts"></div>
+              <div class="opponent-counts" id="opponent-counts"></div><div class="opponent-audit" role="status" aria-live="polite"><span id="opponent-automation-summary">Scripted actions: 0</span><span id="opponent-automation-status"></span><button type="button" id="resume-opponent-button" class="button" hidden>Continue opponent after manual resolution</button></div>
               <div class="zone" id="opponent-land-zone"><div class="zone-label"><span>Opponent lands</span><small id="opponent-land-count">0</small></div><div class="card-row" id="opponent-lands"></div></div>
               <div class="zone" id="opponent-battlefield-zone"><div class="zone-label"><span>Opponent battlefield</span><small>PUBLIC INFORMATION</small></div><div class="card-row battlefield-row" id="opponent-field"></div></div>
               <div class="table-divider"><span>THE BATTLEFIELD</span><i></i></div>
@@ -100,6 +100,11 @@
     </section>
     <footer class="app-footer"><span>MORROW <i>·</i> DECK LAB</span><p>Card data & artwork from <a href="https://scryfall.com/" target="_blank" rel="noopener noreferrer">Scryfall</a>. Magic: The Gathering © Wizards of the Coast. An independent playtesting tool.</p></footer>
   </main>
+  <dialog id="discard-choice-dialog" class="cast-dialog" aria-labelledby="discard-choice-title">
+    <h2 id="discard-choice-title">Shorikai: choose a card to discard</h2>
+    <p>Shorikai has drawn two cards. Select one card from your hand to discard. A 1/1 Pilot token enters after the discard.</p>
+    <div id="discard-choice-list" class="mana-choice-list"></div>
+  </dialog>
   <dialog id="cast-dialog" class="cast-dialog" aria-labelledby="cast-dialog-title">
     <div class="dialog-header"><h2 id="cast-dialog-title">Choose mana payment</h2><button type="button" class="icon-button close-dialog" aria-label="Close mana payment">×</button></div>
     <p id="cast-payment-pool" class="secondary"></p>
