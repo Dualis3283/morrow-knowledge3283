@@ -61,3 +61,9 @@ First: event and replacement staging for token creation, then player-choice and 
 - **MECH-013 / P0 / source candidate:** manual mana source override for unimplemented filter-land/rock options, with automatic life/mana logging, no arbitrary Oracle inference.
 
 Source references and reproducible tests: `tests/mana-draw-fundamentals.test.mjs` and `tests/mana-draw-cards.json`; website 390/1440px `tests/mana-draw-browser.mjs`. Do not advance status to live without independent Cloudflare and hash readback.
+
+## Added action gate — 0.1.9 candidate
+
+- **MECH-014 / P0:** Manual mill to player's graveyard (1–99 from library top, own/opponent, separate from draw).
+- **MECH-015 / P0:** Source-linked exile (source card instance ID, owner, face-up exile record) plus manual paid/free recast and manual battlefield/hand return.
+- **Evidence:** `apps/deck-lab/tests/manual-mill-linked-exile.test.mjs`; browser `tests/manual-mill-exile-browser.mjs` on mobile/desktop. Scope: manual, not full Oracle permission enforcement. The merge, CI, live readback and Android-device gates are **pending** until individually verified.

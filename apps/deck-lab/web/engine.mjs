@@ -269,6 +269,7 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
       log(state, `Practice choice: ${named(instance.card)} returns from the graveyard to ${state.players[owner].name}'s command zone (return on death enabled).`);
     }
   }
+  if (zone !== 'exile') delete instance.exiledBy;
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
   if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; delete instance.loyalty; delete instance.loyaltyActivatedTurn; }
   if (zone === 'battlefield') {
@@ -421,7 +422,7 @@ function payment(state, player, card, extraGeneric=0, filter=null) {
 /** Uncommitted quote used by hand highlight and cast-payment dialog. */
 export function castOptions(state,player,id,filter=null) {
   const where=find(state,id);
-  if(!where || where.player!==player || !['hand','command'].includes(where.zone))return {canCast:false,reason:'Card is not in your hand or command zone.',sources:[],pool:pool()};
+  if(!where || !(['hand','command'].includes(where.zone)&&where.player===player || where.zone==='exile'&&where.instance.exiledBy))return {canCast:false,reason:'Card is not in a castable hand, command or explicitly linked exile zone.',sources:[],pool:pool()};
   const card=castingCard(where.instance),land=type(card,'Land');
   const ready=state.phase==='main' && state.activePlayer===player && !state.finished;
   const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
@@ -431,7 +432,7 @@ export function castOptions(state,player,id,filter=null) {
   const plan=land ? null : payment(state,player,card,tax,filter);
   const canCast=ready && !stackBlocked && (land ? !state.players[player].landPlayed : Boolean(plan));
   const reason=!ready?'Keep your hand; casting happens on your turn.':stackBlocked?'Resolve the stack before casting this card.':land?(state.players[player].landPlayed?'Land drop already used.':'Land drop ready.') : !cost(card)?'Unsupported casting cost needs manual handling.':plan?'Mana available. Review sources and confirm.':'Not enough payable mana. Tap a rock or land to float mana, or adjust your selection.';
-  return {canCast,reason,land,tax,cost:card.mana_cost||'',pool:{...state.players[player].manaPool},sources,plan,cardName:named(card)};
+  return {canCast,reason,land,tax,linkedExile:where.zone==='exile'?{...where.instance.exiledBy}:null,cost:card.mana_cost||'',pool:{...state.players[player].manaPool},sources,plan,cardName:named(card)};
 }
 /** Safe, explicit mana modes for the tap-card interface. */
 export function tapOptions(state,player,id){
@@ -466,16 +467,29 @@ function validTarget(state, caster, targetId, descriptor) {
   if (descriptor === 'nonartifactCreature') return !type(card, 'Artifact');
   return true;
 }
-function play(state, player, id, targetId, argumentsPayment=null) {
+function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExile=false, withoutPaying=false}={}) {
   if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('Cards may be played only during your active main phase.');
   const location = find(state, id);
-  if (!location || location.player !== player || !['hand', 'command'].includes(location.zone)) throw new Error('Choose a card in your hand or your commander in the command zone.');
+  if (!location || (!fromLinkedExile && (location.player !== player || !['hand','command'].includes(location.zone))))
+    throw new Error('Choose a card in your hand, command zone, or explicitly linked exile.');
+  if (fromLinkedExile && (location.zone!=='exile' || !location.instance.exiledBy))
+    throw new Error('This card is not in an explicitly linked exile zone. Unlinked exiled cards have no cast permission.');
+  if (withoutPaying && !fromLinkedExile)throw new Error('A free cast requires a manually linked exiled card.');
   const instance = location.instance, card = castingCard(instance), adapter = profile(instance.card);
   const commandCast = location.zone === 'command';
   if (commandCast && (!instance.isCommander || instance.owner !== player)) throw new Error('Only your own commander can be cast from your command zone.');
   if (instance.isCommander && !card.mana_cost) throw new Error('This commander has no supported printed mana cost; use manual payment and placement.');
   if (state.stack.length && !type(card, 'Instant')) throw new Error('Only supported instants may be cast while the stack is not empty.');
   if (type(card, 'Land')) {
+    if (fromLinkedExile && !state.players[player].landPlayed && !state.stack.length) {
+      // Permission to play a land from exile is explicitly adjudicated by the user.
+      const source=instance.exiledBy;remove(state,location);
+      instance.tapped=entersTapped(card,adapter,state,player);moveTo(state,instance,player,'battlefield');
+      state.players[player].landPlayed=true;stat(state,player,'landsPlayed');
+      log(state,`Manual linked exile land play: ${named(card)} from under ${source.sourceName} (${source.sourceId})${instance.tapped?' tapped':''}. User verified play permission and land-drop rules.`);
+      warn(state,'Playing a linked exiled land is manual permission, not automatic Oracle interpretation.');return;
+    }
+    if(fromLinkedExile)throw new Error('Linked exiled land requires an available land drop and an empty stack.');
     if (commandCast) throw new Error('A land cannot be played from the command zone.');
     if (state.stack.length) throw new Error('Resolve the stack before playing a land.');
     if (state.players[player].landPlayed) throw new Error('Only one land drop is supported each turn.');
@@ -488,8 +502,9 @@ function play(state, player, id, targetId, argumentsPayment=null) {
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
   const commanderTax = commandCast ? 2 * instance.commanderCasts : 0;
-  const paid = payment(state, player, card, commanderTax, argumentsPayment);
+  const paid = withoutPaying ? {steps:[],pool:{...state.players[player].manaPool}} : payment(state, player, card, commanderTax, argumentsPayment);
   if (!paid) throw new Error('Not enough usable mana of the required colors; unsupported costs require a manual move.');
+  const exileSource=fromLinkedExile ? {...instance.exiledBy} : null;
   for (const step of paid.steps) {
     const source=find(state,step.id)?.instance;
     if(!source || source.tapped) throw new Error('Chosen mana source became unavailable.');
@@ -499,12 +514,13 @@ function play(state, player, id, targetId, argumentsPayment=null) {
     log(state,`Mana payment: tap ${named(source.card)} for ${Object.entries(step.mana).map(([c,n])=>`${n}${c}`).join(' + ')}${step.activationGeneric?` after paying ${step.activationGeneric} generic to activate`:''}.`);
   }
   state.players[player].manaPool = paid.pool;
-  remove(state, location); instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
+  remove(state, location); if(fromLinkedExile)delete instance.exiledBy; instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
-  log(state, `${state.players[player].name} casts ${named(instance.card)}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
+  log(state, `${state.players[player].name} casts ${named(instance.card)}${exileSource?` from exile linked to ${exileSource.sourceName} (${exileSource.sourceId})${withoutPaying?' without paying mana (explicit manual permission)':' using normal mana payment (manual casting permission)'}`:''}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
   queueCastInteractions(state, player, card);
   finishIfLethal(state);
+  if(fromLinkedExile)warn(state,`Casting ${named(card)} from exile requires user verification of ${exileSource.sourceName}'s permission, restrictions and any alternate costs; not inferred by the simulator.`);
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 // Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.
@@ -936,6 +952,11 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   log(state, 'Bounded practice engine: named Ovika, Iconoclast, Gatekeeper, Sai, Sram, Etherium Spinner, Whirlwind and Shorikai interactions are audited; other abilities and all hidden decision policies are incomplete. This is not an accurate game win-rate predictor.');
   return state;
 }
+/** Face-up exile card associations; no automatic Oracle permission is inferred. */
+export function linkedExiles(state, sourceId=null) {
+  return state.players.flatMap((p,owner)=>p.exile.filter(x=>x.exiledBy && (sourceId===null||x.exiledBy.sourceId===sourceId))
+    .map(x=>({id:x.id,name:named(x.card),owner,sourceId:x.exiledBy.sourceId,sourceName:x.exiledBy.sourceName})));
+}
 function apply(state, action) {
   if (!action || !action.type) throw new Error('Choose an action.');
   const player = action.player ?? 0;
@@ -1021,6 +1042,59 @@ function apply(state, action) {
       x.instance.tapped=true;
       log(state,`Manual mana override: ${own.name} taps ${named(x.instance.card)} and declares ${amount}${color}. Verify the printed activation cost and restrictions; not auto-validated.`);
       warn(state,`${named(x.instance.card)}: mana was supplied by explicit manual override, not an automated rule.`);
+      break;
+    }
+    case 'mill': {
+      if(state.finished||!state.players[0].kept)throw new Error('Finish opening the table before milling.');
+      const target=action.targetPlayer;
+      if(![0,1].includes(target)||!Number.isInteger(action.count)||action.count<1||action.count>99)
+        throw new Error('Choose yourself or the opponent and 1 to 99 cards.');
+      const owner=state.players[target],quantity=Math.min(action.count,owner.library.length);
+      const names=[];
+      for(let i=0;i<quantity;i++){
+        const card=owner.library.shift();names.push(named(card.card));moveTo(state,card,target,'graveyard');
+      }
+      stat(state,target,'cardsMilled',quantity);
+      log(state,`Manual mill: ${owner.name} mills ${quantity} of ${action.count} requested card(s) to their graveyard${names.length?': '+names.join(', '):'; library empty'}. This is not a draw; any mill/replacement triggers require manual adjudication.`);
+      if(quantity<action.count)warn(state,`${owner.name} has only ${quantity} cards left to mill; milling an empty library does not itself lose the game.`);
+      break;
+    }
+    case 'exileLinked': {
+      if(state.finished||!state.players[0].kept)throw new Error('Keep the opening hand before using linked exile.');
+      const target=find(state,action.id),source=find(state,action.sourceId);
+      if(!target||!['battlefield','graveyard','stack'].includes(target.zone)||target.instance.kind==='trigger'||target.instance.isToken)
+        throw new Error('Choose a nontoken card on the battlefield, in a graveyard or on the stack to exile.');
+      if(!source||!['battlefield','stack'].includes(source.zone)||source.instance.kind==='trigger'||source.instance.id===target.instance.id)
+        throw new Error('Choose a different permanent or spell on the battlefield or stack as the exile source.');
+      const card=remove(state,target);
+      // The exiled card is held in its OWNER'S exile zone; previous controller is not ownership.
+      moveTo(state,card,card.owner,'exile');
+      card.exiledBy={sourceId:source.instance.id,sourceName:named(source.instance.card),sourceOwner:source.instance.owner,exileTurn:state.turn};
+      log(state,`Manual linked exile: ${named(card.card)} (owner: ${state.players[card.owner].name}) exiled from ${target.zone} by ${card.exiledBy.sourceName} (${card.exiledBy.sourceId}); any triggers and later permissions must be verified manually.`);
+      if(card.isCommander)warn(state,'A commander exiled this way may have a command-zone choice; move it to command zone manually if appropriate.');
+      break;
+    }
+    case 'castLinkedExile': {
+      const target=find(state,action.id);
+      if(!target||target.zone!=='exile'||!target.instance.exiledBy)throw new Error('Choose a card explicitly associated with an exile source.');
+      if(action.withoutPaying!==true && action.withoutPaying!==false)throw new Error('Choose either ordinary mana payment or explicit manual free-cast permission.');
+      play(state,player,action.id,action.targetId,
+        action.sourceIds?{sourceIds:action.sourceIds,sourceChoices:action.sourceChoices||{}}:null,
+        {fromLinkedExile:true,withoutPaying:action.withoutPaying});
+      break;
+    }
+    case 'returnLinkedExile': {
+      if(state.finished||!state.players[0].kept)throw new Error('A finished game cannot move a permanent.');
+      const target=find(state,action.id);
+      if(!target||target.zone!=='exile'||!target.instance.exiledBy)throw new Error('Choose an exiled card linked to a source.');
+      if(!['battlefield','hand','graveyard'].includes(action.zone))throw new Error('Return linked exile to battlefield, hand or graveyard.');
+      if(action.zone==='battlefield'&&!/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(target.instance.card.type_line||target.instance.card.card_faces?.[0]?.type_line||''))
+        throw new Error('Only permanent cards may be placed directly on the battlefield.');
+      const source={...target.instance.exiledBy};const card=remove(state,target);
+      const controller=action.zone==='battlefield'?player:card.owner;
+      moveTo(state,card,controller,action.zone);
+      log(state,`Manual linked exile return: ${named(card.card)} from ${source.sourceName} (${source.sourceId}) to ${state.players[controller].name}'s ${action.zone}, without casting or paying costs. Any ETB and source effects are user-adjudicated.`);
+      warn(state,'Manual linked exile return does not verify the originating card or resolve its printed ability.');
       break;
     }
     case 'drawCard': {
