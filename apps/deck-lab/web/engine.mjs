@@ -143,6 +143,47 @@ function cost(card) {
   }
   return out;
 }
+// Audited static spell-cost reducers; this is not freeform Oracle text execution.
+// Each entry reduces GENERIC cost only, after commander tax / cost increases.
+const STATIC_COST_REDUCERS={
+  'The Darkness Crystal':{kind:'black',generic:1},
+  'Jet Medallion':{kind:'black',generic:1},
+  'Pearl Medallion':{kind:'white',generic:1},
+  'Sapphire Medallion':{kind:'blue',generic:1},
+  'Ruby Medallion':{kind:'red',generic:1},
+  'Emerald Medallion':{kind:'green',generic:1},
+  'Foundry Inspector':{kind:'artifact',generic:1},
+  'Etherium Sculptor':{kind:'artifact',generic:1},
+  "Jhoira's Familiar":{kind:'historic',generic:1},
+  'Ugin, the Ineffable':{kind:'colorless',generic:2}
+};
+const SPELL_COLORS={white:'W',blue:'U',black:'B',red:'R',green:'G'};
+function spellColors(card){
+  // Scryfall colors, when provided, are authoritative (Devoid is colorless).
+  if(Array.isArray(card.colors))return new Set(card.colors);
+  if(card.color_indicator?.length)return new Set(card.color_indicator);
+  return new Set([...String(card.mana_cost||'').matchAll(/\{([^}]+)\}/g)]
+    .flatMap(([,symbol])=>symbol.split('/')).filter(c=>['W','U','B','R','G'].includes(c)));
+}
+function applicableReduction(card,kind){
+  const colors=spellColors(card);
+  if(SPELL_COLORS[kind])return colors.has(SPELL_COLORS[kind]);
+  if(kind==='colorless')return colors.size===0;
+  if(kind==='artifact')return type(card,'Artifact');
+  return kind==='historic'&&(type(card,'Legendary')||type(card,'Artifact')||type(card,'Saga'));
+}
+export function spellCostQuote(state,player,card,extraGeneric=0,{isSpell=true}={}){
+  const printed=cost(card);
+  if(!printed)return null;
+  const increase=Math.max(0,Number(extraGeneric)||0),raw=printed.generic+increase;
+  const modifiers=[];
+  if(isSpell)for(const source of state.players[player].battlefield){
+    const rule=STATIC_COST_REDUCERS[named(source.card)];
+    if(rule&&applicableReduction(card,rule.kind))modifiers.push({sourceId:source.id,sourceName:named(source.card),generic:rule.generic});
+  }
+  const reduced=Math.min(raw,modifiers.reduce((sum,m)=>sum+m.generic,0));
+  return {printed:{...printed},increase,reduced,modifiers,wanted:{...printed,generic:raw-reduced}};
+}
 const EFFECTS = {
   'Raise the Alarm': {effect:'tokens',count:2,token:{name:'Soldier',type_line:'Token Creature — Soldier',power:'1',toughness:'1',colors:['W']}},
   'Dragon Fodder': {effect:'tokens',count:2,token:{name:'Goblin',type_line:'Token Creature — Goblin',power:'1',toughness:'1',colors:['R']}},
@@ -188,6 +229,7 @@ function profile(card) {
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
   if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
   if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
+  if(STATIC_COST_REDUCERS[named(card)])return {status:'partial',auto:true,reason:`Static spell cost reduction supported (${STATIC_COST_REDUCERS[named(card)].generic} generic per eligible spell). Other abilities and continuous effects on this card are not automated.`};
   if (named(card) === 'Fellwar Stone') return {status:'partial',reason:'Dynamic opponent-land colors evaluated at play time; other conditional effects are not inferred.',auto:true};
   if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
   if (named(card) === "Commander's Sphere") return {status:'partial',reason:'Commander identity mana supported; sacrifice draw mode is manual.',auto:true};
@@ -302,6 +344,7 @@ export function upgradeGame(snapshot) {
   }
   state.stack ||= [];
   if(state.responseWindow&&!state.stack.length)delete state.responseWindow;
+  if(state.responseWindow&&!Number.isInteger(state.responseWindow.responses))state.responseWindow.responses=0;
   state.nextTriggerId ??= 0;
   state.nextTokenId ??= 0;
   state.nextTriggerBatchId ??= 0;
@@ -394,9 +437,9 @@ function spendPool(available, wanted) {
   for(const c of ['C','W','U','B','R','G']) {const n=Math.min(left[c],generic);left[c]-=n;generic-=n;}
   return left;
 }
-function payment(state, player, card, extraGeneric=0, filter=null) {
-  const wanted=cost(card);if (!wanted) return null;
-  wanted.generic+=extraGeneric;
+function payment(state, player, card, extraGeneric=0, filter=null, {isSpell=true}={}) {
+  const quote=spellCostQuote(state,player,card,extraGeneric,{isSpell});if(!quote)return null;
+  const wanted=quote.wanted;
   const constraints=filter?.sourceIds ? new Set(filter.sourceIds) : null;
   const available=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
     .map(x=>({instance:x,...(manaSource(x.card,state,player)||{})}))
@@ -441,10 +484,11 @@ export function castOptions(state,player,id,filter=null) {
   const tax=where.zone==='command' ? 2*(where.instance.commanderCasts||0):0;
   const sources=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
     .map(x=>({id:x.id,name:named(x.card),...manaSource(x.card,state,player)})).filter(x=>x.options?.length);
+  const costQuote=land?null:spellCostQuote(state,player,card,tax);
   const plan=land ? null : payment(state,player,card,tax,filter);
   const canCast=ready && !stackBlocked && (land ? !state.players[player].landPlayed : Boolean(plan));
   const reason=!ready?'Keep your hand; casting happens on your turn.':stackBlocked?'Resolve the stack before casting this card.':land?(state.players[player].landPlayed?'Land drop already used.':'Land drop ready.') : !cost(card)?'Unsupported casting cost needs manual handling.':plan?'Mana available. Review sources and confirm.':'Not enough payable mana. Tap a rock or land to float mana, or adjust your selection.';
-  return {canCast,reason,land,tax,linkedExile:where.zone==='exile'?{...where.instance.exiledBy}:null,cost:card.mana_cost||'',pool:{...state.players[player].manaPool},sources,plan,cardName:named(card)};
+  return {canCast,reason,land,tax,costQuote,linkedExile:where.zone==='exile'?{...where.instance.exiledBy}:null,cost:card.mana_cost||'',pool:{...state.players[player].manaPool},sources,plan,cardName:named(card)};
 }
 /** Safe, explicit mana modes for the tap-card interface. */
 export function tapOptions(state,player,id){
@@ -489,7 +533,8 @@ function validTarget(state, caster, targetId, descriptor) {
   return true;
 }
 function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExile=false, withoutPaying=false}={}) {
-  if (state.finished || state.phase !== 'main' || state.activePlayer !== player) throw new Error('This bounded simulator supports casting during the active main phase only; cross-turn priority is not modeled.');
+  const responder=player===1&&state.activePlayer===0&&state.phase==='main'&&state.responseWindow?.priorityPlayer===1;
+  if (state.finished || state.phase !== 'main' || (state.activePlayer !== player && !responder)) throw new Error('Casting on the other player turn is currently permitted only for scripted instant responses in a response window.');
   if(state.responseWindow&&state.responseWindow.priorityPlayer!==player)throw new Error('This player does not currently have priority.');
   const location = find(state, id);
   if (!location || (!fromLinkedExile && (location.player !== player || !['hand','command'].includes(location.zone))))
@@ -502,6 +547,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
   if (commandCast && (!instance.isCommander || instance.owner !== player)) throw new Error('Only your own commander can be cast from your command zone.');
   if (instance.isCommander && !card.mana_cost) throw new Error('This commander has no supported printed mana cost; use manual payment and placement.');
   if (state.stack.length && !type(card, 'Instant')) throw new Error('Only supported instants may be cast while the stack is not empty.');
+  if(responder&&(!type(card,'Instant')||!['Counterspell','Negate','Stifle','Disallow'].includes(named(card))))throw new Error('Scripted opponent responses only support named, cost-paid counterspells.');
   if (type(card, 'Land')) {
     if (fromLinkedExile && !state.players[player].landPlayed && !state.stack.length) {
       // Permission to play a land from exile is explicitly adjudicated by the user.
@@ -524,6 +570,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
   }
   if (adapter.target && !validTarget(state, player, targetId, adapter.target)) throw new Error('Choose a legal battlefield target for this spell.');
   const commanderTax = commandCast ? 2 * instance.commanderCasts : 0;
+  const quote=spellCostQuote(state,player,card,commanderTax);
   const paid = withoutPaying ? {steps:[],pool:{...state.players[player].manaPool}} : payment(state, player, card, commanderTax, argumentsPayment);
   if (!paid) throw new Error('Not enough usable mana of the required colors; unsupported costs require a manual move.');
   const exileSource=fromLinkedExile ? {...instance.exiledBy} : null;
@@ -536,6 +583,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
     log(state,`Mana payment: tap ${named(source.card)} for ${Object.entries(step.mana).map(([c,n])=>`${n}${c}`).join(' + ')}${step.activationGeneric?` after paying ${step.activationGeneric} generic to activate`:''}.`);
   }
   state.players[player].manaPool = paid.pool;
+  if(!withoutPaying&&quote?.reduced)log(state,`Spell cost reduction: ${named(card)} has ${quote.increase} added generic, reduced by ${quote.reduced} generic (${quote.modifiers.map(m=>m.sourceName).join(', ')}); pay ${quote.wanted.generic} generic plus printed colored requirements. Printed mana value unchanged.`);
   remove(state, location); if(fromLinkedExile)delete instance.exiledBy; instance.controller = player; if (targetId) instance.targetId = targetId; else delete instance.targetId;
   if (commandCast) instance.commanderCasts++;
   state.stack.push(instance); stat(state, player, 'cardsCast');
@@ -1018,7 +1066,7 @@ function activateShorikai(state,player,id) {
   if(!permanent||permanent.zone!=='battlefield'||permanent.player!==player||named(permanent.instance.card)!=='Shorikai, Genesis Engine'||permanent.instance.tapped)
     throw new Error('Select your untapped Shorikai on the battlefield.');
   const fakeCost={name:'Shorikai activation cost',type_line:'Instant',mana_cost:'{1}',cmc:1};
-  const paid=payment(state,player,fakeCost,0,{sourceIds:state.players[player].battlefield.filter(x=>x.id!==id).map(x=>x.id)});
+  const paid=payment(state,player,fakeCost,0,{sourceIds:state.players[player].battlefield.filter(x=>x.id!==id).map(x=>x.id)},{isSpell:false});
   if(!paid)throw new Error('Shorikai requires one mana before tapping.');
   for(const step of paid.steps){
     const source=find(state,step.id)?.instance;if(!source||source.tapped)throw new Error('Shorikai payment source unavailable.');
@@ -1134,6 +1182,32 @@ export function linkedExiles(state, sourceId=null) {
   return state.players.flatMap((p,owner)=>p.exile.filter(x=>x.exiledBy && (sourceId===null||x.exiledBy.sourceId===sourceId))
     .map(x=>({id:x.id,name:named(x.card),owner,sourceId:x.exiledBy.sourceId,sourceName:x.exiledBy.sourceName})));
 }
+// Public, narrowly bounded opponent reaction: no fabricated responses or free casts.
+// No hidden hand identities are revealed unless one is actually cast.
+function scriptedCounterResponse(state){
+  const window=state.responseWindow;
+  if(!window||window.priorityPlayer!==1)return false;
+  window.responses ??= 0;
+  if(window.responses>=2)return false;
+  const top=state.stack.at(-1);
+  if(!top||top.controller!==0)return false;
+  const names=['Stifle','Negate','Counterspell','Disallow'];
+  const candidates=state.players[1].hand.filter(x=>names.includes(named(x.card)))
+    .sort((a,b)=>names.indexOf(named(a.card))-names.indexOf(named(b.card))||a.id.localeCompare(b.id));
+  for(const card of candidates){
+    const adapter=profile(card.card);
+    if(!validTarget(state,1,top.id,adapter.target)||!payment(state,1,card.card))continue;
+    // The cast itself performs the same normal payment and target validation as a human cast.
+    play(state,1,card.id,top.id);
+    state.responseWindow.responses++;
+    state.responseWindow.priorityPlayer=0;
+    state.responseWindow.passes=0;
+    state.opponentAudit.counterResponses=(state.opponentAudit.counterResponses||0)+1;
+    log(state,`Scripted opponent responds with ${named(card.card)} targeting ${named(top.card)}. Paid from available mana; human regains priority. This is a fixed priority policy.`);
+    return true;
+  }
+  return false;
+}
 function apply(state, action) {
   if (!action || !action.type) throw new Error('Choose an action.');
   const player = action.player ?? 0;
@@ -1152,7 +1226,7 @@ function apply(state, action) {
       if(!staff||staff.zone!=='battlefield'||staff.player!==player||named(staff.instance.card)!=='Proteus Staff'||staff.instance.tapped)throw new Error('Choose your untapped Proteus Staff.');
       if(!target||target.zone!=='battlefield'||!isCreature(target.instance))throw new Error('Choose a battlefield creature to transform.');
       const sources=state.players[player].battlefield.filter(x=>x.id!==staff.instance.id).map(x=>x.id);
-      const paid=payment(state,player,{name:'Proteus Staff activation',type_line:'Instant',mana_cost:'{2}{U}',cmc:3},0,{sourceIds:sources});
+      const paid=payment(state,player,{name:'Proteus Staff activation',type_line:'Instant',mana_cost:'{2}{U}',cmc:3},0,{sourceIds:sources},{isSpell:false});
       if(!paid)throw new Error('Pay {2}{U} to activate Proteus Staff.');
       for(const step of paid.steps){const mana=find(state,step.id)?.instance;if(!mana||mana.tapped)throw new Error('Mana source unavailable.');mana.tapped=true;if(step.damage)state.players[player].life-=step.damage;if(step.lifeGain)state.players[player].life+=step.lifeGain;}
       state.players[player].manaPool=paid.pool;staff.instance.tapped=true;
@@ -1214,7 +1288,7 @@ function apply(state, action) {
       if(state.finished||state.phase!=='main'||state.activePlayer!==0||!state.stack.length||state.pendingChoice||state.pendingLibrary)
         throw new Error('Open a response window on an unresolved stack during your main phase.');
       if(state.responseWindow)throw new Error('Response window already open.');
-      state.responseWindow={priorityPlayer:0,passes:0};
+      state.responseWindow={priorityPlayer:0,passes:0,responses:0};
       log(state,'Response window opened: you have priority. The scripted opponent has no supported response policy and will pass deterministically.');
       break;
     }
@@ -1225,6 +1299,9 @@ function apply(state, action) {
       const top=state.stack.at(-1),adapter=profile(top.card);
       if((top.kind!=='trigger'&&(!adapter.auto||adapter.status==='manual'))||(top.trigger?.adapter==='loyalty-manual'))
         throw new Error('Top of stack needs explicit manual effect adjudication before both players can pass.');
+      state.responseWindow.priorityPlayer=1;
+      if(scriptedCounterResponse(state))break;
+      state.responseWindow.priorityPlayer=0;
       log(state,`You pass priority; scripted opponent passes. Two consecutive passes resolve ${named(top.card)}.`);
       resolve(state);
       if(state.responseWindow){

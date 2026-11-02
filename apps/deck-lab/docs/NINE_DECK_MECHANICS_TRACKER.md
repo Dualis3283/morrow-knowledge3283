@@ -94,3 +94,11 @@ Proteus Staff first creature; Mass Polymorph N creatures and shuffle; Empty the 
 - Same-owner same-cast trigger batch IDs enable narrow voluntary ordering, not APNAP or simultaneous cross-player/ETB ordering.
 - Test files `apps/deck-lab/tests/response-priority.test.mjs` and website `tests/stack-response-browser.mjs`.
 - Progress lifecycle: locally tested only until independently verified CI/merge/live. Open follow-ups: opponent turn responses, automatic opponent responses, full APNAP event queue, commander replacement/SBA choices and simultaneous ETB ordering.
+
+## MECH-021 · Generic spell cost modifiers and scripted opponent counter responses (0.1.14 candidate)
+
+- Static named generic-only reducers (The Darkness Crystal, Medallions, Foundry Inspector, Etherium Sculptor, Jhoira's Familiar, Ugin Ineffable) use a **shared spellCostQuote** before payment, including commander tax and cast eligibility. Do not reduce colored symbols or mana value. Casting dialog shows adjusted cost. Abilities are not spells, and unused/static effects of reducers stay manual.
+- Scripted opponent can use up to two real paid, legal Counterspell/Negate/Stifle/Disallow responses to human stack objects on human main phase; deterministic transparent public actions. Not full opponent instant/counter AI or cross-turn APNAP.
+- Test: `apps/deck-lab/tests/cost-reduction-responder.test.mjs`, web `tests/cost-reduction-opponent-response-browser.mjs` (390/1440px).
+- Open: The Darkness Crystal nontoken-creature death replacement/exile/lifegain and exiled-card return activation; Cloud Key or Semblance Anvil type choice and imprint; alternative costs, convoke/delve/affinity, +/− cost layering with many modifiers, replacement/trigger batching, post-main opponent responses, commander zone choices.
+- Stage: locally tested candidate until independently verified CI/merge/deployment/readback.

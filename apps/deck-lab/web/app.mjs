@@ -196,6 +196,8 @@ function renderCommander() {
   }
 }
 function manaText(options) { return Object.entries(options || {}).filter(([,n])=>n).map(([c,n])=>`${n}${c}`).join(' + ') || 'none'; }
+function payableSymbols(wanted){if(!wanted)return 'unsupported mana cost';return `${wanted.generic?`{${wanted.generic}}`:''}${['W','U','B','R','G','C'].map(c=>`{${c}}`.repeat(wanted[c]||0)).join('')}`||'{0}';}
+
 function openManaChoice(instance) {
   if($('card-dialog').open)$('card-dialog').close();
   const source=tapOptions(game,0,instance.id);
@@ -246,7 +248,7 @@ function openCastDialog(id,targetId='') {
   if(quote.land){if($('card-dialog').open)$('card-dialog').close();dispatch(where.zone==='exile'?{type:'castLinkedExile',id,withoutPaying:false}:{type:'play',id});return;}
   if($('card-dialog').open)$('card-dialog').close();
   casting={id,targetId,selected:new Set(quote.plan?.sourceIds||[]),choices:Object.fromEntries((quote.plan?.steps||[]).map(step=>[step.id,step.index]))};
-  $('cast-dialog-title').textContent=`Cast ${quote.cardName} · ${quote.cost || '{0}'}${quote.tax?` + {${quote.tax}} tax`:''}`;
+  $('cast-dialog-title').textContent=`Cast ${quote.cardName} · pay ${payableSymbols(quote.costQuote?.wanted)}${quote.costQuote?.reduced?` · save {${quote.costQuote.reduced}} generic`:''}`;
   const sourceBox=$('cast-payment-sources');sourceBox.replaceChildren();
   for(const source of quote.sources){
     const row=element('div','payment-source');
@@ -270,7 +272,8 @@ function updateCastQuote(){
   if(!casting || !game)return;
   const quote=castOptions(game,0,casting.id,{sourceIds:[...casting.selected],sourceChoices:casting.choices});
   $('cast-payment-pool').textContent=`Already floating: ${manaText(quote.pool)}. Only checked untapped sources are available. Tap modes can be changed.`;
-  $('cast-payment-status').textContent=quote.canCast?`Ready: ${quote.plan.steps.map(step=>`${lookup(step.id)?.instance?.card.name || 'Source'} (${manaText(step.mana)}${step.damage?` · ${step.damage} damage to you`:''})`).join(', ')||'pay from floating pool'}; ${quote.reason}`:quote.reason;
+  const reductions=quote.costQuote?.reduced?`Adjusted: ${quote.cost||'{0}'}${quote.tax?` + {${quote.tax}} tax`:''} − {${quote.costQuote.reduced}} (${quote.costQuote.modifiers.map(m=>m.sourceName).join(', ')}) → ${payableSymbols(quote.costQuote.wanted)}. `:`Pay ${payableSymbols(quote.costQuote?.wanted)}. `;
+  $('cast-payment-status').textContent=reductions+(quote.canCast?`Ready: ${quote.plan.steps.map(step=>`${lookup(step.id)?.instance?.card.name || 'Source'} (${manaText(step.mana)}${step.damage?` · ${step.damage} damage to you`:''})`).join(', ')||'pay from floating pool'}; ${quote.reason}`:quote.reason);
   $('cast-pay-button').disabled=!quote.canCast;
 }
 function isPlaneswalker(card){return /\bPlaneswalker\b/i.test(card?.type_line||'');}
