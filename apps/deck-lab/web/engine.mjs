@@ -111,6 +111,7 @@ const EFFECTS = {
   'Giant Growth': { effect: 'pump', amount: 3, target: 'creature' },
   'Divination': { effect: 'draw', amount: 2 },
   'Harmonize': { effect: 'draw', amount: 3 },
+  "Night's Whisper": {effect:'drawLoseLife',amount:2,lifeLoss:2},
   'Unsummon': { effect: 'bounce', target: 'creature' },
   'Murder': { effect: 'destroy', target: 'creature' },
   'Doom Blade': { effect: 'destroy', target: 'nonblackCreature' },
@@ -128,6 +129,7 @@ const EFFECTS = {
 };
 function profile(card) {
   if (!card || !card.name) return { status: 'manual', reason: 'Missing card definition.', auto: false };
+  if (['Swiftfoot Boots','Lightning Greaves','Shadowspear','Whispersilk Cloak'].includes(named(card))) return {status:'partial',reason:'Equipment may be cast and creates an artifact permanent; attaching, equipping, granted keywords and combat effects are manual.',auto:true};
   if (card.card_faces?.length || /\b(Battle|Saga|Aura|Equipment)\b/.test(card.type_line || '')) return { status: 'manual', reason: 'Faces, defense, chapters and attachments require manual resolution.', auto: false };
   if (type(card,'Planeswalker')) return {status:'partial',reason:'Printed loyalty and one ability activation per turn tracked; loyalty ability effects and planeswalker combat require manual adjudication.',auto:false,planeswalker:true};
   if (!cost(card)) return { status: 'manual', reason: 'Variable, hybrid, Phyrexian, alternative or missing mana cost requires manual payment.', auto: false };
@@ -136,6 +138,11 @@ function profile(card) {
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
   if (named(card) === 'Arcane Signet') return {status:'partial',reason:'Mana colors follow your commander identity; supported with a valid commander.',auto:true};
   if (named(card) === "Commander's Sphere") return {status:'partial',reason:'Commander identity mana supported; sacrifice draw mode is manual.',auto:true};
+  if (named(card) === 'Sai, Master Thopterist') return {status:'partial',reason:'Artifact-spell Thopter cast trigger automated; sacrifice-two-artifacts draw ability manual.',auto:true};
+  if (named(card) === 'Sram, Senior Edificer') return {status:'partial',reason:'Aura, Equipment and Vehicle spell-cast draw trigger automated.',auto:true};
+  if (named(card) === 'Etherium Spinner') return {status:'partial',reason:'Mana-value-four-or-more cast trigger creates Thopters; other effects manual.',auto:true};
+  if (named(card) === 'Whirlwind of Thought') return {status:'partial',reason:'Noncreature spell-cast card-draw trigger automated.',auto:true};
+  if (named(card) === 'Shorikai, Genesis Engine') return {status:'partial',reason:'Printed {1},{T} draw-two/discard-one/Pilot activation is available; crew and other Vehicle interactions manual.',auto:true};
   if (named(card) === 'Ovika, Enigma Goliath') return { status: 'partial', reason: 'Cast-trigger Goblins and commander casting supported; ward, alternative effects and opponent decisions are not modeled.', auto: true };
   if (named(card) === 'Third Path Iconoclast') return { status: 'partial', reason: 'Cast-trigger Soldier tokens supported; other interactions may need manual review.', auto: true };
   if (named(card) === 'Molten Gatekeeper') return { status: 'partial', reason: 'Other friendly creature entry triggers 1 damage to opponent; unearth is manual.', auto: true };
@@ -239,6 +246,8 @@ export function upgradeGame(snapshot) {
   state.stack ||= [];
   state.nextTriggerId ??= 0;
   state.nextTokenId ??= 0;
+  state.opponentAudit ||= {turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]};
+  if(state.pendingChoice && state.pendingChoice.player!==0 && state.pendingChoice.player!==1)delete state.pendingChoice;
   for (const player of state.players) for (const permanent of player.battlefield) {
     if (type(permanent.card,'Planeswalker') && !Number.isInteger(permanent.loyalty))
       permanent.loyalty = Math.max(0,Math.trunc(number(permanent.card.loyalty)));
@@ -452,9 +461,21 @@ function pushInteraction(state, controller, source, adapter, count) {
     trigger:{adapter,count}});
 }
 function queueCastInteractions(state, player, spell) {
-  if (type(spell,'Creature') || type(spell,'Land')) return;
-  const sources = state.players[player].battlefield.filter(x => ['Ovika, Enigma Goliath','Third Path Iconoclast'].includes(named(x.card)));
+  if (type(spell,'Land')) return;
+  const sources = state.players[player].battlefield.filter(x => ['Ovika, Enigma Goliath','Third Path Iconoclast','Sai, Master Thopterist','Sram, Senior Edificer','Etherium Spinner','Whirlwind of Thought'].includes(named(x.card)));
   for (const source of sources) {
+    const sourceName=named(source.card);
+    const isArtifact=type(spell,'Artifact'),isNoncreature=!type(spell,'Creature');
+    const isQualifiedSram = type(spell,'Aura') || type(spell,'Equipment') || type(spell,'Vehicle');
+    if (sourceName === 'Sai, Master Thopterist' && isArtifact || sourceName === 'Etherium Spinner' && Number(spell.cmc)>=4 && !/\{[XYZ]\}/.test(String(spell.mana_cost||''))) {
+      pushInteraction(state,player,source,'thopter-token',1);
+      log(state,`${sourceName} trigger: create one 1/1 flying Thopter artifact creature on resolution.`);continue;
+    }
+    if (sourceName === 'Sram, Senior Edificer' && isQualifiedSram || sourceName === 'Whirlwind of Thought' && isNoncreature) {
+      pushInteraction(state,player,source,'cast-draw',1);
+      log(state,`${sourceName} trigger: draw one card on resolution.`);continue;
+    }
+    if (!isNoncreature)continue;
     if (named(source.card) === 'Third Path Iconoclast') {
       pushInteraction(state,player,source,'iconoclast-soldier',1);
       log(state,`Third Path Iconoclast trigger: one 1/1 colorless Soldier artifact creature on resolving.`);
@@ -482,15 +503,31 @@ function resolveInteraction(state, instance) {
     log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
     return true;
   }
-  if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage'].includes(trigger?.adapter)) return false;
+  if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage','thopter-token','cast-draw','shorikai-activate'].includes(trigger?.adapter)) return false;
   state.stack.pop();
   const controller = instance.controller, count = trigger.count;
+  if (controller===1) state.opponentAudit.triggerResolutions++;
+  if (trigger.adapter === 'cast-draw') {
+    draw(state,controller,1);log(state,`${named(instance.card)} resolves: ${state.players[controller].name} draws one card.`);return true;
+  }
+  if (trigger.adapter === 'shorikai-activate') {
+    draw(state,controller,2);
+    if(controller===1){
+      const pick=chooseOpponentDiscard(state.players[controller].hand);
+      if(pick){const location=find(state,pick.id);remove(state,location);moveTo(state,pick,controller,'graveyard');log(state,'Scripted opponent discards one card following its documented deterministic discard policy.');}
+      makePilot(state,controller);
+    }else{
+      state.pendingChoice={kind:'shorikai-discard',player:0,sourceId:trigger.sourceId};
+      log(state,'Shorikai draws two. Choose a card from your hand to discard before the Pilot is created.');
+    }
+    return true;
+  }
   if (trigger.adapter === 'gatekeeper-damage') {
     dealToPlayer(state,controller,1-controller,1,'Molten Gatekeeper');
     finishIfLethal(state); return true;
   }
-  const goblin = trigger.adapter === 'ovika-goblins';
-  const tokenCard = goblin
+  const goblin = trigger.adapter === 'ovika-goblins', thopter=trigger.adapter==='thopter-token';
+  const tokenCard = thopter ? {name:'Thopter',type_line:'Token Artifact Creature — Thopter',cmc:0,mana_cost:'',oracle_text:'Flying',keywords:['flying'],colors:[],power:'1',toughness:'1'} : goblin
     ? {name:'Phyrexian Goblin',type_line:'Token Creature — Phyrexian Goblin',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:['R'],power:'1',toughness:'1'}
     : {name:'Soldier',type_line:'Token Artifact Creature — Soldier',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:[],power:'1',toughness:'1'};
   for (let i=0;i<count;i++) {
@@ -499,7 +536,7 @@ function resolveInteraction(state, instance) {
     if (goblin) token.temporaryHaste=true;
     moveTo(state,token,controller,'battlefield');
   }
-  log(state,`${goblin?'Ovika':'Third Path Iconoclast'} trigger resolves: ${count} ${named(tokenCard)} token(s)${goblin?' with haste until end of turn':''}.`);
+  log(state,`${thopter?'Artifact cast':goblin?'Ovika':'Third Path Iconoclast'} trigger resolves: ${count} ${named(tokenCard)} token(s)${goblin?' with haste until end of turn':''}.`);
   return true;
 }
 function searchBasic(state, player, destination) {
@@ -534,6 +571,7 @@ function resolve(state) {
         break;
       }
       case 'draw': draw(state, player, adapter.amount); break;
+      case 'drawLoseLife': draw(state,player,adapter.amount);state.players[player].life-=adapter.lifeLoss;log(state,`${named(instance.card)}: draw ${adapter.amount}, lose ${adapter.lifeLoss} life.`);break;
       case 'pump': target.instance.tempPower = (target.instance.tempPower || 0) + adapter.amount; target.instance.tempToughness = (target.instance.tempToughness || 0) + adapter.amount; break;
       case 'bounce': remove(state, target); moveTo(state, target.instance, target.instance.owner, 'hand'); break;
       case 'destroy':
@@ -666,9 +704,10 @@ function targetFor(state, player, adapter) {
 export function suggestions(state, player=0) {
   if (state.phase !== 'main' || state.activePlayer !== player || state.finished) return [];
   const p=state.players[player];
+  if (state.pendingChoice) return [];
   if (state.stack.length) {
     const top=state.stack.at(-1), adapter=profile(top.card);
-    if (top.kind === 'trigger' || (adapter.auto && adapter.status !== 'manual'))
+    if ((top.kind === 'trigger' && top.trigger?.adapter!=='loyalty-manual') || (adapter.auto && adapter.status !== 'manual'))
       return [{type:'resolve',label:`Resolve ${named(top.card)}`,why:'Top of the stack must resolve before continuing.',sourceNames:[]}];
     return [];
   }
@@ -678,7 +717,8 @@ export function suggestions(state, player=0) {
     lands.sort((a,b)=>Number(Boolean(manaSource(b.card)))-Number(Boolean(manaSource(a.card))) || Number(entersTapped(b.card,profile(b.card),state,player))-Number(entersTapped(a.card,profile(a.card),state,player)));
     for (const instance of lands) actions.push({type:'play',id:instance.id,label:`Play ${named(instance.card)}`,why:`Normal land drop${manaSource(instance.card)?'; mana source recognized':'; mana ability may require manual input'}.`,sourceNames:[],land:true});
   }
-  const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && named(x.card)==='Ovika, Enigma Goliath' && profile(x.card).auto)];
+  // Scripted commanders are never free-cast: exact printed mana plus commander tax required.
+  const candidates=[...p.hand,...p.command.filter(x=>x.isCommander && ['Ovika, Enigma Goliath','Shorikai, Genesis Engine'].includes(named(x.card)) && profile(x.card).auto)];
   for(const instance of candidates) {
     const adapter=profile(instance.card);
     if (type(instance.card,'Land') || !adapter.auto) continue;
@@ -693,24 +733,83 @@ export function suggestions(state, player=0) {
     const priority=instance.isCommander ? 100 : adapter.source ? (state.round<=5 ? 90 : 20) : adapter.effect==='draw' ? 60 : ['destroy','exile','bounce'].includes(adapter.effect) ? 50 : ['ramp','cultivate'].includes(adapter.effect) ? 85 : isCreature(instance) ? 30+number(card.cmc) : 15;
     actions.push({type:'play',id:instance.id,targetId:target?.id,label:`Cast ${named(instance.card)}`,why:`Known cost${tax?` + ${tax} commander tax`:''}; ${adapter.status==='partial'?'partial rules support':'recognized effect'}.`,sourceNames,priority});
   }
+  // Shorikai's single activation needs one mana; use the normal payment planner for it.
+  const shorikai=p.battlefield.find(x=>named(x.card)==='Shorikai, Genesis Engine'&&!x.tapped);
+  if(shorikai){
+    const others=p.battlefield.filter(x=>x.id!==shorikai.id).map(x=>x.id);
+    if(payment(state,player,{name:'Shorikai activation',type_line:'Instant',mana_cost:'{1}',cmc:1},0,{sourceIds:others}))
+      actions.push({type:'activateShorikai',id:shorikai.id,label:'Activate Shorikai — draw 2, discard 1, create Pilot',why:'Audited activated ability; discard is a deterministic opponent heuristic or player choice.',sourceNames:[],priority:25});
+  }
   return [...actions.filter(x=>x.land).slice(0,1),...actions.filter(x=>!x.land).sort((a,b)=>b.priority-a.priority)];
+}
+function chooseOpponentDiscard(hand) {
+  // Bounded practice heuristic: keep cheap playable cards; no unobserved strategic claims.
+  return [...hand].sort((a,b)=>number(b.card.cmc)-number(a.card.cmc) || named(a.card).localeCompare(named(b.card)))[0] || null;
+}
+function makePilot(state,player) {
+  const token=fresh({name:'Pilot',type_line:'Token Creature — Pilot',power:'1',toughness:'1',cmc:0,mana_cost:'',colors:[],keywords:[],oracle_text:'This token crews Vehicles as though its power were 2 greater.'},player,`pilot-token-${state.nextTokenId++}`);
+  token.isToken=true;moveTo(state,token,player,'battlefield');
+  log(state,`${state.players[player].name} creates a 1/1 colorless Pilot token; enhanced crewing is not automated.`);
+}
+function activateShorikai(state,player,id) {
+  if(state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice)throw new Error('Activate Shorikai during your active main phase with an empty stack.');
+  const permanent=find(state,id);
+  if(!permanent||permanent.zone!=='battlefield'||permanent.player!==player||named(permanent.instance.card)!=='Shorikai, Genesis Engine'||permanent.instance.tapped)
+    throw new Error('Select your untapped Shorikai on the battlefield.');
+  const fakeCost={name:'Shorikai activation cost',type_line:'Instant',mana_cost:'{1}',cmc:1};
+  const paid=payment(state,player,fakeCost,0,{sourceIds:state.players[player].battlefield.filter(x=>x.id!==id).map(x=>x.id)});
+  if(!paid)throw new Error('Shorikai requires one mana before tapping.');
+  for(const step of paid.steps){
+    const source=find(state,step.id)?.instance;if(!source||source.tapped)throw new Error('Shorikai payment source unavailable.');
+    source.tapped=true;if(step.damage){state.players[player].life-=step.damage;log(state,`${named(source.card)} deals ${step.damage} damage for Shorikai activation.`);}
+  }
+  state.players[player].manaPool=paid.pool;permanent.instance.tapped=true;
+  pushInteraction(state,player,permanent.instance,'shorikai-activate',1);
+  log(state,`${state.players[player].name} activates Shorikai: pay {1}, tap; draw two, discard one, create Pilot on resolution.`);
+  if(player===1)state.opponentAudit.activatedAbilities++;
+  finishIfLethal(state);
+}
+export function opponentDiagnostics(state,{revealHand=false}={}) {
+  const a=state.opponentAudit||{},p=state.players[1];
+  const unsupported=p.hand.filter(x=>!type(x.card,'Land')&&!profile(x.card).auto);
+  return {turns:a.turns||0,actions:a.actions||0,casts:a.casts||0,activatedAbilities:a.activatedAbilities||0,triggerResolutions:a.triggerResolutions||0,
+    unknownHandCount:unsupported.length,halted:Boolean(a.halted),publicActions:(a.publicActions||[]).slice(-20),
+    ...(revealHand||state.finished?{unsupportedCards:unsupported.map(x=>({name:named(x.card),reason:profile(x.card).reason}))}:{})};
 }
 function assistedStep(state,player,mode='next') {
   const choices=suggestions(state,player);
   const choice=mode==='land' ? choices.find(x=>x.land) : choices[0];
   if (!choice) return false;
   if (choice.type==='resolve') resolve(state);
+  else if(choice.type==='activateShorikai')activateShorikai(state,player,choice.id);
   else play(state,player,choice.id,choice.targetId);
   return true;
 }
 function autoTurn(state,player) {
-  if(state.finished) return;
-  for(let count=0;count<35 && !state.finished;count++) if(!assistedStep(state,player)) break;
-  if(state.stack.length) { warn(state,'Automated opponent paused: unsupported stack resolution.'); return; }
-  if(state.finished) return;
+  if(state.finished) return true;
+  const audit=state.opponentAudit;
+  if(!state.pendingOpponent)audit.turns++;
+  for(let count=0;count<35 && !state.finished;count++) {
+    const next=suggestions(state,player)[0];if(!next)break;
+    if(!assistedStep(state,player))break;
+    audit.actions++;
+    if(next.type==='play'&&!next.land)audit.casts++;
+    if((audit.publicActions||[]).length>=100)audit.publicActions.shift();
+    audit.publicActions.push({turn:state.turn,kind:next.type,label:next.label});
+  }
+  audit.unknownHandCount=state.players[player].hand.filter(x=>!type(x.card,'Land')&&!profile(x.card).auto).length;
+  if(state.stack.length||state.pendingChoice) {
+    audit.halted=true;state.pendingOpponent={reason:'Unsupported stack or choice requires manual resolution.'};
+    warn(state,'Scripted opponent paused on an unresolved effect; inspect and adjudicate before continuing.');
+    return false;
+  }
+  audit.halted=false;delete state.pendingOpponent;
+  if(state.finished) return true;
   const p=state.players[player];
   for(const x of p.battlefield) if(canAttack(state,x)) x.attacking=true;
-  if(p.battlefield.some(x=>x.attacking)) combat(state,player);
+  if(p.battlefield.some(x=>x.attacking))combat(state,player);
+  log(state,`Scripted opponent turn: ${audit.actions} cumulative recognized actions; ${audit.unknownHandCount} hand card(s) still require manual coverage (card identities kept hidden).`);
+  return true;
 }
 function endCurrent(state) {
   const p = state.players[state.activePlayer];
@@ -729,17 +828,17 @@ function endTurn(state) {
   if (state.stack.length) throw new Error('Resolve or manually move every stack card before ending the turn.');
   endCurrent(state);
   if (state.startingPlayer === 0) {
-    beginTurn(state, 1); autoTurn(state, 1); endCurrent(state);
+    beginTurn(state, 1); if(!autoTurn(state, 1))return; endCurrent(state);
     if (state.finished || !finishRound(state)) return;
     beginTurn(state, 0);
   } else {
     if (!finishRound(state)) return;
-    beginTurn(state, 1); autoTurn(state, 1); endCurrent(state);
+    beginTurn(state, 1); if(!autoTurn(state, 1))return; endCurrent(state);
     if (!state.finished) beginTurn(state, 0);
   }
 }
 function startKeptGame(state) {
-  if (state.startingPlayer === 1) { beginTurn(state, 1); autoTurn(state, 1); endCurrent(state); }
+  if (state.startingPlayer === 1) { beginTurn(state, 1); if(!autoTurn(state,1))return; endCurrent(state); }
   if (!state.finished) beginTurn(state, 0);
 }
 
@@ -750,12 +849,12 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   const state = {
     players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander', true)] : [], commanderId: [commander, opponentCommander][p] ? `p${p}-commander` : null, returnCommanderOnDeath: true, passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
     stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
-    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0,
+    stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0, opponentAudit:{turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]},
   };
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }
   if (opponentDeck.length) autoKeep(state, 1); else { state.players[1].kept = true; warn(state, 'Opponent has no deck: passive goldfish practice; no opposing draws or actions.'); }
   for (const row of [...coverage(deck), ...coverage(opponentDeck)]) if (row.status !== 'supported') warn(state, `${row.name}: ${row.reason}`);
-  log(state, 'Bounded deck test: supported Ovika commander casting and named Ovika/Iconoclast/Gatekeeper triggers are automated, ordinary command tax and land drops supported. Other commanders, card abilities, priority, replacement effects and multiplayer rules may require manual intervention.');
+  log(state, 'Bounded practice engine: named Ovika, Iconoclast, Gatekeeper, Sai, Sram, Etherium Spinner, Whirlwind and Shorikai interactions are audited; other abilities and all hidden decision policies are incomplete. This is not an accurate game win-rate predictor.');
   return state;
 }
 function apply(state, action) {
@@ -823,7 +922,28 @@ function apply(state, action) {
       if (!applied) warn(state,'No further fully payable, recognized play; inspect your hand and use manual controls for unmodeled effects.');
       log(state,`Guided ${action.mode} play: ${applied} action(s); no automatic end turn or combat.`); break;
     }
-    case 'endTurn': endTurn(state); break;
+    case 'activateShorikai': activateShorikai(state,player,action.id);break;
+    case 'chooseDiscard': {
+      if(!state.pendingChoice||state.pendingChoice.kind!=='shorikai-discard'||state.pendingChoice.player!==player)
+        throw new Error('No pending Shorikai discard choice.');
+      const location=find(state,action.id);
+      if(!location||location.player!==player||location.zone!=='hand')throw new Error('Choose one card from your hand to discard.');
+      const card=remove(state,location);moveTo(state,card,player,'graveyard');
+      delete state.pendingChoice;makePilot(state,player);log(state,`${state.players[player].name} discards ${named(card.card)} for Shorikai.`);break;
+    }
+    case 'resumeOpponent': {
+      if(!state.pendingOpponent||state.activePlayer!==1||state.stack.length||state.pendingChoice)
+        throw new Error('Opponent can resume only after the unresolved stack and choices are adjudicated.');
+      if(!autoTurn(state,1))break;
+      endCurrent(state);
+      if(state.startingPlayer===0 && !state.finished && !finishRound(state))break;
+      if(state.startingPlayer===1 && !state.finished && !finishRound(state))break;
+      if(!state.finished)beginTurn(state,0);
+      break;
+    }
+    case 'endTurn':
+      if(state.pendingChoice)throw new Error('Complete the pending Shorikai discard choice before ending your turn.');
+      endTurn(state);break;
     case 'life':
       if (!Number.isFinite(action.delta)) throw new Error('Life change must be a number.');
       state.players[player].life += action.delta; log(state, `${state.players[player].name}: life ${action.delta >= 0 ? '+' : ''}${action.delta}, now ${state.players[player].life}.`); break;

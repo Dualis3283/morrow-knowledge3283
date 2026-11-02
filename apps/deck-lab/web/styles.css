@@ -78,3 +78,9 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 .loyalty-badge{background:#6d5495;color:#fff;white-space:nowrap;font-weight:700;}
 .loyalty-status{font-weight:750;}
 .loyalty-note{font-size:.85rem;max-width:36rem;line-height:1.4;color:#e6d3b2;}
+
+.opponent-audit{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem .75rem;font-size:.78rem;color:#e2cda7;margin:.5rem 0;line-height:1.45;}
+.opponent-audit #opponent-automation-status{opacity:.85;}
+.opponent-audit button{min-height:44px;}
+#discard-choice-dialog .mana-choice-list{flex-direction:column;}
+#discard-choice-dialog .mana-choice-list button{min-height:44px;text-align:left;}

@@ -118,3 +118,14 @@ Named, audited interaction adapters (not freeform Oracle interpretation): [Ovika
 - Added a real-browser test at 390px mobile and 1440px desktop for manual River tap mode, life change, token resolution, planeswalker loyalty cost, used-this-turn display and deliberately manual effect.
 - **Rules references:** Underground River, https://mtg.wtf/card/bro/267/Underground-River ; Wizards Foundations Mechanics, https://magic.wizards.com/en/news/feature/foundations-mechanics ; comprehensive rules https://mtg.wtf/help/rules .
 - Release gates must pass independently before production and Android 0.1.6 debug APK can be marked live. Physical Android test remains unobserved.
+
+
+## Tracked nine-deck opponent interaction slice — candidate 0.1.7
+
+**Persistent register:** `apps/deck-lab/docs/NINE_DECK_MECHANICS_TRACKER.md` plus `apps/deck-lab/docs/nine-deck-card-matrix.json`. The source-reviewed matrix covers nine complete decks, 900 physical cards, 767 list entries, and 644 distinct card records. The card-level legacy supported/partial/manual classifier is NOT a complete implementation certificate.
+
+**Automated in this candidate, with identical engine for both players:** Sai, Master Thopterist (artifact spell cast -> 1/1 flying artifact Thopter), Sram, Senior Edificer (Aura/Equipment/Vehicle spell cast -> draw), Etherium Spinner (mana value >= 4 cast -> Thopter), Whirlwind of Thought (noncreature spell cast -> draw), Night's Whisper (draw two, lose two life), and Shorikai, Genesis Engine (pay {1} and tap, stack ability -> draw two, discard one, create a Pilot). The scripted opponent uses a deterministic highest-mana-value discard heuristic; the player receives an explicit post-draw discard selector. Some known simple Equipment may enter the battlefield, but equipment attachments/effects remain manual. Scripted Shorikai can be cast from its command zone with exact mana plus commander tax when affordable; no free commander or unsupported transformations.
+
+**Observability:** `opponentDiagnostics` counts turns, public actions, casts, ability activations, trigger resolutions, and unsupported hand-card counts without exposing hidden card names. Unresolvable stack states pause the opponent instead of advancing the player turn and claiming a complete outcome. The manual loyalty marker is never auto-resolved by the scripted opponent.
+
+**Testing / boundaries:** Eight new scripted-opponent tests, 390px and 1440px browser UI test for opponent cast trigger and player Shorikai choice, plus pre-existing engine/browser/Android artifact parity checks. This is an audited named-card subset, not a general Oracle engine: token doubling/replacements, general draw ordering/scry, DFC and Room doors, most loyalty abilities, crewing, full equipment attachments and other unknown effects remain open in the tracker. The source changes are not live until PR/CI/production readback. Physical Android-device test remains unobserved.

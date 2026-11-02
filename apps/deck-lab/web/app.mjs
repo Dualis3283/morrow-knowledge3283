@@ -1,5 +1,5 @@
 import {demoDecks, resolveDeck, expandDeck, parseDeck} from './cards.mjs';
-import {createGame, act, scoreThreat, coverage, upgradeGame, suggestions, castOptions, tapOptions, loyaltyOptions} from './engine.mjs';
+import {createGame, act, scoreThreat, coverage, upgradeGame, suggestions, castOptions, tapOptions, loyaltyOptions, opponentDiagnostics} from './engine.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'morrow-deck-simulator-web-v1';
@@ -331,6 +331,12 @@ function renderGame() {
   setText('round-label', `Round ${Math.min(game.round, game.roundLimit || 10)} / ${game.roundLimit || 10}`);
   setText('phase-label', game.finished ? 'Test complete' : (!own.kept ? 'Opening hand' : 'Your turn · main phase'));
   setText('opponent-counts', `${opponent.library.length} in library · ${opponent.hand.length} in hand · ${opponent.graveyard.length} in graveyard`);
+  const scripted=opponentDiagnostics(game);
+  setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
+  setText('opponent-automation-status',scripted.halted?'Paused: unresolved effects require manual adjudication':`${scripted.unknownHandCount} hand card(s) without complete automated coverage`);
+  $('resume-opponent-button').hidden=!game.pendingOpponent;
+  $('resume-opponent-button').disabled=Boolean(game.stack?.length || game.pendingChoice);
+
   fillZone('opponent-lands', opponent.battlefield.filter(i => isLand(i.card)), 1, 'The first land is still to come.', true);
   fillZone('opponent-field', opponent.battlefield.filter(i => !isLand(i.card)), 1, 'Watch the opponent’s board develop.');
   fillZone('player-lands', own.battlefield.filter(i => isLand(i.card)), 0, 'A foundation for your next play.', true);
@@ -359,7 +365,7 @@ function renderGame() {
   $('assist-main').disabled=!first;
   $('undo-action').disabled=!undoHistory.length;
   setText('assist-preview', first ? `${first.label} · ${first.why}${first.sourceNames.length ? ` · Auto-tap: ${first.sourceNames.join(', ')}` : ''}` : 'No payable supported action. Inspect a card, adjust the table manually or end your turn.');
-  $('end-turn-button').disabled = game.finished;
+  $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || Boolean(game.pendingChoice);
   $('combat-button').disabled = game.finished || !attackers.length || game.combatDone;
   $('mulligan-button').disabled = own.mulligans >= 7;
   const bottoms = Math.min(own.mulligans || 0, own.hand.length);
@@ -388,6 +394,16 @@ function renderGame() {
     setText('random-result', r.kind === 'coin' ? `Coin · ${r.result}` : `d${r.sides || 6} · ${r.result}`);
   } else setText('random-result', 'A small chance of something.');
   setText('game-warnings', [...new Set(game.warnings || [])].slice(-3).join(' '));
+  const choice=game.pendingChoice;
+  const discardDialog=$('discard-choice-dialog');
+  if(choice?.kind==='shorikai-discard' && choice.player===0){
+    $('discard-choice-list').replaceChildren(...own.hand.map(instance=>{
+      const button=element('button','button',`Discard ${instance.card.name}`);
+      button.type='button';button.addEventListener('click',()=>dispatch({type:'chooseDiscard',id:instance.id}));return button;
+    }));
+    if(!discardDialog.open)discardDialog.showModal();
+  }else if(discardDialog.open)discardDialog.close();
+
 }
 function lookup(id) {
   if (!game) return null;
@@ -513,6 +529,7 @@ function showCard(instance, player = 0, zone = 'preview') {
     if (zone === 'battlefield') {
       actions.append(actionButton(instance.tapped ? 'Untap card' : tapOptions(game,player,instance.id)?'Tap for mana':'Tap card', () => {if(player===0 && !instance.tapped && tapOptions(game,player,instance.id)){openManaChoice(instance);return null;}return {type:'tap',id:instance.id};}, {disabled: !ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
+      if(player===0 && card.name==='Shorikai, Genesis Engine') actions.append(actionButton('Activate Shorikai: draw 2, discard 1, Pilot',{type:'activateShorikai',id:instance.id},{disabled:!ready||instance.tapped||game.activePlayer!==0||game.stack.length>0,primary:true}));
       if(isPlaneswalker(card)){
         const options=loyaltyOptions(card);
         info.append(element('p','loyalty-note','Loyalty costs and once-per-turn use are tracked. Apply each loyalty ability’s effect manually; this is not a full Oracle interpreter.'));
@@ -905,6 +922,7 @@ $('cast-pay-button').addEventListener('click',()=>{
   const action={type:'play',id:casting.id,sourceIds:[...casting.selected],sourceChoices:{...casting.choices},...(casting.targetId?{targetId:casting.targetId}:{})};
   if(dispatch(action)){$('cast-dialog').close();casting=null;}
 });
+$('resume-opponent-button').addEventListener('click',()=>dispatch({type:'resumeOpponent'}));
 $('end-turn-button').addEventListener('click', () => dispatch({type: 'endTurn'}));
 $('assist-land').addEventListener('click', () => dispatch({type:'assist',mode:'land'}));
 $('assist-next').addEventListener('click', () => dispatch({type:'assist',mode:'next'}));
