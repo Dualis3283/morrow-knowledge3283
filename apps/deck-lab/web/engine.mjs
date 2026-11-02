@@ -42,6 +42,7 @@ function manaSource(card, argumentsState = null, argumentsPlayer = 0) {
     'Thought Vessel': { options: [mono('C')], partial: true },
     'Hedron Archive': { options: [mono('C', 2)], partial: true },
     'Meticulous Commons': { options: [mono('W'), mono('B')], entryCondition: 'controlPlaneswalker' },
+    'Underground River': { options: [mono('C'), mono('U'), mono('B')], optionDamage: [0, 1, 1] },
     'Llanowar Elves': { options: [mono('G')] },
     'Elvish Mystic': { options: [mono('G')] },
     'Fyndhorn Elves': { options: [mono('G')] },
@@ -102,6 +103,11 @@ function cost(card) {
   return out;
 }
 const EFFECTS = {
+  'Raise the Alarm': {effect:'tokens',count:2,token:{name:'Soldier',type_line:'Token Creature — Soldier',power:'1',toughness:'1',colors:['W']}},
+  'Dragon Fodder': {effect:'tokens',count:2,token:{name:'Goblin',type_line:'Token Creature — Goblin',power:'1',toughness:'1',colors:['R']}},
+  "Krenko's Command": {effect:'tokens',count:2,token:{name:'Goblin',type_line:'Token Creature — Goblin',power:'1',toughness:'1',colors:['R']}},
+  'Hordeling Outburst': {effect:'tokens',count:3,token:{name:'Goblin',type_line:'Token Creature — Goblin',power:'1',toughness:'1',colors:['R']}},
+  'Midnight Haunting': {effect:'tokens',count:2,token:{name:'Spirit',type_line:'Token Creature — Spirit',power:'1',toughness:'1',colors:['W'],keywords:['flying']}},
   'Giant Growth': { effect: 'pump', amount: 3, target: 'creature' },
   'Divination': { effect: 'draw', amount: 2 },
   'Harmonize': { effect: 'draw', amount: 3 },
@@ -113,16 +119,17 @@ const EFFECTS = {
   'Path to Exile': { effect: 'exile', target: 'creature', basicLand: true },
   'Disenchant': { effect: 'destroy', target: 'artifactEnchantment' },
   'Naturalize': { effect: 'destroy', target: 'artifactEnchantment' },
-  'Lightning Bolt': { effect: 'burn', amount: 3, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature or opposing-player damage supported; self, planeswalker and battle targets require manual resolution.' },
-  'Shock': { effect: 'burn', amount: 2, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature or opposing-player damage supported; self, planeswalker and battle targets require manual resolution.' },
-  'Lightning Strike': { effect: 'burn', amount: 3, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature or opposing-player damage supported; self, planeswalker and battle targets require manual resolution.' },
+  'Lightning Bolt': { effect: 'burn', amount: 3, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature, planeswalker and opposing-player damage supported; self and battle targets require manual resolution.' },
+  'Shock': { effect: 'burn', amount: 2, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature, planeswalker and opposing-player damage supported; self and battle targets require manual resolution.' },
+  'Lightning Strike': { effect: 'burn', amount: 3, target: 'creatureOrPlayer', status: 'partial', reason: 'Creature, planeswalker and opposing-player damage supported; self and battle targets require manual resolution.' },
   'Rampant Growth': { effect: 'ramp', amount: 1 },
   'Cultivate': { effect: 'cultivate', amount: 2 },
   "Kodama's Reach": { effect: 'cultivate', amount: 2 },
 };
 function profile(card) {
   if (!card || !card.name) return { status: 'manual', reason: 'Missing card definition.', auto: false };
-  if (card.card_faces?.length || /\b(Planeswalker|Battle|Saga|Aura|Equipment)\b/.test(card.type_line || '')) return { status: 'manual', reason: 'Faces, loyalty, defense, chapters and attachments require manual resolution.', auto: false };
+  if (card.card_faces?.length || /\b(Battle|Saga|Aura|Equipment)\b/.test(card.type_line || '')) return { status: 'manual', reason: 'Faces, defense, chapters and attachments require manual resolution.', auto: false };
+  if (type(card,'Planeswalker')) return {status:'partial',reason:'Printed loyalty and one ability activation per turn tracked; loyalty ability effects and planeswalker combat require manual adjudication.',auto:false,planeswalker:true};
   if (!cost(card)) return { status: 'manual', reason: 'Variable, hybrid, Phyrexian, alternative or missing mana cost requires manual payment.', auto: false };
   if (EFFECTS[card.name]) return { status: 'supported', reason: 'Explicit named effect adapter.', auto: true, ...EFFECTS[card.name] };
   const source = manaSource(card);
@@ -141,6 +148,11 @@ function profile(card) {
     return { status: 'partial', reason: 'Creature body can be placed manually; Oracle abilities are not automated.', auto: false };
   }
   return { status: 'manual', reason: 'No explicit effect adapter; resolve this card manually.', auto: false };
+}
+export function loyaltyOptions(card) {
+  if (!type(card,'Planeswalker')) return [];
+  return text(card).split('\n').map(line=>line.match(/^\s*([+\-−]?\d+)\s*:\s*(.+)$/))
+    .filter(Boolean).map(match=>({delta:Number(match[1].replace('−','-')),label:match[1],effect:match[2]}));
 }
 export function coverage(deck = []) {
   const seen = new Set();
@@ -205,8 +217,14 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
     }
   }
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
-  if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; }
-  if (zone === 'battlefield') { instance.enteredTurn = state.turn; instance.damage = 0; }
+  if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; delete instance.loyalty; delete instance.loyaltyActivatedTurn; }
+  if (zone === 'battlefield') {
+    instance.enteredTurn = state.turn; instance.damage = 0;
+    if (type(instance.card,'Planeswalker') && !Number.isInteger(instance.loyalty)) {
+      instance.loyalty = Math.max(0,Math.trunc(number(instance.card.loyalty)));
+      delete instance.loyaltyActivatedTurn;
+    }
+  }
   state.players[player][zone].push(instance);
   if (zone === 'battlefield' && isCreature(instance)) queueCreatureEntryInteractions(state, player, instance);
 }
@@ -221,6 +239,10 @@ export function upgradeGame(snapshot) {
   state.stack ||= [];
   state.nextTriggerId ??= 0;
   state.nextTokenId ??= 0;
+  for (const player of state.players) for (const permanent of player.battlefield) {
+    if (type(permanent.card,'Planeswalker') && !Number.isInteger(permanent.loyalty))
+      permanent.loyalty = Math.max(0,Math.trunc(number(permanent.card.loyalty)));
+  }
   const all = [...state.players.flatMap(player => ZONES.flatMap(zone => player[zone])), ...state.stack];
   for (let owner = 0; owner < state.players.length; owner++) {
     const player = state.players[owner], stableId = `p${owner}-commander`;
@@ -273,6 +295,14 @@ function finishIfLethal(state) {
 }
 function cleanupDead(state) {
   for (let p = 0; p < 2; p++) for (const instance of [...state.players[p].battlefield]) {
+    if (type(instance.card,'Planeswalker')) {
+      if ((instance.loyalty ?? 0) <= 0) {
+        const location=find(state,instance.id);remove(state,location);
+        log(state,`${named(instance.card)} leaves the battlefield at zero loyalty.`);
+        moveTo(state,instance,instance.owner ?? p,'graveyard');
+      }
+      continue;
+    }
     if (!isCreature(instance)) continue;
     if (toughness(instance) <= 0 || (!has(instance, 'indestructible') && (instance.damage >= toughness(instance) || instance.deathtouchDamage))) {
       const location = find(state, instance.id); remove(state, location); log(state, `${named(instance.card)} dies.`);
@@ -324,7 +354,7 @@ function payment(state, player, card, extraGeneric=0, filter=null) {
         if(activation)continue;
       }
       for(const c of COLORS)next[c]+=(mana[c]||0);
-      const result=search(next,remaining.filter((_,i)=>i!==index),[...steps,{id:x.instance.id,index:optionIndex,mana,activationGeneric:x.activationGeneric||0}]);
+      const result=search(next,remaining.filter((_,i)=>i!==index),[...steps,{id:x.instance.id,index:optionIndex,mana,activationGeneric:x.activationGeneric||0,damage:x.optionDamage?.[optionIndex]||0}]);
       if(result)return result;
     }
     return null;
@@ -350,7 +380,7 @@ export function castOptions(state,player,id,filter=null) {
 export function tapOptions(state,player,id){
  const x=find(state,id);if(!x || x.player!==player || x.zone!=='battlefield')return null;
  const source=manaSource(x.instance.card,state,player);
- return source?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,options:source.options}:null;
+ return source?{tapped:x.instance.tapped,activationGeneric:source.activationGeneric||0,options:source.options,optionDamage:source.optionDamage||[]}:null;
 }
 function entersTapped(card, adapter, state = null, player = 0) {
   // Check existing permanents BEFORE the new land enters; an opponent's walker is irrelevant.
@@ -369,6 +399,7 @@ function validTarget(state, caster, targetId, descriptor) {
   if (has(target.instance, 'shroud') || (target.player !== caster && has(target.instance, 'hexproof'))) return false;
   const card = target.instance.card;
   if (descriptor === 'artifactEnchantment') return type(card, 'Artifact') || type(card, 'Enchantment');
+  if (descriptor === 'creatureOrPlayer' && type(card,'Planeswalker')) return true;
   if (!isCreature(card)) return false;
   if (descriptor === 'nonblackCreature') return !(card.colors || []).includes('B');
   if (descriptor === 'nonartifactCreature') return !type(card, 'Artifact');
@@ -402,6 +433,7 @@ function play(state, player, id, targetId, argumentsPayment=null) {
     const source=find(state,step.id)?.instance;
     if(!source || source.tapped) throw new Error('Chosen mana source became unavailable.');
     source.tapped=true;
+    if(step.damage) {state.players[player].life-=step.damage;log(state,`${named(source.card)} deals ${step.damage} damage to ${state.players[player].name} for colored mana.`);}
     log(state,`Mana payment: tap ${named(source.card)} for ${Object.entries(step.mana).map(([c,n])=>`${n}${c}`).join(' + ')}${step.activationGeneric?` after paying ${step.activationGeneric} generic to activate`:''}.`);
   }
   state.players[player].manaPool = paid.pool;
@@ -410,6 +442,7 @@ function play(state, player, id, targetId, argumentsPayment=null) {
   state.stack.push(instance); stat(state, player, 'cardsCast');
   log(state, `${state.players[player].name} casts ${named(instance.card)}${commandCast ? ` from the command zone (+${commanderTax} generic commander tax; command cast ${instance.commanderCasts})` : ''}${instance.isCommander && instance.card.card_faces?.length ? ` using its front face, ${named(card)}` : ''}${targetId ? ` targeting ${named(find(state, targetId)?.instance.card)}` : ''}.`);
   queueCastInteractions(state, player, card);
+  finishIfLethal(state);
   if (adapter.status !== 'supported') warn(state, `${named(card)}: ${adapter.reason}`);
 }
 // Named, bounded interaction adapter. No Oracle-text execution or hidden-information inference.
@@ -444,6 +477,11 @@ function queueCreatureEntryInteractions(state, controller, entering) {
 }
 function resolveInteraction(state, instance) {
   const trigger = instance?.trigger;
+  if (trigger?.adapter === 'loyalty-manual') {
+    state.stack.pop();
+    log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
+    return true;
+  }
   if (!['ovika-goblins','iconoclast-soldier','gatekeeper-damage'].includes(trigger?.adapter)) return false;
   state.stack.pop();
   const controller = instance.controller, count = trigger.count;
@@ -474,17 +512,27 @@ function resolve(state) {
   const instance = state.stack.at(-1); if (!instance) throw new Error('The stack is empty.');
   if (resolveInteraction(state, instance)) return;
   const adapter = profile(instance.card), player = instance.controller;
-  if (adapter.status === 'manual' || (instance.isCommander && !adapter.auto)) throw new Error(`${named(instance.card)} has no complete effect adapter. Use a manual move after resolving its effects yourself.`);
+  if (adapter.status === 'manual' || (instance.isCommander && !adapter.auto && !adapter.planeswalker)) throw new Error(`${named(instance.card)} has no complete effect adapter. Use a manual move after resolving its effects yourself.`);
   state.stack.pop();
   if (adapter.target && !validTarget(state, player, instance.targetId, adapter.target)) {
     moveTo(state, instance, instance.owner, 'graveyard'); log(state, `${named(instance.card)} has no legal target and does not resolve.`); return;
   }
   const target = instance.targetId ? find(state, instance.targetId) : null;
-  if (type(instance.card, 'Creature') || type(instance.card, 'Artifact') || type(instance.card, 'Enchantment')) {
+  if (type(instance.card, 'Creature') || type(instance.card, 'Artifact') || type(instance.card, 'Enchantment') || type(instance.card, 'Planeswalker')) {
     instance.tapped = !!adapter.source?.entersTapped; moveTo(state, instance, player, 'battlefield');
     if (adapter.status === 'partial') { const message = `${named(instance.card)} enters; unimplemented Oracle abilities are not applied.`; log(state, message); warn(state, message); }
   } else {
     switch (adapter.effect) {
+      case 'tokens': {
+        const count=adapter.count;
+        if (!Number.isInteger(count)||count<0||count>40) throw new Error('Unsupported token count.');
+        for(let n=0;n<count;n++){
+          const token=fresh({...adapter.token,cmc:0,mana_cost:'',oracle_text:'',keywords:adapter.token.keywords||[]},player,`spell-token-${state.nextTokenId++}`);
+          token.isToken=true;moveTo(state,token,player,'battlefield');
+        }
+        log(state,`${named(instance.card)} creates ${count} ${adapter.token.name} token(s).`);
+        break;
+      }
       case 'draw': draw(state, player, adapter.amount); break;
       case 'pump': target.instance.tempPower = (target.instance.tempPower || 0) + adapter.amount; target.instance.tempToughness = (target.instance.tempToughness || 0) + adapter.amount; break;
       case 'bounce': remove(state, target); moveTo(state, target.instance, target.instance.owner, 'hand'); break;
@@ -500,7 +548,10 @@ function resolve(state) {
         break;
       }
       case 'burn':
-        if (target) target.instance.damage += adapter.amount;
+        if (target && type(target.instance.card,'Planeswalker')) {
+          target.instance.loyalty = Math.max(0,(target.instance.loyalty||0)-adapter.amount);
+          log(state,`${named(instance.card)} deals ${adapter.amount} damage to ${named(target.instance.card)}, reducing loyalty to ${target.instance.loyalty}.`);
+        } else if (target) target.instance.damage += adapter.amount;
         else dealToPlayer(state, player, 1 - player, adapter.amount, named(instance.card));
         break;
       case 'ramp': searchBasic(state, player, 'battlefield'); shuffle(state, state.players[player].library); break;
@@ -738,8 +789,10 @@ function apply(state, action) {
           activationSpent=Object.fromEntries(COLORS.filter(c=>before[c]!==available[c]).map(c=>[c,before[c]-available[c]]));
         }
         for(const [color,amount] of Object.entries(option))available[color]+=amount;
+        const pain=source.optionDamage?.[action.choiceIndex??0]||0;
+        if(pain){state.players[location.player].life-=pain;log(state,`${named(instance.card)} deals ${pain} damage to ${state.players[location.player].name} for colored mana.`);}
         state.players[location.player].manaPool=available;
-        instance.manualMana={option:action.choiceIndex??0,produced:option,activationSpent};
+        instance.manualMana={option:action.choiceIndex??0,produced:option,activationSpent,damage:source.optionDamage?.[action.choiceIndex??0]||0};
       }else if(instance.tapped && instance.manualMana){
         // Rewind only unspent floating mana; never create negative balances.
         const next={...state.players[location.player].manaPool};
@@ -748,9 +801,12 @@ function apply(state, action) {
           next[color]-=n;
         }
         for(const [c,n] of Object.entries(instance.manualMana.activationSpent||{}))next[c]+=n;
-        state.players[location.player].manaPool=next;delete instance.manualMana;
+        state.players[location.player].manaPool=next;
+        if(instance.manualMana.damage)state.players[location.player].life+=instance.manualMana.damage;
+        delete instance.manualMana;
       }
       instance.tapped=!instance.tapped;
+      finishIfLethal(state);
       log(state,`${named(instance.card)} ${instance.tapped?'tapped':'manually untapped'}${source?`; floating mana ${COLORS.filter(c=>state.players[location.player].manaPool[c]).map(c=>`${state.players[location.player].manaPool[c]}${c}`).join(' ')||'empty'}`:'; unmodeled mana ability'}.`);break;
     }
     case 'attack':
@@ -774,7 +830,34 @@ function apply(state, action) {
     case 'counter': {
       const location = find(state, action.id);
       if (!location || location.zone !== 'battlefield' || !Number.isInteger(action.delta) || location.instance.counters + action.delta < 0) throw new Error('Choose a battlefield card and a valid +1/+1 counter change.');
+      if(type(location.instance.card,'Planeswalker'))throw new Error('Use loyalty controls for planeswalkers; +1/+1 counters are not loyalty.');
       location.instance.counters += action.delta; log(state, `${named(location.instance.card)}: ${location.instance.counters} +1/+1 counter(s).`); cleanupDead(state); break;
+    }
+    case 'loyaltyAdjust': {
+      const where=find(state,action.id);
+      if(!where||where.zone!=='battlefield'||!type(where.instance.card,'Planeswalker')||!Number.isInteger(action.delta)||Math.abs(action.delta)>100)
+        throw new Error('Choose a planeswalker and a valid loyalty adjustment.');
+      where.instance.loyalty=Math.max(0,(where.instance.loyalty||0)+action.delta);
+      log(state,`Manual loyalty adjustment: ${named(where.instance.card)} ${action.delta>=0?'+':''}${action.delta}, now ${where.instance.loyalty}. No ability effect was applied.`);
+      cleanupDead(state);break;
+    }
+    case 'activateLoyalty': {
+      const where=find(state,action.id);
+      if(!where||where.zone!=='battlefield'||where.player!==player||!type(where.instance.card,'Planeswalker'))throw new Error('Choose a planeswalker you control.');
+      if(state.finished||state.activePlayer!==player||state.phase!=='main'||state.stack.length)
+        throw new Error('Loyalty abilities require your main phase and an empty stack.');
+      if(where.instance.loyaltyActivatedTurn===state.turn)throw new Error('This planeswalker already activated a loyalty ability this turn.');
+      const ability=loyaltyOptions(where.instance.card).find(x=>x.delta===action.delta);
+      if(!ability)throw new Error('Choose a printed loyalty ability; unrecognized costs require manual handling.');
+      if(action.delta<0 && (where.instance.loyalty||0)<-action.delta)throw new Error('Not enough loyalty to activate that ability.');
+      where.instance.loyalty+=action.delta;
+      where.instance.loyaltyActivatedTurn=state.turn;
+      state.stack.push({id:`p${player}-trigger-${state.nextTriggerId++}`,owner:player,controller:player,
+        kind:'trigger',sourceId:where.instance.id,card:{name:`${named(where.instance.card)} — ${ability.label} loyalty`,type_line:'Activated Ability',cmc:0,oracle_text:ability.effect},
+        trigger:{adapter:'loyalty-manual',count:1}});
+      log(state,`${named(where.instance.card)} activates ${ability.label} loyalty (now ${where.instance.loyalty}); resolve the printed effect manually before clearing its ability from the stack.`);
+      warn(state,`${named(where.instance.card)} loyalty ability effect requires manual resolution. Loyalty cost/limit are tracked.`);
+      cleanupDead(state);break;
     }
     case 'move': {
       if (!ZONES.includes(action.zone)) throw new Error('Choose a supported destination zone.');

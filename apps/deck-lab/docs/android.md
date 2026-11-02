@@ -40,3 +40,22 @@ Version code 4 (Android package `dev.morrow.decklab`) bundles the shared site en
 **Proof:** five deterministic regression tests cover colored choices, no extra/blue mana, tapped entry, untapping and spending black, owned planeswalker entering untapped, opponent planeswalker not qualifying, and unrelated lands not being inferred. The extended desktop/mobile browser test validates the tap-for-mana choice dialog and downstream spell payment. Both website and Android use byte-identical engine source; Android version 0.1.5 debug candidate uses version code 6. Independent CI, production and physical-device verification are separate gates.
 
 **Reference:** https://mtg.wtf/card/fra/184/Meticulous-Commons
+
+
+## Mana, token-resolution and loyalty tracking audit — 0.1.6
+
+### Confirmed before the fix
+- Underground River was not recognised as a mana source because the bounded parser did not support its two separate tap abilities and associated colored-mode damage.
+- Only named cast triggers (Ovika, Third Path Iconoclast, Molten Gatekeeper entry damage) created token permanents. Ordinary token-creating instant/sorcery spells had no effect adapters; they could not automatically resolve.
+- Planeswalkers were generic manual permanents. No distinct loyalty resource, activation timing/limit, loyalty loss from targeted damage or zero-loyalty state based removal was modelled.
+
+### Implemented scope
+- Underground River offers {C}, {U}, or {B}; selecting U/B deals exactly one damage to its controller when the ability is used, including through an auto-selected casting payment. C causes no damage. Payment preview does not alter health. Explicit source/colour choices remain available.
+- Named, *audited* token-spell adapters: Raise the Alarm (two 1/1 white Soldiers), Dragon Fodder and Krenko's Command (two 1/1 red Goblins), Hordeling Outburst (three 1/1 red Goblins) and Midnight Haunting (two 1/1 flying white Spirits). Tokens appear only as the spell resolves, with separate entry triggers and ephemeral token lifecycle. Unknown effects, variable X, choices and replacement effects are never inferred. Ovika triggers on casting *before* the spell's token effect resolves.
+- Planeswalkers: printed loyalty initialised on entry and older saves migrated; `loyalty` stored separately from +1/+1 `counters`. Printed +/-/0 loyalty abilities are presented in the inspector with per-turn once-only cost/stack tracking. Their effects must be resolved manually. State-based removal when loyalty reaches zero, and targeted damage from supported burn spells, work. Generic manual loyalty adjustment is explicitly labelled as an override. Planeswalker combat, loyalty replacements/doubling, emblem effects, and unknown Oracle ability effects are NOT automated.
+
+### Evidence and boundaries
+- 8 fresh deterministic regression tests for land mana and life damage (manual and auto); explicit token spell resolution, stack interaction with Ovika and Molten Gatekeeper, token ceasing outside battlefield, unmodeled X tokens; loyalty entry/turn activation/zero removal, targeted damage, and save migration. All previously passing tests rerun.
+- Added a real-browser test at 390px mobile and 1440px desktop for manual River tap mode, life change, token resolution, planeswalker loyalty cost, used-this-turn display and deliberately manual effect.
+- **Rules references:** Underground River, https://mtg.wtf/card/bro/267/Underground-River ; Wizards Foundations Mechanics, https://magic.wizards.com/en/news/feature/foundations-mechanics ; comprehensive rules https://mtg.wtf/help/rules .
+- Release gates must pass independently before production and Android 0.1.6 debug APK can be marked live. Physical Android test remains unobserved.
