@@ -112,3 +112,8 @@ input,select,textarea{min-width:0}.deck-entry>div:first-child,.game-heading>div:
 #library-review-setup-dialog label{display:block;margin-top:.65rem;}
 #library-review-setup-dialog select,#library-review-setup-dialog input{display:block;width:100%;min-height:44px;margin:.25rem 0 .6rem;}
 @media(max-width:440px){.library-allocation-card{grid-template-columns:64px minmax(0,1fr) 44px;gap:.45rem;padding:.38rem;}.library-allocation-card-info strong{font-size:.82rem;}.library-allocation-dialog{width:96vw;padding:.7rem;}}
+
+/* Library matching effects */
+.empty-laboratory-zombies{display:grid;gap:.35rem;max-height:45vh;overflow-y:auto;}
+.empty-lab-option{display:flex;gap:.55rem;align-items:center;padding:.45rem;border:1px solid var(--border,rgba(193,168,125,.28));border-radius:.5rem;min-height:44px;}
+.empty-lab-option input{width:22px;height:22px;}

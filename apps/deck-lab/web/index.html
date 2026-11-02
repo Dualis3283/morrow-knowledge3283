@@ -108,6 +108,19 @@
     <label for="library-review-count">Number to look at (1–10)</label><input id="library-review-count" type="number" value="3" min="1" max="10" step="1">
     <div class="dialog-actions"><button id="library-review-setup-cancel" class="button" type="button">Cancel</button><button id="library-review-setup-confirm" class="button primary" type="button">Show cards</button></div>
   </dialog>
+  <dialog id="cast-laboratory-dialog" class="cast-dialog" aria-labelledby="cast-laboratory-title">
+    <h2 id="cast-laboratory-title">Cast Empty the Laboratory</h2>
+    <p>Choose X. The engine pays {X}{U}{U} from your usable mana sources when cast. The number of Zombies actually sacrificed is determined on resolution.</p>
+    <label for="cast-laboratory-x">X (0–20)</label><input id="cast-laboratory-x" type="number" min="0" max="20" step="1" value="1">
+    <div class="dialog-actions"><button type="button" id="cast-laboratory-cancel" class="button">Cancel</button><button type="button" id="cast-laboratory-confirm" class="button primary">Pay and cast</button></div>
+  </dialog>
+  <dialog id="empty-laboratory-dialog" class="cast-dialog" aria-labelledby="empty-laboratory-title">
+    <h2 id="empty-laboratory-title">Empty the Laboratory · sacrifice X Zombies</h2>
+    <p>Choose Zombies to sacrifice after the normal mana planner has paid {X}{U}{U}. Select the Zombies sacrificed during resolution. This does not verify that the casting cost was paid.</p>
+    <div id="empty-laboratory-zombies" class="empty-laboratory-zombies"></div>
+    <p id="empty-laboratory-summary" role="status"></p>
+    <div class="dialog-actions"><button type="button" id="empty-laboratory-cancel" class="button">Cancel</button><button type="button" id="empty-laboratory-confirm" class="button primary">Sacrifice and reveal</button></div>
+  </dialog>
   <dialog id="library-allocation-dialog" class="cast-dialog library-allocation-dialog" aria-labelledby="library-allocation-title">
     <div class="library-allocation-head"><div><h2 id="library-allocation-title">Allocate revealed cards</h2><p id="library-allocation-desc" class="tiny" role="status"></p></div><span id="library-allocation-count" class="mini-count"></span></div>
     <div id="library-allocation-cards" class="library-allocation-cards"></div>

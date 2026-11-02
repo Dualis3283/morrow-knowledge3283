@@ -443,6 +443,23 @@ function renderGame() {
   renderLibraryAllocation();
 
 }
+function openLaboratoryCastDialog(spell){
+  if($('card-dialog').open)$('card-dialog').close();
+  $('cast-laboratory-dialog').dataset.spellId=spell.id;
+  $('cast-laboratory-x').value='1';
+  $('cast-laboratory-dialog').showModal();
+}
+function openEmptyLabDialog(spell){
+  if($('card-dialog').open)$('card-dialog').close();
+  $('empty-laboratory-dialog').dataset.spellId=spell.id;
+  const controller=spell.controller;
+  const list=$('empty-laboratory-zombies');list.replaceChildren();
+  for(const zombie of game.players[controller].battlefield.filter(x=>isCreature(x.card)&&/\bZombie\b/.test(String(x.card.type_line||'').split('—').slice(1).join(' ')))){
+    const label=element('label','empty-lab-option');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=zombie.id;label.append(checkbox,element('span','',zombie.card.name));list.append(label);
+  }
+  $('empty-laboratory-summary').textContent=`X=${spell.paidX}. Choose ${Math.min(spell.paidX,list.children.length)} of ${list.children.length} available Zombies to sacrifice. They go to graveyard before revealing.`;
+  $('empty-laboratory-dialog').showModal();
+}
 function renderLibraryAllocation(){
   if(!game)return;
   const pending=game.pendingLibrary, dialog=$('library-allocation-dialog');
@@ -452,12 +469,12 @@ function renderLibraryAllocation(){
     if(pending.mode==='reveal-nonland'&&pending.revealFound)destinations[pending.ids.at(-1)]='hand';
     libraryDraft={player:pending.player,mode:pending.mode,ids:pending.ids.slice(),order:pending.ids.slice(),destinations,shuffle:false};
   }
-  $('library-allocation-title').textContent=pending.mode==='ponder'?'Ponder · order top three':pending.mode==='preordain'?'Preordain · scry two':pending.mode==='reveal-nonland'?'Reveal until first nonland':'Review and allocate cards';
-  $('library-allocation-desc').textContent=pending.mode==='ponder'?'Reorder the cards (top first), optionally shuffle the entire library, then draw one.':pending.mode==='preordain'?'Keep cards on top or put them on the bottom in your chosen order; then draw one.':pending.mode==='reveal-nonland'?'Land cards before the first nonland go to the bottom. Choose what happens to the first nonland, subject to the actual card’s text.':'Move cards up/down to order them, and choose a destination for each. This is an explicit manual allocation.';
+  $('library-allocation-title').textContent=pending.mode==='matching-reveal'?`${pending.sourceName} · reveal ${pending.required} ${pending.variant==='empty-lab'?'Zombie':'creature'}(s)` : pending.mode==='ponder'?'Ponder · order top three':pending.mode==='preordain'?'Preordain · scry two':pending.mode==='reveal-nonland'?'Reveal until first nonland':'Review and allocate cards';
+  $('library-allocation-desc').textContent=pending.mode==='matching-reveal'?`Found ${(pending.matches||[]).length} matching creatures in ${pending.ids.length} revealed card(s). Matches enter together. Others: ${pending.variant==='proteus'?'bottom in chosen order':pending.variant==='mass-polymorph'?'shuffle into library':'bottom in randomized order'}. This action uses fixed card rules.`:pending.mode==='ponder'?'Reorder the cards (top first), optionally shuffle the entire library, then draw one.':pending.mode==='preordain'?'Keep cards on top or put them on the bottom in your chosen order; then draw one.':pending.mode==='reveal-nonland'?'Land cards before the first nonland go to the bottom. Choose what happens to the first nonland, subject to the actual card’s text.':'Move cards up/down to order them, and choose a destination for each. This is an explicit manual allocation.';
   $('library-allocation-count').textContent=`${pending.ids.length} card(s)`;
   const shuffle=$('library-allocation-shuffle');shuffle.closest('label').hidden=!['ponder','look'].includes(pending.mode);shuffle.checked=libraryDraft.shuffle;
   $('library-allocation-cancel').hidden=!['look','reveal-nonland'].includes(pending.mode);
-  $('library-allocation-confirm').textContent=pending.mode==='ponder'||pending.mode==='preordain'?'Confirm and draw one':'Confirm card allocation';
+  $('library-allocation-confirm').textContent=pending.mode==='matching-reveal'?'Confirm creature replacements':pending.mode==='ponder'||pending.mode==='preordain'?'Confirm and draw one':'Confirm card allocation';
   const list=$('library-allocation-cards');list.replaceChildren();
   for(let i=0;i<libraryDraft.order.length;i++){
     const id=libraryDraft.order[i],instance=game.players[pending.player].library.find(c=>c.id===id);
@@ -477,12 +494,13 @@ function renderLibraryAllocation(){
     controls.append(up,down);
     const dest=element('select');dest.setAttribute('aria-label',`Destination for ${instance.card.name}`);
     const isRevealLand=pending.mode==='reveal-nonland'&&(id!==pending.ids.at(-1)||!pending.revealFound);
-    const modes=pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:isRevealLand?['bottom']:['top','bottom','hand','graveyard','exile','battlefield'];
+    const modes=pending.mode==='matching-reveal'?[(pending.matches||[]).includes(id)?'battlefield':pending.variant==='mass-polymorph'?'shuffle into library':'bottom']:pending.mode==='ponder'?['top']:pending.mode==='preordain'?['top','bottom']:isRevealLand?['bottom']:['top','bottom','hand','graveyard','exile','battlefield'];
     for(const name of modes){
       if(name==='battlefield'&&!/(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)/i.test(instance.card.type_line||instance.card.card_faces?.[0]?.type_line||''))continue;
       const option=element('option','',name[0].toUpperCase()+name.slice(1));option.value=name;dest.append(option);
     }
-    dest.value=libraryDraft.destinations[id]|| (pending.mode==='reveal-nonland'?'bottom':'top');
+    dest.value=pending.mode==='matching-reveal'?modes[0]:libraryDraft.destinations[id]|| (pending.mode==='reveal-nonland'?'bottom':'top');
+    if(pending.mode==='matching-reveal')dest.disabled=true;
     dest.addEventListener('change',()=>{libraryDraft.destinations[id]=dest.value;renderLibrarySummary();});
     const destLabel=element('label','tiny','Destination');destLabel.append(dest);
     info.append(destLabel);item.append(preview,info,controls);list.append(item);
@@ -493,7 +511,7 @@ function renderLibraryAllocation(){
 function renderLibrarySummary(){
   if(!libraryDraft)return;
   const counts={};for(const id of libraryDraft.order){const dest=libraryDraft.destinations[id]||(libraryDraft.mode==='reveal-nonland'?'bottom':'top');counts[dest]=(counts[dest]||0)+1;}
-  $('library-allocation-summary').textContent=`Top-to-bottom order as displayed. ${Object.entries(counts).map(([k,n])=>`${n} ${k}`).join(' · ')||'No cards revealed'}${libraryDraft.shuffle?' · shuffle entire library':''}${['ponder','preordain'].includes(libraryDraft.mode)?' · then draw 1':''}.`;
+  $('library-allocation-summary').textContent=game.pendingLibrary?.mode==='matching-reveal'?`Revealed ${libraryDraft.order.length}. ${(game.pendingLibrary.matches||[]).length} match(es) enter together; remaining cards ${game.pendingLibrary.variant==='proteus'?'go bottom in chosen order':game.pendingLibrary.variant==='mass-polymorph'?'shuffle into library':'go bottom in random order'}.`: `Top-to-bottom order as displayed. ${Object.entries(counts).map(([k,n])=>`${n} ${k}`).join(' · ')||'No cards revealed'}${libraryDraft.shuffle?' · shuffle entire library':''}${['ponder','preordain'].includes(libraryDraft.mode)?' · then draw 1':''}.`;
 }
 function lookup(id) {
   if (!game) return null;
@@ -611,7 +629,9 @@ function showCard(instance, player = 0, zone = 'preview') {
         }));
         info.append(targetLabel, targetSelect);
       }
-      actions.append(actionButton(zone==='exile' ? isLand(card)?'Play linked exiled land (manual permission)':'Cast linked exiled card · pay mana' : zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => {openCastDialog(instance.id,targetSelect?.value||'');return null;}, {primary: true, disabled: !ready}));
+      if(!(zone==='hand'&&card.name==='Empty the Laboratory'))actions.append(actionButton(zone==='exile' ? isLand(card)?'Play linked exiled land (manual permission)':'Cast linked exiled card · pay mana' : zone === 'command' ? 'Play commander' : isLand(card) ? 'Play land' : 'Play card', () => {openCastDialog(instance.id,targetSelect?.value||'');return null;}, {primary: true, disabled: !ready}));
+      if(zone==='hand'&&player===0&&card.name==='Empty the Laboratory')
+        actions.append(actionButton('Cast Empty the Laboratory for chosen X',()=>{openLaboratoryCastDialog(instance);return null;},{disabled:!ready||game.activePlayer!==0||game.stack.length>0}));
     }
     const isCommander = isCommanderInstance(instance);
     const owner = Number.isInteger(instance.owner) ? instance.owner : player;
@@ -635,6 +655,12 @@ function showCard(instance, player = 0, zone = 'preview') {
         actions.append(actionButton('Tap and assign mana manually',()=>{openManualMana(instance);return null;},{disabled:!ready}));
       if (player === 0 && isCreature(card)) actions.append(actionButton(instance.attacking ? 'Remove attacker' : 'Attack with creature', {type: 'attack', id: instance.id}, {primary: true, disabled: !ready}));
       if(player===0 && card.name==='Shorikai, Genesis Engine') actions.append(actionButton('Activate Shorikai: draw 2, discard 1, Pilot',{type:'activateShorikai',id:instance.id},{disabled:!ready||instance.tapped||game.activePlayer!==0||game.stack.length>0,primary:true}));
+      if(player===0&&card.name==='Proteus Staff'){
+        const targetSelector=element('select');targetSelector.setAttribute('aria-label','Creature to transform with Proteus Staff');
+        for(const [pi,p] of game.players.entries())for(const creature of p.battlefield.filter(x=>isCreature(x.card))){const option=element('option','',`${pi===0?'Your':'Opponent'} ${creature.card.name}`);option.value=creature.id;targetSelector.append(option);}
+        actions.append(targetSelector);
+        actions.append(actionButton('Activate Proteus Staff: pay {2}{U}, tap, reveal first creature',()=>({type:'activateProteusStaff',id:instance.id,targetId:targetSelector.value}),{disabled:!ready||instance.tapped||game.activePlayer!==0||game.stack.length>0||!targetSelector.options.length}));
+      }
       if(isPlaneswalker(card)){
         const options=loyaltyOptions(card);
         info.append(element('p','loyalty-note','Loyalty costs and once-per-turn use are tracked. Apply each loyalty ability’s effect manually; this is not a full Oracle interpreter.'));
@@ -659,7 +685,8 @@ function showCard(instance, player = 0, zone = 'preview') {
     if(['battlefield','graveyard','stack'].includes(zone)&&!instance.isToken&&instance.kind!=='trigger'&&game.players.flatMap(p=>p.battlefield).concat(game.stack.filter(x=>x.kind!=='trigger')).some(x=>x.id!==instance.id)){
       actions.append(actionButton('Exile under another card…',()=>{openLinkedExileDialog(instance);return null;},{disabled:!ready}));
     }
-    if (zone === 'stack') actions.append(actionButton('Resolve top spell', {type: 'resolve'}, {primary: true, disabled: !ready || game.stack.at(-1)?.id !== instance.id}));
+    if(zone==='stack'&&card.name==='Empty the Laboratory')actions.append(actionButton('Resolve Empty the Laboratory: sacrifice Zombies and reveal',()=>{openEmptyLabDialog(instance);return null;},{disabled:!ready||game.stack.at(-1)?.id!==instance.id}));
+    if (zone === 'stack' && card.name!=='Empty the Laboratory') actions.append(actionButton('Resolve top spell', {type: 'resolve'}, {primary: true, disabled: !ready || game.stack.at(-1)?.id !== instance.id}));
     if (actions.childNodes.length) content.append(actions);
     const manual = element('details', 'manual-tools');
     manual.append(element('summary', '', 'Manual zone move / resolve an unsupported effect'));
@@ -1060,6 +1087,17 @@ $('library-allocation-confirm').addEventListener('click',()=>{
  dispatch({type:'commitLibraryReview',player:libraryDraft.player,order:libraryDraft.order.slice(),destinations:{...libraryDraft.destinations},shuffle:libraryDraft.shuffle});
 });
 $('library-allocation-cancel').addEventListener('click',()=>dispatch({type:'cancelLibraryReview'}));
+$('cast-laboratory-cancel').addEventListener('click',()=>$('cast-laboratory-dialog').close());
+$('cast-laboratory-confirm').addEventListener('click',()=>{
+  const id=$('cast-laboratory-dialog').dataset.spellId,x=Number($('cast-laboratory-x').value);
+  if(dispatch({type:'castEmptyLaboratory',id,x}))$('cast-laboratory-dialog').close();
+});
+$('empty-laboratory-cancel').addEventListener('click',()=>$('empty-laboratory-dialog').close());
+$('empty-laboratory-confirm').addEventListener('click',()=>{
+ const id=$('empty-laboratory-dialog').dataset.spellId;
+ const sacrificeIds=[...$('empty-laboratory-zombies').querySelectorAll('input:checked')].map(x=>x.value);
+ if(dispatch({type:'resolveEmptyLaboratory',id,sacrificeIds}))$('empty-laboratory-dialog').close();
+});
 $('library-allocation-dialog').addEventListener('cancel',event=>{if(game?.pendingLibrary&&!['look','reveal-nonland'].includes(game.pendingLibrary.mode))event.preventDefault();});
 $('mill-cards-button').addEventListener('click',openMillCards);
 $('mill-cards-cancel').addEventListener('click',()=>$('mill-cards-dialog').close());
