@@ -242,6 +242,12 @@ function profile(card) {
   if(EFFECTS[card.name])return {...EFFECTS[card.name],status:EFFECTS[card.name].status||'supported',reason:EFFECTS[card.name].status==='partial'?'Named reveal; other ETB replacements remain manual.':'Explicit named effect adapter.',auto:EFFECTS[card.name].effect!=='mass-polymorph'};
   const source = manaSource(card);
   if (source) return { status: source.partial ? 'partial' : 'supported', reason: source.partial ? 'Mana ability supported; other optional abilities are omitted and logged.' : 'Unconditional mana source supported.', auto: true, source };
+  if(['Parallel Lives','Anointed Procession','Adrix and Nev, Twincasters','Mondrak, Glory Dominus'].includes(named(card)))
+    return {status:'partial',auto:true,reason:'Named token-creation replacement doubles tokens controlled by this player; other Oracle abilities and competing replacement ordering remain manual.'};
+  if(named(card)==='Doubling Season')
+    return {status:'partial',auto:true,reason:'Token doubling is supported; its counter-adding replacement is NOT automatically modeled.'};
+  if(named(card)==='Reflections of Littjara')
+    return {status:'partial',auto:true,reason:'Choose a creature subtype; casting matching creature spells queues a spell-copy trigger. Noncreature kindred spell copies remain manual.'};
   if(named(card)==='Necroduality')return {status:'partial',auto:true,reason:'Non-token Zombie entering under your control queues one copy trigger per Necroduality; supported copyable card attributes only. Complex copied/as-enters abilities, legend rule and replacement layers remain manual.'};
   if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
   if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
@@ -338,6 +344,7 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
       log(state, `Practice choice: ${named(instance.card)} returns from the graveyard to ${state.players[owner].name}'s command zone (return on death enabled).`);
     }
   }
+  if(zone!=='battlefield'&&named(instance.card)==='Reflections of Littjara')delete instance.chosenCreatureType;
   if(zone!=='battlefield'&&['Cloud Key','Semblance Anvil'].includes(named(instance.card))){delete instance.costChosenType;delete instance.imprintResolved;delete instance.imprintCardTypes;delete instance.imprintCardId;}
   if (zone !== 'exile') delete instance.exiledBy;
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
@@ -353,6 +360,35 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
   if (zone === 'battlefield' && isCreature(instance)) queueCreatureEntryInteractions(state, player, instance);
 }
 
+function legendGroups(state,player){
+  const groups=new Map();
+  for(const permanent of state.players[player].battlefield){
+    if(!/\bLegendary\b/.test(String(permanent.card.type_line||'')))continue;
+    const key=named(permanent.card);
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(permanent);
+  }
+  return [...groups].filter(([,members])=>members.length>1).map(([name,members])=>({name,ids:members.map(x=>x.id)}));
+}
+function refreshLegendChoice(state){
+  for(const player of [0,1]){
+    const groups=legendGroups(state,player);
+    if(!groups.length)continue;
+    const group=groups[0];
+    if(player===1){
+      const pick=group.ids.map(id=>find(state,id).instance).sort((a,b)=>Number(a.isToken)-Number(b.isToken)||a.id.localeCompare(b.id))[0];
+      for(const id of group.ids.filter(x=>x!==pick.id)){
+        const where=find(state,id),permanent=remove(state,where);departureToGraveyard(state,permanent,player);
+      }
+      log(state,`Legend rule (scripted opponent): keeps ${group.name} (${pick.id}); deterministic non-token/ID selection, no human choice.`);
+      return refreshLegendChoice(state);
+    }
+    state.pendingLegend={player,name:group.name,ids:group.ids,createdTurn:state.turn};
+    log(state,`Legend rule: choose which ${group.name} you keep; other copies are put into their owners' graveyards (tokens cease to exist).`);
+    return;
+  }
+  delete state.pendingLegend;
+}
 /** Upgrade older saved tables without changing the caller's snapshot. */
 export function upgradeGame(snapshot) {
   const state = clone(snapshot);
@@ -622,6 +658,15 @@ function pushInteraction(state, controller, source, adapter, count, batchId=null
 function queueCastInteractions(state, player, spell) {
   if (type(spell,'Land')) return;
   const batchId=state.nextTriggerBatchId++; 
+  for(const source of state.players[player].battlefield.filter(x=>named(x.card)==='Reflections of Littjara'&&x.chosenCreatureType)){
+    const subtype=String(spell.type_line||'').split('—').slice(1).join(' ').split(/[^A-Za-z]+/).filter(Boolean);
+    if(!subtype.some(t=>t.toLowerCase()===source.chosenCreatureType.toLowerCase()))continue;
+    if(!type(spell,'Creature')){warn(state,'Reflections of Littjara: noncreature kindred spell copy requires manual stack adjudication.');continue;}
+    state.stack.push({id:`p${player}-trigger-${state.nextTriggerId++}`,kind:'trigger',owner:player,controller:player,sourceId:source.id,
+      card:{name:`Reflections of Littjara — copy ${named(spell)}`,type_line:'Triggered Ability',cmc:0},
+      trigger:{adapter:'reflections-spell-copy',sourceId:source.id,sourceName:named(source.card),copyCard:clone(spell),copiedFromId:state.stack.findLast(x=>x.controller===player&&named(x.card)===named(spell)&&x.kind!=='trigger')?.id||null,copiedFromName:named(spell),batchId}});
+    log(state,`Reflections of Littjara (${source.id}) triggers on casting ${named(spell)} with chosen type ${source.chosenCreatureType}; copy of creature spell queued above original.`);
+  }
   const sources = state.players[player].battlefield.filter(x => ['Ovika, Enigma Goliath','Third Path Iconoclast','Sai, Master Thopterist','Sram, Senior Edificer','Etherium Spinner','Whirlwind of Thought'].includes(named(x.card)));
   for (const source of sources) {
     const sourceName=named(source.card);
@@ -652,12 +697,25 @@ function queueCastInteractions(state, player, spell) {
 // Copyable printed card attributes, not transient permanent state. This is a bounded
 // token-copy model: characteristic-defining/continuous layers and some copied DFC faces
 // remain manual; every token records its source for independent inspection.
-function createTokenCopy(state,player,copyCard,origin={},source=null,mode='manual'){
+const TOKEN_DOUBLE_NAMES=new Set(['Parallel Lives','Anointed Procession','Adrix and Nev, Twincasters','Mondrak, Glory Dominus','Doubling Season']);
+function tokenCount(state,player,base,{notCreated=false}={}){
+  let amount=base;
+  const sources=[];
+  if(!notCreated)for(const source of state.players[player].battlefield){
+    if(TOKEN_DOUBLE_NAMES.has(named(source.card))){amount*=2;sources.push(`${named(source.card)} (${source.id})`);}
+    if(amount>128)throw new Error('Token creation would exceed 128 tokens. Resolve or manually adjudicate the complete replacement event; no partial tokens created.');
+  }
+  if(amount>128)throw new Error('This bounded engine permits at most 128 tokens in one event.');
+  if(sources.length)log(state,`Token creation replacement: ${base} → ${amount} token(s) for ${state.players[player].name} from ${sources.join(', ')}.`);
+  return amount;
+}
+function createTokenCopy(state,player,copyCard,origin={},source=null,mode='manual',options={}){
   const card=clone(copyCard);
   const token=fresh(card,player,`copy-token-${state.nextTokenId++}`);
   token.isToken=true;
   token.copiedFrom={id:origin.id||null,name:origin.name||named(card)};
   token.createdBy=source?{sourceId:source.id,sourceName:source.name,mode}:{sourceId:null,sourceName:'Manual token copy',mode};
+  if(options.notCreated)token.spellCopyNotCreated=true;
   token.tapped=false;
   moveTo(state,token,player,'battlefield');
   log(state,`${mode==='automatic'?'Token-copy trigger':'Manual token copy'}: ${named(card)} token ${token.id} enters for ${state.players[player].name}${source?` from ${source.name} (${source.id})`:''}; copied from ${token.copiedFrom.name} (${token.copiedFrom.id||'snapshot'}), without inherited counters/tapped state.`);
@@ -726,9 +784,18 @@ function resolveInteraction(state, instance) {
     log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
     return true;
   }
-  if(trigger?.adapter==='necroduality-copy'){
+  if(trigger?.adapter==='reflections-spell-copy'){
     state.stack.pop();
     createTokenCopy(state,instance.controller,trigger.copyCard,
+      {id:trigger.copiedFromId,name:trigger.copiedFromName},
+      {id:trigger.sourceId,name:trigger.sourceName},'spell-copy',{notCreated:true});
+    log(state,'Reflections of Littjara: resolving a copy of a creature permanent spell creates a token permanent, but does NOT create tokens for doubling effects.');
+    return true;
+  }
+  if(trigger?.adapter==='necroduality-copy'){
+    state.stack.pop();
+    const n=tokenCount(state,instance.controller,1);
+    for(let i=0;i<n;i++)createTokenCopy(state,instance.controller,trigger.copyCard,
       {id:trigger.copiedFromId,name:trigger.copiedFromName},
       {id:trigger.sourceId,name:trigger.sourceName},'automatic');
     if(instance.controller===1)state.opponentAudit.triggerResolutions++;
@@ -767,13 +834,14 @@ function resolveInteraction(state, instance) {
   const tokenCard = thopter ? {name:'Thopter',type_line:'Token Artifact Creature — Thopter',cmc:0,mana_cost:'',oracle_text:'Flying',keywords:['flying'],colors:[],power:'1',toughness:'1'} : goblin
     ? {name:'Phyrexian Goblin',type_line:'Token Creature — Phyrexian Goblin',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:['R'],power:'1',toughness:'1'}
     : {name:'Soldier',type_line:'Token Artifact Creature — Soldier',cmc:0,mana_cost:'',oracle_text:'',keywords:[],colors:[],power:'1',toughness:'1'};
-  for (let i=0;i<count;i++) {
+  const total=tokenCount(state,controller,count);
+  for (let i=0;i<total;i++) {
     const token=fresh(tokenCard,controller,`interaction-token-${state.nextTokenId++}`);
     token.isToken=true;
     if (goblin) token.temporaryHaste=true;
     moveTo(state,token,controller,'battlefield');
   }
-  log(state,`${thopter?'Artifact cast':goblin?'Ovika':'Third Path Iconoclast'} trigger resolves: ${count} ${named(tokenCard)} token(s)${goblin?' with haste until end of turn':''}.`);
+  log(state,`${thopter?'Artifact cast':goblin?'Ovika':'Third Path Iconoclast'} trigger resolves: ${total} ${named(tokenCard)} token(s)${goblin?' with haste until end of turn':''}.`);
   return true;
 }
 function searchBasic(state, player, destination) {
@@ -909,7 +977,8 @@ function resolve(state) {
       case 'tokens': {
         const count=adapter.count;
         if (!Number.isInteger(count)||count<0||count>40) throw new Error('Unsupported token count.');
-        for(let n=0;n<count;n++){
+        const total=tokenCount(state,player,count);
+        for(let n=0;n<total;n++){
           const token=fresh({...adapter.token,cmc:0,mana_cost:'',oracle_text:'',keywords:adapter.token.keywords||[]},player,`spell-token-${state.nextTokenId++}`);
           token.isToken=true;moveTo(state,token,player,'battlefield');
         }
@@ -1126,9 +1195,12 @@ function chooseOpponentDiscard(hand) {
   return [...hand].sort((a,b)=>number(b.card.cmc)-number(a.card.cmc) || named(a.card).localeCompare(named(b.card)))[0] || null;
 }
 function makePilot(state,player) {
+  const total=tokenCount(state,player,1);
+  for(let n=0;n<total;n++){
   const token=fresh({name:'Pilot',type_line:'Token Creature — Pilot',power:'1',toughness:'1',cmc:0,mana_cost:'',colors:[],keywords:[],oracle_text:'This token crews Vehicles as though its power were 2 greater.'},player,`pilot-token-${state.nextTokenId++}`);
   token.isToken=true;moveTo(state,token,player,'battlefield');
-  log(state,`${state.players[player].name} creates a 1/1 colorless Pilot token; enhanced crewing is not automated.`);
+  }
+  log(state,`${state.players[player].name} creates Pilot token(s); enhanced crewing is not automated.`);
 }
 function activateShorikai(state,player,id) {
   if(state.phase!=='main'||state.activePlayer!==player||state.stack.length||state.pendingChoice)throw new Error('Activate Shorikai during your active main phase with an empty stack.');
@@ -1279,6 +1351,7 @@ function scriptedCounterResponse(state){
   return false;
 }
 function apply(state, action) {
+  if(state.pendingLegend&&action.type!=='chooseLegendToKeep')throw new Error('Complete the pending legend-rule choice before any other action.');
   if (!action || !action.type) throw new Error('Choose an action.');
   const player = action.player ?? 0;
   if (![0, 1].includes(player)) throw new Error('Player must be 0 or 1.');
@@ -1290,6 +1363,30 @@ function apply(state, action) {
     case 'keep':
       if (state.phase !== 'opening') throw new Error('Opening hand already kept.');
       keep(state, 0, action.bottomIds || []); startKeptGame(state); break;
+    case 'chooseLegendToKeep': {
+      const choice=state.pendingLegend;
+      if(!choice||choice.player!==player||!choice.ids.includes(action.id))throw new Error('Choose one of the conflicting legendary permanents to keep.');
+      for(const id of choice.ids.filter(x=>x!==action.id)){
+        const where=find(state,id);
+        if(!where||where.zone!=='battlefield'||where.player!==choice.player)continue;
+        const lost=remove(state,where);
+        departureToGraveyard(state,lost,choice.player);
+      }
+      log(state,`Legend rule: ${state.players[player].name} keeps ${choice.name} (${action.id}).`);
+      delete state.pendingLegend;
+      break;
+    }
+    case 'chooseReflectionsType': {
+      const where=find(state,action.id);
+      if(!where||where.zone!=='battlefield'||where.player!==player||named(where.instance.card)!=='Reflections of Littjara')throw new Error('Choose Reflections of Littjara on your battlefield.');
+      if(where.instance.chosenCreatureType)throw new Error('Reflections creature type has already been chosen.');
+      if(typeof action.chosenType!=='string'||!(/^[A-Za-z][A-Za-z -]{0,35}$/.test(action.chosenType)))throw new Error('Specify a valid creature subtype such as Zombie or Merfolk.');
+      const chosen=action.chosenType.trim();
+      if(['Creature','Artifact','Enchantment','Land','Planeswalker','Instant','Sorcery','Legendary','Token'].includes(chosen))throw new Error('Choose a creature subtype, not a card type or supertype.');
+      where.instance.chosenCreatureType=chosen;
+      log(state,`Reflections of Littjara (${where.instance.id}) chooses ${chosen}. Casting a matching creature spell queues a spell-copy trigger.`);
+      break;
+    }
     case 'chooseCloudKeyType': {
       const source=find(state,action.id);
       if(!source||source.zone!=='battlefield'||source.player!==player||named(source.instance.card)!=='Cloud Key')throw new Error('Choose a Cloud Key you control.');
@@ -1528,7 +1625,8 @@ function apply(state, action) {
       const snapshot=clone(target.instance.card);
       const origin={id:target.instance.id,name:named(target.instance.card)};
       const linked=source?{id:source.instance.id,name:named(source.instance.card)}:null;
-      for(let i=0;i<quantity;i++)createTokenCopy(state,player,snapshot,origin,linked,'manual');
+      const total=tokenCount(state,player,quantity);
+      for(let i=0;i<total;i++)createTokenCopy(state,player,snapshot,origin,linked,'manual');
       log(state,`Manual token-copy allocation: ${quantity} copy/copies of ${origin.name}; no printed source ability, targeting, cost or legal trigger condition inferred.`);
       cleanupDead(state);break;
     }
@@ -1673,6 +1771,7 @@ function apply(state, action) {
     }
     default: throw new Error('Unknown action.');
   }
+  refreshLegendChoice(state);
   return state;
 }
 export function act(state, action) { return apply(upgradeGame(state), action); }
