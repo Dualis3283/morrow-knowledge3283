@@ -367,7 +367,7 @@ function renderGame() {
   setText('session-seed', `SEED ${game.seed}`);
   setText('game-title', game.finished ? 'A test, complete.' : 'Your table');
   setText('round-label', `Round ${Math.min(game.round, game.roundLimit || 10)} / ${game.roundLimit || 10}`);
-  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':game.responseWindow?'Response window · you have priority':!own.kept?'Opening hand':'Your turn · main phase');
+  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':game.responseWindow?'Response window · you have priority':!own.kept?'Opening hand':game.phase==='upkeep'?(game.activePlayer===0?'Your upkeep':'Opponent upkeep')+' · resolve triggers before draw':game.turnStep==='postcombat-main'?'Your turn · after combat':'Your turn · main phase');
   setText('opponent-counts', `${opponent.library.length} in library · ${opponent.hand.length} in hand · ${opponent.graveyard.length} in graveyard`);
   const scripted=opponentDiagnostics(game);
   setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
@@ -405,11 +405,11 @@ function renderGame() {
   $('assist-main').disabled=!first;
   $('undo-action').disabled=!undoHistory.length;
   setText('assist-preview', first ? `${first.label} · ${first.why}${first.sourceNames.length ? ` · Auto-tap: ${first.sourceNames.join(', ')}` : ''}` : 'No payable supported action. Inspect a card, adjust the table manually or end your turn.');
-  $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || Boolean(game.pendingChoice||game.pendingLibrary);
+  $('end-turn-button').disabled = game.finished || game.activePlayer!==0 || game.phase!=='main' || Boolean(game.pendingChoice||game.pendingLibrary);
   $('draw-card-button').disabled=!own.kept||game.finished||!own.library.length||Boolean(game.pendingLibrary);
   $('review-library-button').disabled=!own.kept||game.finished||Boolean(game.pendingLibrary)||Boolean(game.pendingChoice);
   $('mill-cards-button').disabled=!own.kept||game.finished||Boolean(game.pendingLibrary);
-  $('combat-button').disabled = game.finished || !attackers.length || game.combatDone;
+  $('combat-button').disabled = game.finished || game.phase!=='main' || !attackers.length || game.combatDone;
   $('mulligan-button').disabled = own.mulligans >= 7;
   const bottoms = Math.min(own.mulligans || 0, own.hand.length);
   setText('keep-label', bottoms ? `London mulligan · keep ${own.hand.length - bottoms}` : 'Find your opening hand.');

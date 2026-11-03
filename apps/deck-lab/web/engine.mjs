@@ -248,6 +248,11 @@ function profile(card) {
     return {status:'partial',auto:true,reason:'Token doubling is supported; its counter-adding replacement is NOT automatically modeled.'};
   if(named(card)==='Reflections of Littjara')
     return {status:'partial',auto:true,reason:'Choose a creature subtype; casting matching creature spells queues a spell-copy trigger. Noncreature kindred spell copies remain manual.'};
+  if(named(card)==='Dreadhorde Invasion')return {status:'partial',auto:true,reason:'Upkeep life loss and amass Zombies 1 supported. Multiple Army choices, counter replacements and attacking Zombie lifelink need manual review.'};
+  if(named(card)==='Bitterblossom')return {status:'partial',auto:true,reason:'Your-upkeep life loss and flying Faerie Rogue token supported.'};
+  if(named(card)==='Phyrexian Arena')return {status:'partial',auto:true,reason:'Your-upkeep draw one and lose one life supported.'};
+  if(named(card)==='Ophiomancer')return {status:'partial',auto:true,reason:'Each-upkeep conditional Snake token creation supported; other effects are not inferred.'};
+  if(named(card)==='Assemble the Legion')return {status:'partial',auto:true,reason:'Your-upkeep muster counters and Soldier tokens supported; counter replacement effects remain manual.'};
   if(named(card)==='Necroduality')return {status:'partial',auto:true,reason:'Non-token Zombie entering under your control queues one copy trigger per Necroduality; supported copyable card attributes only. Complex copied/as-enters abilities, legend rule and replacement layers remain manual.'};
   if(named(card)==='Proteus Staff')return {status:'partial',auto:false,reason:'Manual {2}{U}, tap and target with first-creature reveal; response timing not simulated.'};
   if(named(card)==='Empty the Laboratory')return {status:'manual',auto:false,reason:'X payment must be confirmed manually; Zombie sacrifice and reveal are supported from stack.'};
@@ -348,7 +353,7 @@ function moveTo(state, instance, player, zone, {keepCommanderInGraveyard = false
   if(zone!=='battlefield'&&['Cloud Key','Semblance Anvil'].includes(named(instance.card))){delete instance.costChosenType;delete instance.imprintResolved;delete instance.imprintCardTypes;delete instance.imprintCardId;}
   if (zone !== 'exile') delete instance.exiledBy;
   instance.controller = player; instance.attacking = false; delete instance.deathtouchDamage;
-  if (zone !== 'battlefield') { instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; delete instance.loyalty; delete instance.loyaltyActivatedTurn; }
+  if (zone !== 'battlefield') { delete instance.musterCounters; instance.tapped = false; instance.counters = 0; instance.damage = 0; delete instance.tempPower; delete instance.tempToughness; delete instance.loyalty; delete instance.loyaltyActivatedTurn; }
   if (zone === 'battlefield') {
     instance.enteredTurn = state.turn; instance.damage = 0;
     if (type(instance.card,'Planeswalker') && !Number.isInteger(instance.loyalty)) {
@@ -402,6 +407,9 @@ export function upgradeGame(snapshot) {
   state.nextTriggerId ??= 0;
   state.nextTokenId ??= 0;
   state.nextTriggerBatchId ??= 0;
+  state.turnStep ??= state.phase === 'main' ? 'precombat-main' : state.phase;
+  state.turnStepHistory ||= [];
+  state.manualStepEvents ||= [];
   state.opponentAudit ||= {turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]};
   if(state.pendingChoice && state.pendingChoice.player!==0 && state.pendingChoice.player!==1)delete state.pendingChoice;
   for (const player of state.players) for (const permanent of player.battlefield) {
@@ -446,14 +454,56 @@ function draw(state, player, count = 1) {
 function recordRound(state) {
   if (!state.roundStats.some(x => x.round === state.round)) state.roundStats.push({ round: state.round, players: [{}, {}] });
 }
+// Bounded turn-step audit, not a complete timing/priority rules engine.
+export const TURN_STEPS=Object.freeze(['untap','upkeep','draw','precombat-main','beginning-of-combat','declare-attackers','declare-blockers','first-strike-damage','combat-damage','end-of-combat','postcombat-main','end-step','cleanup']);
+const STEP_ORACLE_PATTERNS={
+  upkeep:/\bat the beginning of (?:your|each|an opponent(?:'s)?|each opponent(?:'s)?) upkeep\b/i,
+  draw:/\bat the beginning of (?:your|each) draw step\b/i,
+  'precombat-main':/\bat the beginning of (?:your|each) (?:precombat )?main phase\b/i,
+  'beginning-of-combat':/\bat the beginning of (?:combat on your turn|each combat|combat)\b/i,
+  'end-of-combat':/\bat the beginning of (?:the )?end of combat\b/i,
+  'end-step':/\bat the beginning of (?:your|each|the next|each opponent(?:'s)?) end step\b/i,
+};
+const SUPPORTED_UPKEEP=new Set(['Dreadhorde Invasion','Bitterblossom','Phyrexian Arena','Ophiomancer','Assemble the Legion']);
+function enterTurnStep(state,step,{skipped=false}={}){
+  if(!TURN_STEPS.includes(step))throw new Error('Unknown turn step: '+step);
+  state.turnStep=step;
+  state.turnStepHistory ||= [];
+  state.turnStepHistory.push({turn:state.turn,player:state.activePlayer,step,skipped});
+  if(state.turnStepHistory.length>160)state.turnStepHistory.splice(0,state.turnStepHistory.length-160);
+  log(state,'Turn step: '+step+(skipped?' (bypassed by bounded practice engine)':'')+'.');
+  // Even a simplified/bypassed combat stage must flag unhandled printed triggers.
+  const pattern=STEP_ORACLE_PATTERNS[step];
+  if(pattern)for(let controller=0;controller<state.players.length;controller++)for(const source of state.players[controller].battlefield){
+    const oracle=String(source.card.oracle_text||'');
+    if(!pattern.test(oracle))continue;
+    if(step==='upkeep'&&SUPPORTED_UPKEEP.has(named(source.card)))continue;
+    const opponentOnly=/\b(?:each|an) opponent(?:'s)?\b/i.test(oracle);
+    const anyPlayer=/\bat the beginning of each\b/i.test(oracle);
+    if(opponentOnly?controller===state.activePlayer:(!anyPlayer&&controller!==state.activePlayer))continue;
+    const event={turn:state.turn,step,controller,sourceId:source.id,name:named(source.card),status:'manual'};
+    state.manualStepEvents ||= [];state.manualStepEvents.push(event);
+    if(state.manualStepEvents.length>80)state.manualStepEvents.shift();
+    warn(state,'Manual '+step+' trigger: '+event.name+' ('+event.sourceId+') has no audited handler. Resolve its printed text yourself; no effect was inferred.');
+  }
+  if(step==='upkeep'&&!skipped)queueUpkeepTriggers(state);
+}
 function sickness(state, instance) { return isCreature(instance) && instance.enteredTurn >= state.turn && !has(instance, 'haste'); }
+function finishUpkeepIfReady(state){
+  if(state.finished||state.phase!=='upkeep'||state.stack.length||state.pendingChoice||state.pendingLibrary)return;
+  enterTurnStep(state,'draw');
+  if(!state.players[state.activePlayer].passive && !(state.round===1 && state.activePlayer===state.startingPlayer))draw(state,state.activePlayer);
+  if(state.finished)return;
+  state.phase='main';enterTurnStep(state,'precombat-main');
+}
 function beginTurn(state, player) {
-  state.activePlayer = player; state.turn++; state.phase = 'main'; state.combatDone = false;
+  state.activePlayer = player; state.turn++; state.phase = 'upkeep'; state.combatDone = false;
   state.players[player].landPlayed = false; state.players[player].manaPool = pool();
   for (const permanent of state.players[player].battlefield) { permanent.tapped = false; permanent.attacking = false; delete permanent.manualMana; }
   recordRound(state);
-  log(state, `Round ${state.round}: ${state.players[player].name}'s turn.`);
-  if (!state.players[player].passive && !(state.round === 1 && player === state.startingPlayer)) draw(state, player);
+  log(state,'Round '+state.round+': '+state.players[player].name+' turn.');
+  enterTurnStep(state,'untap');enterTurnStep(state,'upkeep');
+  finishUpkeepIfReady(state);
 }
 function finishIfLethal(state) {
   if (state.players.some(p => p.life <= 0)) { state.finished = true; state.phase = 'finished'; state.finishReason = 'A life total reached zero'; }
@@ -533,8 +583,8 @@ export function castOptions(state,player,id,filter=null) {
   if(!where || !(['hand','command'].includes(where.zone)&&where.player===player || where.zone==='exile'&&where.instance.exiledBy))return {canCast:false,reason:'Card is not in a castable hand, command or explicitly linked exile zone.',sources:[],pool:pool()};
   if(where.zone==='exile'&&where.instance.exiledBy?.sourceName==='The Darkness Crystal')return {canCast:false,reason:'The Darkness Crystal does not grant casting permission; activate the specific source instead.',sources:[],pool:{...state.players[player].manaPool}};
   const card=castingCard(where.instance),land=type(card,'Land');
-  const ready=state.phase==='main' && state.activePlayer===player && !state.finished && (!state.responseWindow||state.responseWindow.priorityPlayer===player);
-  const stackBlocked=state.stack.length && (!type(card,'Instant') || land);
+  const ready=(state.phase==='main'||state.phase==='upkeep'&&type(card,'Instant')) && state.activePlayer===player && !state.finished && (!state.responseWindow||state.responseWindow.priorityPlayer===player);
+  const stackBlocked=(state.stack.length||state.phase==='upkeep') && (!type(card,'Instant') || land);
   const tax=where.zone==='command' ? 2*(where.instance.commanderCasts||0):0;
   const sources=state.players[player].battlefield.filter(x=>!x.tapped && !sickness(state,x))
     .map(x=>({id:x.id,name:named(x.card),...manaSource(x.card,state,player)})).filter(x=>x.options?.length);
@@ -588,7 +638,8 @@ function validTarget(state, caster, targetId, descriptor) {
 }
 function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExile=false, withoutPaying=false}={}) {
   const responder=player===1&&state.activePlayer===0&&state.phase==='main'&&state.responseWindow?.priorityPlayer===1;
-  if (state.finished || state.phase !== 'main' || (state.activePlayer !== player && !responder)) throw new Error('Casting on the other player turn is currently permitted only for scripted instant responses in a response window.');
+  const upkeepInstant=state.phase==='upkeep'&&state.activePlayer===player;
+  if (state.finished || (state.phase !== 'main' && !upkeepInstant) || (state.activePlayer !== player && !responder)) throw new Error('Casting on the other player turn is currently permitted only for scripted instant responses in a response window.');
   if(state.responseWindow&&state.responseWindow.priorityPlayer!==player)throw new Error('This player does not currently have priority.');
   const location = find(state, id);
   if (!location || (!fromLinkedExile && (location.player !== player || !['hand','command'].includes(location.zone))))
@@ -598,6 +649,7 @@ function play(state, player, id, targetId, argumentsPayment=null, {fromLinkedExi
   if(fromLinkedExile&&location.instance.exiledBy?.sourceName==='The Darkness Crystal')throw new Error('The Darkness Crystal cannot cast its exiled cards; use its paid tap activation.');
   if (withoutPaying && !fromLinkedExile)throw new Error('A free cast requires a manually linked exiled card.');
   const instance = location.instance, card = castingCard(instance), adapter = profile(instance.card);
+  if(upkeepInstant&&!type(card,'Instant'))throw new Error('Only instants are supported during upkeep; resolve the upkeep stack before your main phase.');
   const commandCast = location.zone === 'command';
   if (commandCast && (!instance.isCommander || instance.owner !== player)) throw new Error('Only your own commander can be cast from your command zone.');
   if (instance.isCommander && !card.mana_cost) throw new Error('This commander has no supported printed mana cost; use manual payment and placement.');
@@ -654,6 +706,22 @@ function pushInteraction(state, controller, source, adapter, count, batchId=null
   state.stack.push({id:`p${controller}-trigger-${state.nextTriggerId++}`,owner:controller,controller,
     kind:'trigger',sourceId:source.id,card:{name:`${named(source.card)} — ${adapter}`,type_line:'Triggered Ability',cmc:0,oracle_text:'Named supported trigger; see activity log.'},
     trigger:{adapter,count,batchId}});
+}
+// Registered upkeep adapters are deliberately named and audited, not inferred from arbitrary Oracle text.
+function queueUpkeepTriggers(state){
+ const batchId=state.nextTriggerBatchId++;
+ for(const controller of [state.activePlayer,1-state.activePlayer])for(const source of state.players[controller].battlefield){
+  const name=named(source.card), own=controller===state.activePlayer;
+  let adapter=null;
+  if(own&&name==='Dreadhorde Invasion')adapter='dreadhorde-upkeep';
+  else if(own&&name==='Bitterblossom')adapter='bitterblossom-upkeep';
+  else if(own&&name==='Phyrexian Arena')adapter='arena-upkeep';
+  else if(own&&name==='Assemble the Legion')adapter='assemble-upkeep';
+  else if(name==='Ophiomancer'&&!state.players[controller].battlefield.some(x=>isCreature(x)&&/\bSnake\b/i.test(String(x.card.type_line||''))))adapter='ophiomancer-upkeep';
+  if(!adapter)continue;
+  pushInteraction(state,controller,source,adapter,1,batchId);
+  log(state,'Upkeep trigger queued: '+name+' ('+source.id+'), controller '+controller+'.');
+ }
 }
 function queueCastInteractions(state, player, spell) {
   if (type(spell,'Land')) return;
@@ -782,6 +850,49 @@ function resolveInteraction(state, instance) {
   if (trigger?.adapter === 'loyalty-manual') {
     state.stack.pop();
     log(state,`${named(instance.card)} leaves the stack. The loyalty ability's printed effect must have been applied manually.`);
+    return true;
+  }
+  if(['dreadhorde-upkeep','bitterblossom-upkeep','arena-upkeep','ophiomancer-upkeep','assemble-upkeep'].includes(trigger?.adapter)){
+    const controller=instance.controller, name=named(instance.card).split(' — ')[0];
+    state.stack.pop();
+    if(controller===1)state.opponentAudit.triggerResolutions++;
+    const token=(card,amount)=>{
+      const count=tokenCount(state,controller,amount);
+      for(let i=0;i<count;i++){const creature=fresh(card,controller,'upkeep-token-'+state.nextTokenId++);
+        creature.isToken=true;moveTo(state,creature,controller,'battlefield');}
+      return count;
+    };
+    if(trigger.adapter==='dreadhorde-upkeep'){
+      state.players[controller].life-=1;
+      let armies=state.players[controller].battlefield.filter(x=>isCreature(x)&&/\bArmy\b/i.test(String(x.card.type_line||'')));
+      if(!armies.length){
+        token({name:'Zombie Army',type_line:'Token Creature — Zombie Army',colors:['B'],power:'0',toughness:'0',cmc:0,mana_cost:'',oracle_text:'',keywords:[]},1);
+        armies=state.players[controller].battlefield.filter(x=>isCreature(x)&&/\bArmy\b/i.test(String(x.card.type_line||'')));
+      }
+      if(armies.length>1)warn(state,'Dreadhorde Invasion: multiple Army choices exist; first Army selected deterministically. This is not a verified strategic choice.');
+      if(armies.length){armies[0].counters+=1;log(state,'Dreadhorde Invasion: lose 1 life and amass Zombies 1 on '+armies[0].id+'.');}
+      else warn(state,'Dreadhorde Invasion: Army creation could not be completed; check replacement effects manually.');
+    }else if(trigger.adapter==='bitterblossom-upkeep'){
+      state.players[controller].life-=1;
+      const made=token({name:'Faerie Rogue',type_line:'Token Creature — Faerie Rogue',colors:['B'],power:'1',toughness:'1',cmc:0,mana_cost:'',oracle_text:'Flying',keywords:['flying']},1);
+      log(state,'Bitterblossom upkeep: lose 1 life; create '+made+' flying Faerie Rogue token(s).');
+    }else if(trigger.adapter==='arena-upkeep'){
+      draw(state,controller,1);state.players[controller].life-=1;
+      log(state,'Phyrexian Arena upkeep: draw 1, lose 1 life.');
+    }else if(trigger.adapter==='ophiomancer-upkeep'){
+      if(!state.players[controller].battlefield.some(x=>isCreature(x)&&/\bSnake\b/i.test(String(x.card.type_line||'')))){
+        const made=token({name:'Snake',type_line:'Token Creature — Snake',colors:['B'],power:'1',toughness:'1',cmc:0,mana_cost:'',oracle_text:'Deathtouch',keywords:['deathtouch']},1);
+        log(state,'Ophiomancer upkeep: create '+made+' deathtouch Snake token(s).');
+      }else log(state,'Ophiomancer intervening-if recheck: Snake already controlled; no token.');
+    }else if(trigger.adapter==='assemble-upkeep'){
+      const source=find(state,instance.sourceId);
+      if(source?.zone==='battlefield'&&source.instance.controller===controller){
+        source.instance.musterCounters=(source.instance.musterCounters||0)+1;
+        const made=token({name:'Soldier',type_line:'Token Creature — Soldier',colors:['R','W'],power:'1',toughness:'1',cmc:0,mana_cost:'',oracle_text:'',keywords:[]},source.instance.musterCounters);
+        log(state,'Assemble the Legion: muster '+source.instance.musterCounters+'; create '+made+' Soldier token(s).');
+      }else log(state,'Assemble the Legion left the battlefield before upkeep resolution; no muster counter added.');
+    }
+    cleanupDead(state);finishIfLethal(state);
     return true;
   }
   if(trigger?.adapter==='reflections-spell-copy'){
@@ -946,7 +1057,7 @@ function commitLibraryReview(state,action){
 }
 function resolve(state) {
   const instance = state.stack.at(-1); if (!instance) throw new Error('The stack is empty.');
-  if (resolveInteraction(state, instance)) return;
+  if (resolveInteraction(state, instance)) {finishUpkeepIfReady(state);return;}
   const adapter = profile(instance.card), player = instance.controller;
   if (adapter.status === 'manual' || (instance.isCommander && !adapter.auto && !adapter.planeswalker)) throw new Error(`${named(instance.card)} has no complete effect adapter. Use a manual move after resolving its effects yourself.`);
   state.stack.pop();
@@ -1046,7 +1157,7 @@ function resolve(state) {
     }
     moveTo(state, instance, instance.owner, 'graveyard');
   }
-  log(state, `${named(instance.card)} resolves.`); cleanupDead(state); finishIfLethal(state);
+  log(state, `${named(instance.card)} resolves.`); cleanupDead(state); finishIfLethal(state); finishUpkeepIfReady(state);
 }
 function canAttack(state, instance) { return isCreature(instance) && !instance.tapped && !sickness(state, instance) && !has(instance, 'defender'); }
 function canBlock(attacker, blocker) { return isCreature(blocker) && !blocker.tapped && (!has(attacker, 'flying') || has(blocker, 'flying') || has(blocker, 'reach')); }
@@ -1076,6 +1187,7 @@ function combat(state, player, assignments) {
   if (state.combatDone) throw new Error('Combat has already resolved this turn.');
   const attackers = state.players[player].battlefield.filter(x => x.attacking);
   if (!attackers.length) throw new Error('Declare at least one attacker.');
+  enterTurnStep(state,'beginning-of-combat');enterTurnStep(state,'declare-attackers');
   assignments ??= autoBlocks(state, player, attackers);
   const blocks = new Map(), used = new Set();
   for (const assignment of assignments) {
@@ -1086,11 +1198,13 @@ function combat(state, player, assignments) {
     if (!blocker || used.has(blocker.id) || !canBlock(attacker, blocker)) throw new Error('Invalid blocker: each untapped legal creature can block one attacker.');
     blocks.set(attacker.id, blocker); used.add(blocker.id);
   }
+  enterTurnStep(state,'declare-blockers');
   for (const attacker of attackers) if (!has(attacker, 'vigilance')) attacker.tapped = true;
   const strike = (instance, first) => first ? has(instance, 'first strike') || has(instance, 'double strike') : !has(instance, 'first strike') || has(instance, 'double strike');
   const damageCreature = (source, target, amount) => { target.damage += amount; if (amount && has(source, 'deathtouch')) target.deathtouchDamage = true; if (has(source, 'lifelink')) state.players[source.controller].life += amount; };
   const damagePlayer = (source, amount) => { if (amount <= 0) return; dealToPlayer(state, player, 1 - player, amount, named(source.card)); if (has(source, 'lifelink')) state.players[player].life += amount; };
   for (const first of [true, false]) {
+    enterTurnStep(state,first?'first-strike-damage':'combat-damage');
     for (const attacker of attackers) {
       if (!find(state, attacker.id) || find(state, attacker.id).zone !== 'battlefield') continue;
       const originalBlocker = blocks.get(attacker.id), blockerLocation = originalBlocker && find(state, originalBlocker.id);
@@ -1109,7 +1223,7 @@ function combat(state, player, assignments) {
     cleanupDead(state);
   }
   for (const attacker of attackers) attacker.attacking = false;
-  state.combatDone = true; log(state, 'Bounded combat resolved (one blocker per attacker; supported keywords only).'); finishIfLethal(state);
+  state.combatDone = true;enterTurnStep(state,'end-of-combat');enterTurnStep(state,'postcombat-main');log(state, 'Bounded combat resolved (one blocker per attacker; supported keywords only).'); finishIfLethal(state);
 }
 function bottomChoice(player) {
   const candidates = [...player.hand]; const bottom = [];
@@ -1150,6 +1264,11 @@ function targetFor(state, player, adapter) {
 // Public, inspectable suggestions. Both automated practice and the manual UI use this
 // same decision path. Never invent a cost, target, or hidden card effect.
 export function suggestions(state, player=0) {
+  if(state.phase==='upkeep'&&state.activePlayer===player&&!state.finished){
+    const top=state.stack.at(-1);
+    return top?.kind==='trigger'&&['dreadhorde-upkeep','bitterblossom-upkeep','arena-upkeep','ophiomancer-upkeep','assemble-upkeep'].includes(top.trigger?.adapter)
+      ? [{type:'resolve',label:'Resolve '+named(top.card),why:'Upkeep triggers resolve before the normal draw step.',sourceNames:[]}] : [];
+  }
   if (state.phase !== 'main' || state.activePlayer !== player || state.finished) return [];
   const p=state.players[player];
   if (state.pendingChoice||state.pendingLibrary) return [];
@@ -1263,6 +1382,13 @@ function autoTurn(state,player) {
   return true;
 }
 function endCurrent(state) {
+  if(state.turnStep!=='end-step'){
+    if(!state.combatDone){
+      for(const step of ['beginning-of-combat','declare-attackers','declare-blockers','first-strike-damage','combat-damage','end-of-combat','postcombat-main'])
+        enterTurnStep(state,step,{skipped:true});
+    }
+    enterTurnStep(state,'end-step');
+  }
   while((state.delayedEndSteps||[]).some(x=>x.createdTurn<=state.turn)){
     const index=state.delayedEndSteps.findIndex(x=>x.createdTurn<=state.turn),event=state.delayedEndSteps.splice(index,1)[0];
     startMatchReview(state,event.controller,'synthetic-destiny',event.required,'Synthetic Destiny · next end step');
@@ -1279,6 +1405,7 @@ function endCurrent(state) {
   for (const player of state.players) for (const instance of player.battlefield) { instance.damage = 0; instance.attacking = false; delete instance.tempPower; delete instance.tempToughness; delete instance.deathtouchDamage; delete instance.temporaryHaste; delete instance.manualMana; }
   const row = state.roundStats.find(x => x.round === state.round);
   if (row) for (let i = 0; i < 2; i++) row.players[i].lifeRemaining = state.players[i].life;
+  enterTurnStep(state,'cleanup');
   return true;
 }
 function finishRound(state) {
@@ -1310,7 +1437,7 @@ export function createGame({ deck = [], opponentDeck = [], commander = null, opp
   if (!Number.isFinite(life) || life <= 0) throw new Error('Starting life must be positive.');
   const state = {
     players: [deck, opponentDeck].map((cards, p) => ({ name: p ? 'Scripted opponent' : 'You', life, library: cards.map((card, i) => fresh(card, p, i)), hand: [], battlefield: [], graveyard: [], exile: [], command: [commander, opponentCommander][p] ? [fresh([commander, opponentCommander][p], p, 'commander', true)] : [], commanderId: [commander, opponentCommander][p] ? `p${p}-commander` : null, returnCommanderOnDeath: true, passive: p === 1 && !cards.length, mulligans: 0, kept: false, landPlayed: false, manaPool: pool() })),
-    stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
+    stack: [], activePlayer: 0, round: 1, turn: 0, phase: 'opening', turnStep:'opening', turnStepHistory:[],manualStepEvents:[], log: [], seed: String(seed), rngState: hash(seed), finished: false, roundLimit: rounds, startingPlayer: onPlay ? 0 : 1, combatDone: false,
     stats: [{}, {}], roundStats: [], warnings: [], lastRandom: null, nextTriggerId: 0, nextTokenId: 0, nextTriggerBatchId: 0, opponentAudit:{turns:0,actions:0,casts:0,activatedAbilities:0,triggerResolutions:0,unknownHandCount:0,halted:false,publicActions:[]},
   };
   for (const p of state.players) { shuffle(state, p.library); p.hand = p.library.splice(0, 7); }

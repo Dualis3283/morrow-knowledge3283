@@ -10,7 +10,7 @@ Additional state fields are `rngState`, `startingPlayer`, `combatDone`, `stats`,
 
 `upgradeGame` returns a migrated copy of an older saved table, and `act` applies the same migration before actions. Recognizable legacy `pN-commander` instances acquire the Commander fields wherever they currently reside, without marking ordinary cards with the same Scryfall definition ID as commanders. A missing historical cast count defaults to zero; earlier manual casts are not reconstructed from old logs.
 
-Phases are `opening`, `main`, and `finished`. `keep` ends opening-hand selection. Counted London mulligans redraw seven and require the exact number of bottom selections. There is no free mulligan. The auto policy takes at most two mulligans seeking 2–5 lands, then bottoms excess lands or expensive cards. An opening deck shorter than seven draws only available cards; subsequent failed draws end the test.
+State phases are `opening`, `upkeep` (while queued upkeep triggers are unresolved), `main`, and `finished`. `keep` ends opening-hand selection. Counted London mulligans redraw seven and require the exact number of bottom selections. There is no free mulligan. The auto policy takes at most two mulligans seeking 2–5 lands, then bottoms excess lands or expensive cards. An opening deck shorter than seven draws only available cards; subsequent failed draws end the test.
 
 Each round includes a turn for both players. On the play, the user skips their first draw; on the draw, the opponent acts first and skips their first draw. A missing opponent deck creates a passive goldfish opponent. Automated duel simulation requires both decks.
 
@@ -21,6 +21,15 @@ Tapping a known source manually adds its default color to the tracked pool. Unta
 The stack resolves last-in, first-out. Ordinary sorceries and permanents cannot be cast onto a nonempty stack. Supported instants can. Unknown spells can be put on the stack with their ordinary cost, but `resolve` rejects them. Resolve their actual effects yourself, then use `move` to place the card in its destination. Partial creature bodies can be resolved manually with an explicit omitted-abilities warning; automation skips them. A small set of partial mana sources and damage spells are automated only for their documented subset, with warnings and run notes.
 
 Manual `move` explicitly bypasses costs and effects. Zone changes clear counters, marked damage, deathtouch marks, and temporary buffs. Entering the battlefield sets the entry turn. Counter controls represent +1/+1 counters only.
+
+
+### Turn-step event and upkeep regression gate (candidate)
+
+Turn starts now record `untap → upkeep → draw → precombat-main` in `turnStepHistory`. Upkeep triggers are queued to the stack *before* the normal draw; resolving the last trigger advances automatically to the draw and main stages. Starting player's first-round draw is still skipped. The bounded combat action records beginning of combat, attackers, blockers, first strike, damage, end of combat and postcombat main; ending the turn records end step and cleanup. Omitted combat is explicitly marked `skipped` in audit history rather than claimed to have been fully simulated. These event receipts are not a complete MTG priority system.
+
+Named, audited upkeep adapters: Dreadhorde Invasion (life -1, amass Zombies 1 onto an Army or create 0/0 Zombie Army then counter), Bitterblossom (life -1, flying black Faerie Rogue), Phyrexian Arena (draw one then lose one), Ophiomancer (intervening-if Snake token at **each** player's upkeep), Assemble the Legion (muster counter then matching Soldier tokens). Stack effects remain individual and the draw step waits until they finish. Token doublers affect created tokens; counter replacement choice, multiple Army targeting, extra phases, full APNAP/player-controlled ordering, Dreadhorde's 6+ Zombie lifelink, non-upkeep step effects and general Oracle parsing are **not** fully automated.
+
+For other cards with recognized beginning-of-step Oracle phrases, `manualStepEvents` and warnings identify their source/turn/step rather than silently announcing that the ability resolved. Apply those abilities manually. A historical saved game without `turnStepHistory` is migrated conservatively; past turns are not reconstructed. Regression test: `tests/turn-steps-upkeep.test.mjs`. Commit/release/test/live-site gates remain separate.
 
 ## Commander practice controls
 
