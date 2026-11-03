@@ -367,7 +367,7 @@ function renderGame() {
   setText('session-seed', `SEED ${game.seed}`);
   setText('game-title', game.finished ? 'A test, complete.' : 'Your table');
   setText('round-label', `Round ${Math.min(game.round, game.roundLimit || 10)} / ${game.roundLimit || 10}`);
-  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?'End step · resolve delayed library reveal':game.responseWindow?'Response window · you have priority':!own.kept?'Opening hand':game.phase==='upkeep'?(game.activePlayer===0?'Your upkeep':'Opponent upkeep')+' · resolve triggers before draw':game.turnStep==='postcombat-main'?'Your turn · after combat':'Your turn · main phase');
+  setText('phase-label',game.finished?'Test complete':game.pendingEndStepResume?(game.pendingEndStepResume==='trigger'?'Your end step · resolve triggers':'End step · resolve delayed library reveal'):game.responseWindow?'Response window · you have priority':!own.kept?'Opening hand':game.phase==='upkeep'?(game.activePlayer===0?'Your upkeep':'Opponent upkeep')+' · resolve triggers before draw':game.turnStep==='postcombat-main'?'Your turn · after combat':'Your turn · main phase');
   setText('opponent-counts', `${opponent.library.length} in library · ${opponent.hand.length} in hand · ${opponent.graveyard.length} in graveyard`);
   const scripted=opponentDiagnostics(game);
   setText('opponent-automation-summary',`Scripted actions ${scripted.actions} · casts ${scripted.casts} · abilities ${scripted.activatedAbilities} · triggers ${scripted.triggerResolutions}`);
