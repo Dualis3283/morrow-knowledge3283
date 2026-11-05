@@ -1,0 +1,31 @@
+{
+  "games": 100,
+  "winner_counts": {
+    "Karn": 56,
+    "Ovika": 43,
+    "Unresolved": 1
+  },
+  "first_player": {
+    "Ovika": {
+      "Karn": 27,
+      "Ovika": 22,
+      "Unresolved": 1
+    },
+    "Karn": {
+      "Karn": 29,
+      "Ovika": 21
+    }
+  },
+  "mean_finish_turn": 8.92,
+  "ovika_cast_by_6": 56,
+  "ovika_cast_by_7": 69,
+  "karn_cast_by_5": 68,
+  "avg_ovika_cast_turn": 6.09,
+  "avg_karn_cast_turn": 4.98,
+  "avg_ovika_tokens_created": 9.14,
+  "avg_ovika_counterspells_used": 0.5,
+  "avg_karn_commander_damage": 16.18,
+  "karn_lock_still_active_at_end": 2,
+  "karn_infinite_mana_assembled": 2,
+  "avg_karn_wipes": 0.03
+}
