@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.1",
+  "record_id": "demo.decision.001",
+  "kind": "decision",
+  "subject": "Synthetic example: project format",
+  "summary": "For this fictional exercise, use a short checklist rather than a long report.",
+  "captured_at": "2026-10-14T00:00:00Z",
+  "status": "confirmed",
+  "scope": "project",
+  "authority": "user_explicit",
+  "provenance": [
+    {
+      "source_id": "demo.source.001",
+      "kind": "user_statement",
+      "pointer": "synthetic://conversation/decision-001",
+      "observed_at": "2026-10-14T00:00:00Z",
+      "claim_status": "confirmed"
+    }
+  ],
+  "supersession": {
+    "supersedes": []
+  },
+  "privacy": {
+    "classification": "public",
+    "share_policy": {
+      "allowed": true,
+      "destinations": [
+        "local"
+      ]
+    },
+    "retention": {
+      "policy": "until_deleted"
+    }
+  }
+}

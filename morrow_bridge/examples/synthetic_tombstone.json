@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.1",
+  "record_id": "demo.tombstone.001",
+  "kind": "tombstone",
+  "subject": "Deleted synthetic record",
+  "captured_at": "2026-10-14T00:05:00Z",
+  "status": "tombstone",
+  "scope": "project",
+  "authority": "user_explicit",
+  "privacy": {
+    "classification": "restricted",
+    "share_policy": {
+      "allowed": false,
+      "destinations": []
+    },
+    "retention": {
+      "policy": "until_deleted"
+    }
+  },
+  "deletion": {
+    "target_record_id": "demo.decision.001",
+    "requested_at": "2026-10-14T00:05:00Z",
+    "outcome": "pending"
+  }
+}
