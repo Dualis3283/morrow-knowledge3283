@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Dualis3283/morrow-knowledge3283/blob/main/02-KNOWLEDGE/collection-audit-record-v0.1.schema.json",
+  "title": "Morrow WF001 collection audit candidate",
+  "type": "object",
+  "required": ["schema_version", "inventory", "coverage", "gates", "records", "verification_queue", "interactions", "caveat"],
+  "properties": {
+    "schema_version": {"const": "morrow-collection-audit-candidate-0.1"},
+    "inventory": {"type": "object", "required": ["source_sha256", "rows", "copies", "unique_names", "errors"]},
+    "coverage": {
+      "type": "object", "required": ["eligible", "rules_verified", "unresolved", "percent"],
+      "properties": {
+        "eligible": {"type": "integer", "minimum": 0},
+        "rules_verified": {"type": "integer", "minimum": 0},
+        "unresolved": {"type": "integer", "minimum": 0},
+        "percent": {"type": "number", "minimum": 0, "maximum": 100}
+      }
+    },
+    "gates": {"type": "object", "required": ["INVENTORY_COMPLETE", "RULES_COMPLETE", "INTERACTIONS_VERIFIED", "RECOMMENDATIONS_VALIDATED", "ALLOCATION_CONFIRMED", "EXPORT_QA_PASSED"], "additionalProperties": {"type": "boolean"}},
+    "records": {"type": "array", "items": {"type": "object", "required": ["name", "quantity", "rules_state", "reason", "allocation"]}},
+    "verification_queue": {"type": "array", "items": {"type": "object", "required": ["name", "state", "reason"]}},
+    "interactions": {"type": "array", "items": {"type": "object", "required": ["index", "status", "reason"]}},
+    "caveat": {"type": "string", "minLength": 1}
+  }
+}
