@@ -168,3 +168,11 @@ Add explicit Context Bridge outcomes:
 Also distinguish **direct analogy** from **abstract principle transfer**. A direct analogy may be rejected while a higher-level lesson remains valid.
 
 Metadata should be added **on use**, not through mass archive tagging.
+
+## Candidate extension: Visual Reasoning Records (MVR-003, 12 November 2026)
+
+A Visual Reasoning Record (VRR) is a renderer-independent sidecar, not a new Bridge record kind. It records visual claims, typed relationships, sources, units, uncertainty, alternative text and verification status. See `visual-reasoning-record-v0.2.schema.json` and `morrow_bridge/visual_gate.py`.
+
+The candidate gate validates the sidecar, resolves every linked source against current caller-supplied Bridge records, invokes the actual Bridge export veto, checks exact provenance pointer and observation instant, and blocks confirmed visual claims when supporting records are not confirmed. Nonlocal export additionally requires public-classified dependencies and a public-safe VRR; public export requires caller-side independent review. No imported grant, label or schema result authenticates consent, source fidelity or reviewer identity. No network transfer occurs. Dependent renderings must be invalidated after upstream revocation, supersession or deletion; runtime propagation is not yet implemented.
+
+Status: candidate only; separate proposal branch. Upstream Bridge v0.1 schema and Core remain unchanged. Local integration tests pass; cross-model transfer, independent review, CI and ratification remain outstanding.
