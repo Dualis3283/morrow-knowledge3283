@@ -34,6 +34,14 @@ Compleated Loyalty contributes:
 
 These are references, not mandatory styling for every Morrow output.
 
+## Owner-approved Morrow emblem — 2026-11-13
+
+The canonical mark is the isolated golden Gemini-inspired arched M over a round Tiger's Eye cabochon. The owner selected this final treatment after removing the outer ring, cardinal coils, chain, background and additional words. No text is part of the emblem; Morrow remains the wordmark when a label is required. Use it as a shared brand asset, with the transparent background preserved and the aspect ratio unchanged. The pendant's Bones & Skin principles remain a design philosophy rather than mandatory logo iconography.
+
+[Optimised web emblem](assets/morrow-logo.webp) — 160 × 160 transparent WebP, derived from the approved render; SHA-256 91cb17752dd20249ef315789c19dadea943b71555f05813809e0b65b9a98cdf4. The full-resolution original remains in the design conversation.
+
+Website application: [branding PR #52](https://github.com/Dualis3283/david-walsh-site/pull/52). Repository acceptance is not a production deployment or visual QA result.
+
 ## Status
 
 **Active / living standard.** Update when a repeated cross-project visual decision is explicitly approved.
