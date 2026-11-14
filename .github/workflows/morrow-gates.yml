@@ -22,6 +22,10 @@ jobs:
           python-version: '3.12'
       - name: Verify canonical structure and state metadata
         run: python3 05-RESEARCH/morrow_checkpoint_gate.py .
+      - name: Verify entity registry and operational naming
+        run: |
+          python3 05-RESEARCH/entity_role_resolver.py 02-KNOWLEDGE/entity-registry-v1.json
+          python3 05-RESEARCH/entity_naming_gate.py .
       - name: Scan entire public Git tree for privacy disclosures
         run: python3 05-RESEARCH/publication_privacy_scan.py .
       - name: Run repository gate and privacy regression tests

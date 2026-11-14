@@ -1,0 +1,92 @@
+{
+  "schema_version": "morrow-entity-registry-1",
+  "visibility": "public",
+  "contexts": [
+    {
+      "id": "morrow",
+      "label": "Morrow methodology"
+    },
+    {
+      "id": "website",
+      "label": "Website and applications"
+    },
+    {
+      "id": "mtg",
+      "label": "Magic: The Gathering"
+    }
+  ],
+  "entities": [
+    {
+      "id": "morrow",
+      "type": "project",
+      "label": "Morrow",
+      "classification": "public",
+      "scopes": [
+        "morrow",
+        "website",
+        "mtg"
+      ],
+      "source": "01-PROJECTS/PROJECT_REGISTER.md"
+    },
+    {
+      "id": "context-bridge",
+      "type": "component",
+      "label": "Context Bridge",
+      "classification": "public",
+      "scopes": [
+        "morrow"
+      ],
+      "source": "02-KNOWLEDGE/CONTEXT_BRIDGE.md"
+    },
+    {
+      "id": "deck-planner",
+      "type": "project",
+      "label": "Deck Planner Companion App",
+      "classification": "public",
+      "scopes": [
+        "website",
+        "mtg"
+      ],
+      "source": "01-PROJECTS/PROJECT_REGISTER.md"
+    }
+  ],
+  "roles": [],
+  "assignments": [],
+  "aliases": [
+    {
+      "label": "Maro",
+      "target": "morrow",
+      "kind": "entity",
+      "scopes": [
+        "morrow",
+        "website"
+      ],
+      "status": "confirmed",
+      "source": "05-RESEARCH/CONTEXT_INTEGRITY_CHECKPOINT_2026-11-14.md"
+    },
+    {
+      "label": "Morrow method",
+      "target": "morrow",
+      "kind": "entity",
+      "scopes": [
+        "morrow",
+        "website",
+        "mtg"
+      ],
+      "status": "confirmed",
+      "source": "05-RESEARCH/CONTEXT_INTEGRITY_CHECKPOINT_2026-11-14.md"
+    },
+    {
+      "label": "Maro method",
+      "target": "morrow",
+      "kind": "entity",
+      "scopes": [
+        "morrow",
+        "website",
+        "mtg"
+      ],
+      "status": "confirmed",
+      "source": "05-RESEARCH/CONTEXT_INTEGRITY_CHECKPOINT_2026-11-14.md"
+    }
+  ]
+}

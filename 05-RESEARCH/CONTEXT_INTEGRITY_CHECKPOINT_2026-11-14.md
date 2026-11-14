@@ -64,3 +64,7 @@ Status: requirement recorded; integration with actual role identifier schema, ma
 ## Role identifier reconciliation
 
 Recovered the established role/identity principles in Morrow Ethos and Relational Context Ruleset; Context Bridge supplies contextual metadata; Publication Privacy governs access. Prior conversation search and Notion title searches did not recover an exact standalone person-role schema. The [Entity and Role Identifier Protocol](../00-CORE/ENTITY_ROLE_IDENTIFIER_PROTOCOL.md) formalises a proposed compatible structure: separate entity, role type, contextual assignment/relationship, alias, context and current intent; stable entity ID with time-scoped assignments; role-only references when identity unnecessary; explicit privacy boundaries. No private person mapping was created. Synthetic expected outcomes are specified but not executed. Existing role schema integration remains subject to recovery; automated implementation is pending.
+
+## Implementation candidate
+
+Public project registry, deterministic scoped resolver, role assignment fixtures and pre-write intent validation added. Operational naming lint checks repository-owned machine identifiers; historical prose and card datasets are outside its scope. Regression tests are integrated with the existing Morrow gate. No real private person mappings or runtime connector authority have been added. Production model integration, actual role schema recovery, private store/access policy, broad alias expansion and merge verification remain pending.
