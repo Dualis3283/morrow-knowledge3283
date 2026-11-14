@@ -1,5 +1,7 @@
 # Morrow Core Phase 3 — Cross-Model Evaluation & Interoperability Handoff
 
+> **Supersession — 19 October 2026:** This is a dated **14 October** planning/handoff record. Its statements that CI was not yet committed, that the Core candidate had not undergone R1 reconciliation, and that the next task was merely to add Bridge CI have been overtaken by later verified work on draft [PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1): **24/24 synthetic tests passed** and a staged integrity/schema readback passed. Three repository CI workflows also passed on public `main` baseline `bd2119e`. These checks do **not** establish live multi-model evaluation or Core ratification. Read the [19 October pipeline audit](../05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md) and current [Working State](CURRENT.md) before acting. Retain the original dated text below as historical evidence.
+
 **Dated:** 14 October 2026 · **Status:** Scoped and ready to begin; **NOT yet executed** as a cross-model evaluation.
 **Priority:** P0 under the owner-approved [strategic direction](../00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
 **Primary mission:** Develop Morrow into an open, interoperable, model-independent and independently verifiable methodology suitable for voluntary worldwide adoption. All other initiatives are secondary/supporting, not cancelled.

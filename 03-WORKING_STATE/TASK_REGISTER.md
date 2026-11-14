@@ -1,12 +1,41 @@
 # Task Register
 
+## Morrow operational baseline — 19 October 2026
+
+**Last consolidated (public GitHub mirror):** 19 October 2026 — GitHub, Notion and current CI reconciled; [audit evidence](../05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md)  
+**Current operational status:** **Active for GitHub CI and curated public knowledge**; portable model-to-model interoperability is **planned / NOT OBSERVED**.  
+**Authority boundary:** Notion's Morrow project pipeline remains the operational task authority; this GitHub record is a public-safe, independently readable checkpoint, not evidence of a Notion sync or a local workstation deployment.
+
+### Active execution pipeline — scoped lifecycle observations
+
+| ID | Work item | Observed lifecycle state | Evidence and limits | Next gate |
+| --- | --- | --- | --- | --- |
+| TASK-001 | Canonical repository layout | **independently verified** (GitHub only) | Eight required directories on `main` passed the [Morrow structure gate](../.github/workflows/morrow-gates.yml) and [PR #3](https://github.com/Dualis3283/morrow-knowledge3283/pull/3). Local PC layout and explicit user confirmation: **NOT OBSERVED**. | Separately verify any chosen local installation; obtain owner confirmation if requested. |
+| TASK-002 | GitHub context and privacy gates | **independently verified** (repository CI scope) | Protected `main` requires passing `privacy` and `verify-layer`; both passed on [merge commit 54fd975](https://github.com/Dualis3283/morrow-knowledge3283/commit/54fd97524158c6a44a7afcc6c01eef3b79a7e2eb). Actual cross-model evaluation is **NOT OBSERVED**. | Retain CI and human semantic privacy review; inspect any future failures. |
+| TASK-003 | Cross-model Context Bridge interoperability | **planned** (live evaluation) | [Draft PR #1](https://github.com/Dualis3283/morrow-knowledge3283/pull/1) passed 24/24 synthetic tests and a staged destination readback. Distinct live models, paired outcomes, remote sync and independent behavioural assessment: **NOT OBSERVED**. | Fix a cross-compatibility matrix, model versions, synthetic cases, scoring and approved execution routes. |
+| TASK-004 | Secure private/local context store | **planned** (deployment) | Privacy separation and publication rules are active in GitHub; no encrypted private store, local runtime or deletion-propagation test has been independently verified. | Specify access controls, key ownership, retention, deletion and per-destination authorisation before any private-data import. |
+| TASK-005 | Cloudflare Workers build for the public knowledge repository | **planned** (investigation) | Cloudflare Workers Builds check **failed** on baseline `bd2119e`; GitHub privacy/verify-layer/ledger checks passed. Authenticated Cloudflare build-log cause is **NOT OBSERVED**. | Inspect the relevant Cloudflare Worker build logs; determine whether the unintended build integration should be corrected or disabled, without impacting website production. |
+| TASK-006 | Cross-system pipeline reconciliation | **independently verified** (Notion/GitHub record scope) | On 19 October, Notion Core, Phase 3, Knowledge Architecture, Working State and Decision Log updates were fetched after the writes; GitHub public-safe mirror has separate commit/CI gates. | Retain record provenance, avoid stale next-actions and keep private Notion source links out of public exports. |
+| TASK-007 | Public Publisher and read-only Bridge candidate | **independently verified** (source/CI scope only) | [PR #6](https://github.com/Dualis3283/morrow-knowledge3283/pull/6) merged at `1431b6d`; 15/15 Node endpoint/security tests passed plus repository privacy and verify-layer CI. Actual Cloudflare runtime and independent MCP interoperability: **NOT OBSERVED**. | Restore Cloudflare authorisation, inspect separate staging environment and independently test deployment before public exposure. |
+| TASK-008 | Cloudflare public Worker staging deployment | **planned / blocked** | No live staging route, public hostname, deploy receipt or HTTP readback. Cloudflare account and Worker API reads returned HTTP 400 authentication errors; no secret changes were made. | Reconnect/authenticate Cloudflare through official flow; verify account and use Access-protected staging first. |
+| TASK-009 | Morrow Verify conformance runner | **planned** | Three synthetic example descriptions published as source/API fixture only; no independent model comparison, result evidence, signed tests or external evaluation performed. | Reconcile 12-versus-16 cases, agree model/fixture contract, then pilot with authorised model access. |
+| TASK-010 | Morrow Observer and Outreach | **planned** | No production metrics collection, contact retention, automated social posting or release-distribution bots deployed. | Define aggregate-only measurement, retention, opt-in outreach and human approval before any implementation. |
+
+**Lifecycle legend:** `planned` → `attempted` → `accepted` → `active` → `independently verified` → `user confirmed`. These labels apply to **bounded tasks**, not to the entire Morrow project by inference. A successful CI check does not confer user confirmation.
+
+**Persistence observations:** `prepared` ≠ `saved` ≠ `uploaded` ≠ `synced` ≠ `verified`. A recorded commit/readback proves only the repository state checked; external destinations require separate evidence.
+
+**Reconciliation note:** This checkpoint supersedes the older *add Bridge CI* next-action below. It does not replace unrelated projects, the Notion task source, the 19/20 unfrozen workflow baseline or prior decisions.
+
+---
+
 Consolidated from Notion pipeline status plus live external verification.
 
 ## NOW
 
 ### Morrow Core Phase 3 — primary P0
-**Status:** Ready for scoped implementation; no Phase 3 cross-model experiments executed yet.  
-**Next:** [Read canonical Phase 3 handoff](MORROW_CORE_PHASE3_HANDOFF_2026-10-14.md); review MC-01–15 and R1 corrections on draft PR #1, add CI for the Bridge structural test suite, then prepare matched control/intervention scenarios and permissioned model adapters.  
+**Status:** Candidate Core v1/Bridge v0.1 remain on draft PR #1. Structural CI and staged integrity readback have passed (24/24 synthetic tests); live cross-model conformance and adoption remain NOT OBSERVED.  
+**Next:** Prepare the cross-compatibility matrix and paired controlled model trials; review Core MC-01–15 and R1 changes without ratifying the draft or importing private context.  
 **Authority:** 14 October owner strategic P0; project record in Notion. Do not confuse this with older website phases or the distinct, unfrozen Phase 6 workflow measurement baseline.  
 
 

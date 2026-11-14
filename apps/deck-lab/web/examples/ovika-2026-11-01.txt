@@ -1,0 +1,82 @@
+# Dated deck fixture: 1 November 2026; 99 main cards + 1 commander.
+# Extracted from the original simulator definitions; no reconstructed additions.
+# Source: https://github.com/Dualis3283/morrow-knowledge3283/blob/1470bdef08dfb59530e27a28fbb137a58375e524/05-RESEARCH/MTG-SIMULATOR/ovika_goldfish.py
+# Simulator branch is unmerged PR #10; this is not a claim that the deck is current.
+# Import for manual testing. Many effects are unsupported by the new bounded engine.
+
+Commander
+1 Ovika, Enigma Goliath
+
+Mainboard
+1 Myr Convert
+1 Plague Myr
+1 Ral, Monsoon Mage
+1 Raphael, Tough Turtle
+1 Third Path Iconoclast
+1 Electro, Assaulting Battery
+1 Irma, Part-Time Mutant
+1 Krenko, Baron of Tin Street
+1 Molten Gatekeeper
+1 Chameleon, Master of Disguise
+1 Enduring Courage
+1 Mister Fantastic, Reed Richards
+1 Sakashima of a Thousand Faces
+1 Urabrask
+1 Sol Ring
+1 Wayfarer's Bauble
+1 Arcane Signet
+1 Izzet Signet
+1 Mind Stone
+1 Sky Diamond
+1 Strionic Resonator
+1 Ashnod's Altar
+1 Blitzball
+1 Chromatic Lantern
+1 Commander's Sphere
+1 Cursed Mirror
+1 Decanter of Endless Water
+1 Heraldic Banner
+1 Strixhaven Stadium
+1 Tablet of Discovery
+1 Resonating Lute
+1 Eldrazi Monument
+1 Gilded Lotus
+1 Portal to Phyrexia
+1 Consign to Memory
+1 Cyclonic Rift
+1 Izzet Charm
+1 Negate
+1 Prismari Charm
+1 Return the Favor
+1 Think Twice
+1 Thrill of Possibility
+1 Untimely Malfunction
+1 Deflecting Swat
+1 Dissipate
+1 Fierce Guardianship
+1 Force of Negation
+1 Laughing Mad
+1 Stoic Rebuttal
+1 Urza's Rebuff
+1 Meeting of Minds
+1 Harmonized Crescendo
+1 Ponder
+1 Preordain
+1 Vandalblast
+1 Glacial Dragonhunt
+1 Inspiration from Beyond
+1 Deep Analysis
+1 Full Throttle
+1 Wisdom of Ages
+1 Blasphemous Act
+1 Frostcliff Siege
+1 Omniscience
+14 Island
+15 Mountain
+1 Baron, Airship Kingdom
+1 Fabled Passage
+1 Izzet Guildgate
+1 Lotus Field
+1 Swiftwater Cliffs
+1 Temple of the False God
+1 Thriving Isle
