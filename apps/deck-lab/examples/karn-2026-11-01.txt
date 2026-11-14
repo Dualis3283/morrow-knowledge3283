@@ -1,0 +1,103 @@
+# Dated deck fixture: 1 November 2026; 99 main cards + 1 commander.
+# Extracted from the original simulator definitions; no reconstructed additions.
+# Source: https://github.com/Dualis3283/morrow-knowledge3283/blob/1470bdef08dfb59530e27a28fbb137a58375e524/05-RESEARCH/MTG-SIMULATOR/ovika_vs_karn_heuristic.py
+# Simulator branch is unmerged PR #10; this is not a claim that the deck is current.
+# Import for manual testing. Many effects are unsupported by the new bounded engine.
+
+Commander
+1 Karn, Legacy Reforged
+
+Mainboard
+1 Karn, Living Legacy
+1 Karn, the Great Creator
+1 Ugin, the Ineffable
+1 Karn Liberated
+1 Ugin, Eye of the Storms
+1 Walking Ballista
+1 Junk Diver
+1 Palladium Myr
+1 Scarecrone
+1 Scrap Trawler
+1 Shimmer Myr
+1 Ultron, Artificial Malevolence
+1 Cryptothrall
+1 Silent Arbiter
+1 The Vision
+1 Voltaic Construct
+1 Geode Golem
+1 Karn, Silver Golem
+1 Duplicant
+1 Steel Hellkite
+1 Krang, Utrom Warlord
+1 Manifold Key
+1 Shadowspear
+1 Sol Ring
+1 Vexing Bauble
+1 Voltaic Key
+1 Lightning Greaves
+1 Strionic Resonator
+1 Swiftfoot Boots
+1 The Irencrag
+1 Thought Vessel
+1 Thran Power Suit
+1 Basalt Monolith
+1 Crucible of Worlds
+1 Mimic Vat
+1 Mirage Mirror
+1 Oblivion Stone
+1 Rings of Brighthearth
+1 Staff of Domination
+1 Sword of Feast and Famine
+1 Sword of Fire and Ice
+1 Sword of Sinew and Steel
+1 Whispersilk Cloak
+1 Grafted Exoskeleton
+1 Hammer of Nazahn
+1 Hedron Archive
+1 Mystic Forge
+1 Nevinyrral's Disk
+1 Portcullis
+1 Thran Dynamo
+1 Unwinding Clock
+1 Forsaken Monument
+1 Memory Jar
+1 Mirrorworks
+1 Mindslaver
+1 Mycosynth Lattice
+1 Planar Bridge
+1 Akroma's Memorial
+1 Spine of Ish Sah
+1 Wondrous Crucible
+1 Darksteel Forge
+1 All Is Dust
+1 Echoes of Eternity
+7 Wastes
+1 Adventurer's Inn
+1 Ancient Tomb
+1 Arch of Orazca
+1 Buried Ruin
+1 Captivating Cave
+1 Conduit Pylons
+1 Darksteel Citadel
+1 Desert
+1 Field of Ruin
+1 Foundry of the Consuls
+1 Ghost Quarter
+1 Hidden Grotto
+1 Inventors' Fair
+1 Lotus Field
+1 Nesting Grounds
+1 Power Depot
+1 Reliquary Tower
+1 Rogue's Passage
+1 Sanctum of Ugin
+1 Scorched Ruins
+1 Shrine of the Forsaken Gods
+1 Temple of the False God
+1 The Gold Saucer
+1 The Grey Havens
+1 Tomb of the Spirit Dragon
+1 Urza's Cave
+1 Vesuva
+1 War Room
+1 Witch's Clinic
