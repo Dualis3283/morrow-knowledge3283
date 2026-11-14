@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:morrow:visual-reasoning:record:0.2",
+  "title": "Morrow Visual Reasoning Record (candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "const": "0.2.0"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "enum": [
+        "evidence",
+        "analytical",
+        "explanatory",
+        "exploratory",
+        "interactive",
+        "none"
+      ]
+    },
+    "representation": {
+      "enum": [
+        "prose",
+        "table",
+        "chart",
+        "timeline",
+        "flow",
+        "network",
+        "map",
+        "annotated_image",
+        "decision_matrix",
+        "checklist",
+        "calculator",
+        "other"
+      ]
+    },
+    "data_origin": {
+      "enum": [
+        "observed",
+        "derived",
+        "simulated",
+        "illustrative",
+        "mixed",
+        "unknown"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "origin": {
+            "enum": [
+              "original",
+              "annotated",
+              "reconstructed",
+              "illustrative",
+              "text",
+              "synthetic"
+            ]
+          },
+          "bridge_record_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{2,127}$"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "origin",
+          "observed_at"
+        ]
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "$ref": "#/$defs/state"
+          },
+          "source_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "denominator": {
+            "type": "string"
+          },
+          "time_basis": {
+            "type": "string"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "state",
+          "source_ids"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "const": "confirmed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_ids": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "value"
+              ]
+            },
+            "then": {
+              "required": [
+                "unit"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "enum": [
+                    "unknown",
+                    "blocked"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "required": [
+                  "value"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "const": "interpretation"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_ids": {
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "relationship": {
+            "enum": [
+              "chronology",
+              "correlation",
+              "dependency",
+              "causation",
+              "proposed"
+            ]
+          },
+          "state": {
+            "$ref": "#/$defs/state"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "relationship",
+          "state",
+          "source_ids"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "const": "confirmed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_ids": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "const": "interpretation"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_ids": {
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "text_fallback": {
+      "type": "string",
+      "minLength": 1
+    },
+    "privacy": {
+      "enum": [
+        "public_safe",
+        "restricted",
+        "private",
+        "unreviewed"
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structural": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive",
+            "not_applicable"
+          ]
+        },
+        "source_fidelity": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive",
+            "not_applicable"
+          ]
+        },
+        "rendering": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive",
+            "not_applicable"
+          ]
+        },
+        "accessibility": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive",
+            "not_applicable"
+          ]
+        },
+        "independent_review": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive",
+            "not_applicable"
+          ]
+        }
+      },
+      "required": [
+        "structural",
+        "source_fidelity",
+        "rendering",
+        "accessibility",
+        "independent_review"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "renderer": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "question",
+    "audience",
+    "purpose",
+    "representation",
+    "data_origin",
+    "sources",
+    "claims",
+    "edges",
+    "text_fallback",
+    "privacy",
+    "verification",
+    "limitations"
+  ],
+  "$defs": {
+    "state": {
+      "enum": [
+        "confirmed",
+        "interpretation",
+        "hypothesis",
+        "unknown",
+        "blocked",
+        "superseded"
+      ]
+    }
+  }
+}
