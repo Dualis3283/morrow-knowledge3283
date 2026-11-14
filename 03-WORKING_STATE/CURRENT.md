@@ -1,5 +1,9 @@
 # Current Working State
 
+## Communication alignment and linguistic archive — 14 November 2026
+
+**Candidate implementation verified:** [resume checkpoint](COMMUNICATION_ALIGNMENT_HANDOFF_2026-11-14.md) records identity continuity, communication alignment, 11-source registry, three archived assets, 61 new regression tests, and implementation/CI receipts. Knowledge PR #36 and website PR #58 open and unmerged at checkpoint; recheck heads and CI. **Next:** reconcile merge/runtime dependencies and design paired baseline-versus-Morrow evaluation. No live model integration or measured cost savings established. This dated update supersedes conflicting older next-action prose for this scope only; Notion remains task authority.
+
 ## Cloudflare global adoption integration — 19 October 2026
 
 **Source implementation:** [PR #6](https://github.com/Dualis3283/morrow-knowledge3283/pull/6) added a stateless, public-safe Publisher and read-only experimental JSON-RPC/MCP adapter. GitHub Worker security/endpoint tests **15/15 passed** with repository privacy and safety CI. **Not a live release:** Cloudflare connections rejected authenticated reads (HTTP 400); no deployment, domain publication, model inference or independent MCP client conformance test occurred. The existing unrelated Workers Builds failure remains open. See [candidate handoff](../cloudflare/morrow-public/README.md), [Task Register TASK-007–010](TASK_REGISTER.md).
