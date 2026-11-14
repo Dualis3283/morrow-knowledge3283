@@ -44,3 +44,19 @@ Extend the proposed Entity Continuity Gate with these acceptance criteria:
 - Verify interpretation at the pre-write boundary and report the outcome separately from transcription quality. User corrections take precedence and become reviewed regression examples.
 
 Status: documented requirement; implementation and validation pending. This is a general communication-context safeguard, not an assertion that the user's dialect caused the incident.
+
+## Addendum — identifier, context and intent checkpoint
+
+User direction: leave verbal communication and language interpretation to the AI model; use the Morrow methodology to checkpoint identifiers, context and intent, extending the existing role-identifier approach rather than duplicating speech recognition.
+
+Architecture: model produces candidate interpretation; Morrow resolves references against authorised existing records, tests context and current intent, assesses uncertainty and consequence, and verifies the action target before persistent changes. A model interpretation is evidence, not authority. This is a proposed extension of the Entity Continuity Gate and Context Bridge, not an independent language engine.
+
+Existing foundations reviewed: [Relational Context Ruleset](../00-CORE/RELATIONAL_CONTEXT_RULESET.md) (roles are distinct from people; historical context informs but does not define), [Context Bridge](../02-KNOWLEDGE/CONTEXT_BRIDGE.md) (retrieval versus judgement, scope, freshness, difference checks), [Project Register](../01-PROJECTS/PROJECT_REGISTER.md) (canonical project records), and [Consistency Protocol](../00-CORE/CONSISTENCY_PROTOCOL.md) (risk-proportionate verification). Exact person-role identifier schema has not been recovered; integrate with it when verified rather than invent a replacement or conflate person identity with role.
+
+Proposed checkpoint fields: checkpoint_id; observed reference (minimal/authorised); candidate entity IDs and type; resolved entity ID; canonical label; role or relationship (separate and time-scoped); context scope; requested intent/action; target record/version/repository; source pointers and last confirmed date; confidence and unresolved ambiguity; authority/permission and risk; resolution outcome (accepted, downgraded, rejected, clarification required); action and verification receipts. Fields are conceptual, not a mandatory form for every conversational turn.
+
+Example: the model receives a phonetic variant of Morrow in a request to apply the method. The gate matches the existing Morrow entity, checks active task and requested operation, and records canonical references. In a Magic card context, the same string may refer to a different entity; do not merge by spelling alone. A role label such as manager refers to a relationship scoped to time and context, not a fixed person. The entity can remain stable while role, context and intent change.
+
+Acceptance criteria: equivalent intent expressed in different ways resolves to the same target; distinct entities with similar names do not merge; a changed role or explicit current correction supersedes historical assumptions; ambiguous consequential requests are clarified; simple low-risk conversation stays lightweight; persistent actions have verified target and separate outcome receipts. No voice recording or cultural profiling is required.
+
+Status: requirement recorded; integration with actual role identifier schema, machine-readable registry, checkpoint validation and regression tests pending. Do not claim speech recognition improvement or verified understanding solely from structural validation.
