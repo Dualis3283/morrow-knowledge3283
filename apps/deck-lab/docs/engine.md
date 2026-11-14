@@ -10,7 +10,7 @@ Additional state fields are `rngState`, `startingPlayer`, `combatDone`, `stats`,
 
 `upgradeGame` returns a migrated copy of an older saved table, and `act` applies the same migration before actions. Recognizable legacy `pN-commander` instances acquire the Commander fields wherever they currently reside, without marking ordinary cards with the same Scryfall definition ID as commanders. A missing historical cast count defaults to zero; earlier manual casts are not reconstructed from old logs.
 
-Phases are `opening`, `main`, and `finished`. `keep` ends opening-hand selection. Counted London mulligans redraw seven and require the exact number of bottom selections. There is no free mulligan. The auto policy takes at most two mulligans seeking 2–5 lands, then bottoms excess lands or expensive cards. An opening deck shorter than seven draws only available cards; subsequent failed draws end the test.
+State phases are `opening`, `upkeep` (while queued upkeep triggers are unresolved), `main`, and `finished`. `keep` ends opening-hand selection. Counted London mulligans redraw seven and require the exact number of bottom selections. There is no free mulligan. The auto policy takes at most two mulligans seeking 2–5 lands, then bottoms excess lands or expensive cards. An opening deck shorter than seven draws only available cards; subsequent failed draws end the test.
 
 Each round includes a turn for both players. On the play, the user skips their first draw; on the draw, the opponent acts first and skips their first draw. A missing opponent deck creates a passive goldfish opponent. Automated duel simulation requires both decks.
 
@@ -21,6 +21,15 @@ Tapping a known source manually adds its default color to the tracked pool. Unta
 The stack resolves last-in, first-out. Ordinary sorceries and permanents cannot be cast onto a nonempty stack. Supported instants can. Unknown spells can be put on the stack with their ordinary cost, but `resolve` rejects them. Resolve their actual effects yourself, then use `move` to place the card in its destination. Partial creature bodies can be resolved manually with an explicit omitted-abilities warning; automation skips them. A small set of partial mana sources and damage spells are automated only for their documented subset, with warnings and run notes.
 
 Manual `move` explicitly bypasses costs and effects. Zone changes clear counters, marked damage, deathtouch marks, and temporary buffs. Entering the battlefield sets the entry turn. Counter controls represent +1/+1 counters only.
+
+
+### Turn-step event and upkeep regression gate (candidate)
+
+Turn starts now record `untap → upkeep → draw → precombat-main` in `turnStepHistory`. Upkeep triggers are queued to the stack *before* the normal draw; resolving the last trigger advances automatically to the draw and main stages. Starting player's first-round draw is still skipped. The bounded combat action records beginning of combat, attackers, blockers, first strike, damage, end of combat and postcombat main; ending the turn records end step and cleanup. Omitted combat is explicitly marked `skipped` in audit history rather than claimed to have been fully simulated. These event receipts are not a complete MTG priority system.
+
+Named, audited upkeep adapters: Dreadhorde Invasion (life -1, amass Zombies 1 onto an Army or create 0/0 Zombie Army then counter), Bitterblossom (life -1, flying black Faerie Rogue), Phyrexian Arena (draw one then lose one), Ophiomancer (intervening-if Snake token at **each** player's upkeep), Assemble the Legion (muster counter then matching Soldier tokens). Stack effects remain individual and the draw step waits until they finish. Token doublers affect created tokens; counter replacement choice, multiple Army targeting, extra phases, full APNAP/player-controlled ordering, Dreadhorde's 6+ Zombie lifelink, non-upkeep step effects and general Oracle parsing are **not** fully automated.
+
+For other cards with recognized beginning-of-step Oracle phrases, `manualStepEvents` and warnings identify their source/turn/step rather than silently announcing that the ability resolved. Apply those abilities manually. A historical saved game without `turnStepHistory` is migrated conservatively; past turns are not reconstructed. Regression test: `tests/turn-steps-upkeep.test.mjs`. Commit/release/test/live-site gates remain separate.
 
 ## Commander practice controls
 
@@ -180,3 +189,14 @@ Nine deterministic engine regression tests cover own/opponent mills, empty libra
 **Tests and gates:** eight engine tests for named Ponder/Preordain, explicit ordering/draw count, deterministic shuffle, empty/no-hit reveal, invalid-order rejection, opponent reveal, save/restore and scripted policy. Browser 390px and 1440px exercise Ponder cast→modal→card reorder→draw, manual look allocations, reveal until nonland for opponent and reload persistence. Combined Android source currently passes 93 engine tests. PR branch, independent CI, Android packaging, production hash readback and physical Android device testing remain separate gates.
 
 **Open:** Multi-match/typed reveal variants such as Proteus Staff (first creature), Mass Polymorph (N creature cards), discover/cascade value restrictions, graveyard replacement effects, look/select Brainstorm hand-to-top and other bespoke Oracle choices. The generic manual tool permits human adjudication but is not a blanket automation claim.
+
+
+## Cross-phase timed trigger registry candidate — 3 November 2026
+
+The bounded step dispatcher now uses an explicit, audited **named-card registry** rather than unrestricted Oracle-text execution. On each player’s upkeep it supports the existing five adapters plus **Koma, Cosmos Serpent** (a blue 3/3 Koma’s Coil token) and **Tendershoot Dryad** (a green 1/1 Saproling). It queues these on **each** upkeep, including the opponent’s. Named token doublers apply to creation; Koma’s sacrifice choices, Tendershoot’s ascend/city’s blessing, and other printed effects are **not** modeled.
+
+**Bennie Bracks, Zoologist** is the first audited *each end step* adapter: `tokensCreatedThisTurn` tracks actual token entries for both players and resets at the start of every turn. A conditional Bennie trigger uses the normal stack, can be answered with a paid instant such as Stifle, and pauses the human end step; resolution resumes normal turn progression. Scripted opponent end-step triggers use a bounded deterministic auto-resolution without full priority. Existing Synthetic Destiny delayed-review behavior is retained.
+
+All thirteen turn stages have bounded provenance. Printed potential triggers at additional untap, attackers, blockers, damage and cleanup stages are logged only as **manual candidates**, never claimed to have fired automatically. Bypassed combat cannot fabricate attack, block or damage events. Simultaneous trigger choice/reordering, full APNAP priority, replacements, static bonuses, unknown card abilities and general Oracle implementation remain **out of scope**.
+
+**Verification:** Ten new Node regression cases cover both players’ upkeep, source order, token creation conditions, turn reset, reloaded end-step stack, countered trigger, opponent end-step and combat audit. A new 390px/1440px Playwright end-step browser regression is required in website Site QA. Repository CI, staging, deployment and live readback are separate release gates; this description is not proof of publication.
