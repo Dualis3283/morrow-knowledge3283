@@ -29,3 +29,18 @@ Risks: fragmented search and recall, duplicate task creation, missed dependencie
 - Reconcile prior relevant tasks if alias searching reveals missed records. No automatic blanket replacement or destructive cleanup.
 
 Owner: Morrow project workflow; user remains authority for entity naming. Future implementation is tracked as pending, not completed.
+
+## Addendum — cultural, dialect and individual communication context (2026-11-14)
+
+User clarification: cultural and dialect differences may contribute to misinterpretation and should be considered in continuity design. The system, not the speaker, must reconcile intent with established context. No particular accent, cultural identity, or causal speech-recognition defect is established by this incident; original audio and transcription evidence are unavailable.
+
+Distinguish expression (accent, dialect, idiom, personal shorthand), representation (speech-to-text or typed input), and meaning (current intent and established context). Treat a transcript as evidence, not definitive intent. Use user-confirmed aliases and demonstrated communication patterns; do not infer ethnicity, nationality, dialect or personal traits from location or impose stereotypes. Preserve dialect and wording where they are intentional, especially in quotations and creative work. Normalize operational identifiers only when context supports the mapping. If ambiguity materially affects a consequential action, ask a focused clarification rather than guessing. For low-risk, reversible work, proceed with an explicit assumption if needed.
+
+Extend the proposed Entity Continuity Gate with these acceptance criteria:
+
+- Test phonetic and orthographic variations, dialectal paraphrases, idioms, shorthand and ambiguous homonyms against the same canonical task or project identity; include legitimate unrelated names and intentionally new entities as negative controls.
+- Measure correct resolution, false merges, missed matches and clarification rate; evaluate whether equivalent intent yields equivalent action across expression variants. Use user-approved examples or synthetic examples; do not collect voice recordings or sensitive cultural profiles by default.
+- Keep observed expression separate from resolved identity and confidence. Store only necessary, approved alias/provenance data; do not silently convert hypotheses into facts or allow old preferences to override a current explicit correction.
+- Verify interpretation at the pre-write boundary and report the outcome separately from transcription quality. User corrections take precedence and become reviewed regression examples.
+
+Status: documented requirement; implementation and validation pending. This is a general communication-context safeguard, not an assertion that the user's dialect caused the incident.
