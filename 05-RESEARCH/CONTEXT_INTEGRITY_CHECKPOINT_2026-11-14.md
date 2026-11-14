@@ -68,3 +68,7 @@ Recovered the established role/identity principles in Morrow Ethos and Relationa
 ## Implementation candidate
 
 Public project registry, deterministic scoped resolver, role assignment fixtures and pre-write intent validation added. Operational naming lint checks repository-owned machine identifiers; historical prose and card datasets are outside its scope. Regression tests are integrated with the existing Morrow gate. No real private person mappings or runtime connector authority have been added. Production model integration, actual role schema recovery, private store/access policy, broad alias expansion and merge verification remain pending.
+
+## Communication alignment candidate
+
+Downloaded Glottolog 5.4 and MASSIVE 1.1, inspected actual archive counts, derived a compact 52-locale test sample, and stored three assets in an unpublished reference archive. Source registry records licences and restricted sources as links only. Added candidate protocol, deterministic structured decision gate and source selector with tests. Runtime integration and paired model measurement remain pending.

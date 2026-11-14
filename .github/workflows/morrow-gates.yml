@@ -26,6 +26,8 @@ jobs:
         run: |
           python3 05-RESEARCH/entity_role_resolver.py 02-KNOWLEDGE/entity-registry-v1.json
           python3 05-RESEARCH/entity_naming_gate.py .
+      - name: Validate linguistic source registry
+        run: python3 05-RESEARCH/linguistic_reference.py 06-SOURCES/linguistic-source-registry-v1.json
       - name: Scan entire public Git tree for privacy disclosures
         run: python3 05-RESEARCH/publication_privacy_scan.py .
       - name: Run repository gate and privacy regression tests
