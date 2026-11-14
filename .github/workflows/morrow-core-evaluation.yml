@@ -1,0 +1,27 @@
+name: Morrow Core matched evaluation harness
+on:
+  pull_request:
+    paths:
+      - '05-RESEARCH/core_matched_eval.py'
+      - '05-RESEARCH/test_core_matched_eval.py'
+      - '05-RESEARCH/CORE_MATCHED_EVALUATION_PROTOCOL_V0_1.md'
+      - '05-RESEARCH/PHASE3_LIVE_PILOT_FIXTURES_V0_1.json'
+      - '00-CORE/MORROW_CORE_V1_DRAFT.md'
+      - '.github/workflows/morrow-core-evaluation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  structural-negative-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline paired-evaluation preparation and negative regression
+        run: python3 -m unittest discover -s 05-RESEARCH -p 'test_core_matched_eval.py' -v
+      - name: Public repository privacy scan
+        run: python3 05-RESEARCH/publication_privacy_scan.py .
