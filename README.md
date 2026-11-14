@@ -14,6 +14,12 @@ Morrow is designed to preserve continuity across conversations, projects, decisi
 
 Canonical public-safe decision: [14 October strategic checkpoint](00-CORE/STRATEGIC_DIRECTION_2026-10-14.md).
 
+## Global adoption Cloudflare candidate — 19 October 2026
+
+The [Morrow public Worker candidate](cloudflare/morrow-public/README.md) implements a **public-safe read-only Publisher and experimental model-integration endpoint**. Source code merged via [PR #6](https://github.com/Dualis3283/morrow-knowledge3283/pull/6) at [commit 1431b6d](https://github.com/Dualis3283/morrow-knowledge3283/commit/1431b6d42e9e9f5cca9738082cf7d407091a4a55). GitHub tests passed **15/15**, together with privacy and repository safety checks. Its Worker is **not deployed**: Cloudflare account read/authentication returned HTTP 400, and its deployment configuration has no public hostname or route. No Core v1 release, live MCP conformance, private data export, AI inference, analytics collection or automated outreach was performed.
+
+Next: repair Cloudflare connection using the normal account authorisation flow (never paste secrets into public files); select a protected staging target; deploy only after environment review; independently test the live endpoints and obtain release approval. Verify, Observer and Outreach remain separate planned services, not completed deployments.
+
 ## Canonical structure
 
 ```text
@@ -79,7 +85,7 @@ This repository is public. Sensitive personal history, private files, unpublishe
 
 See [Current Working State](03-WORKING_STATE/CURRENT.md) and [Task Register](03-WORKING_STATE/TASK_REGISTER.md).
 
-Last consolidation: **2 October 2026**.
+Latest public-safe operational audit checkpoint: **19 October 2026**; prior detailed consolidation: 2 October 2026. See [pipeline audit](05-RESEARCH/MORROW_PIPELINE_AUDIT_2026-10-19.md).
 
 
 ### Ask Morrow staging
@@ -88,3 +94,10 @@ Last consolidation: **2 October 2026**.
 
 ### Ask Morrow Workers AI
 - `01-PROJECTS/ASK_MORROW_WORKERS_AI_CHECKPOINT.md` — free-provider evaluation, cost evidence, response-gate results and remaining system/UX gate.
+
+
+## Magic: The Gathering Deck Lab
+
+[Deck Lab](apps/deck-lab/) is an Android and browser deck-testing prototype. [Download the APK](apps/deck-lab/downloads/morrow-deck-lab-debug.apk), [get the source and instructions](apps/deck-lab/downloads/source.zip), or [view the playmat preview](apps/deck-lab/downloads/playmat-preview.png).
+
+It uses Scryfall card data and a bounded, seeded scripted opponent; complex effects and Commander rules require manual handling. See [instructions and validation](apps/deck-lab/README.md) before interpreting results.

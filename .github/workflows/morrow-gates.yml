@@ -1,0 +1,42 @@
+name: Morrow Context & Safety Gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-layer:
+    name: verify-layer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate content
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify canonical structure and state metadata
+        run: python3 05-RESEARCH/morrow_checkpoint_gate.py .
+      - name: Scan entire public Git tree for privacy disclosures
+        run: python3 05-RESEARCH/publication_privacy_scan.py .
+      - name: Run repository gate and privacy regression tests
+        run: python3 -m unittest discover -s 05-RESEARCH -p 'test_*.py' -v
+      - name: Validate Bridge draft if present in PR
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "morrow_bridge/validate.py" || -f "02-KNOWLEDGE/bridge-record-v0.1.schema.json" ]]; then
+            test -f requirements.txt
+            test -f morrow_bridge/validate.py
+            test -f 02-KNOWLEDGE/bridge-record-v0.1.schema.json
+            test -f tests/test_morrow_bridge.py
+            python3 -m pip install -r requirements.txt
+            python3 -m unittest discover -s tests -v
+          else
+            echo "Bridge candidate not present: NOT APPLICABLE (not verified)"
+          fi
