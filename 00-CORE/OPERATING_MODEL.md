@@ -105,3 +105,7 @@ Review this model when:
 - a new repository/tool/source becomes canonical;
 - a previous constraint is explicitly removed;
 - a recommendation materially fails despite following the current model.
+
+## Communication alignment (candidate)
+
+Apply [Communication Alignment Protocol](COMMUNICATION_ALIGNMENT_PROTOCOL.md) before expensive research or consequential action when scope or intent may be materially ambiguous. Answer clear requests directly. Acknowledge proportionately; recover context before asking; do not convert discussion into permission. Candidate implementation is not live integration.

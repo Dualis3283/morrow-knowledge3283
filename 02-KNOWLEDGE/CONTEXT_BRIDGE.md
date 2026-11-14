@@ -168,3 +168,11 @@ Add explicit Context Bridge outcomes:
 Also distinguish **direct analogy** from **abstract principle transfer**. A direct analogy may be rejected while a higher-level lesson remains valid.
 
 Metadata should be added **on use**, not through mass archive tagging.
+
+## Identifier resolution extension — candidate v1
+
+Before relevance assessment, resolve a model-supplied candidate mention using the scoped entity registry and resolver. See [Entity and Role Identifier Protocol](../00-CORE/ENTITY_ROLE_IDENTIFIER_PROTOCOL.md), [registry](entity-registry-v1.json), and [resolver](../05-RESEARCH/entity_role_resolver.py). Resolve only the identity needed for the task; historical role assignments use event date; ambiguity must not silently select a person. An accepted identity is not proof of intent or authority. The separate intent checkpoint binds the current action, scope and target, and requires independently supplied authority before marking a candidate ready. This library is a prototype, not a live AI-model integration. Private records belong in a separately authorised store, not the public registry.
+
+## Communication alignment extension (candidate)
+
+After identifier resolution, verify current intent and proportionate clarification via [Communication Alignment Protocol](../00-CORE/COMMUNICATION_ALIGNMENT_PROTOCOL.md). Recover known context first; linguistic references are optional evidence selected by task purpose via the [source registry](../06-SOURCES/linguistic-source-registry-v1.json), never inference about individual cultural identity.

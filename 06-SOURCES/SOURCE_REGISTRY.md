@@ -82,3 +82,7 @@ This registry points to authoritative or high-value source locations. It does no
 - Public-safe Morrow checkpoint: 07-ARCHIVE/WEBSITE_LAYOUT_PHOTO_CHECKPOINT_2026-10-12.md.
 - Source-specific report remains private under Dualis3283/david-walsh-site, docs/PHOTO_LAYOUT_REMEDIATION_2026-10-12.md. Do not copy private site source or the user's photos to this public knowledge repository.
 - Project-specific Notion record: Private Notion record — find by the heading above in the authenticated workspace .
+
+## Linguistic and communication references
+
+See [Linguistic Reference Library v1](LINGUISTIC_REFERENCE_LIBRARY.md) and [machine-readable registry](linguistic-source-registry-v1.json). Retrieve by purpose; check licence and privacy before ingestion.

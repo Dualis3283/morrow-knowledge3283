@@ -10,7 +10,7 @@ Recall is conditional on relevance, provenance, freshness and present user inten
 
 ## Portable checkpoint schema
 
-A retained MARO/Morrow record should include:
+A retained Morrow record should include:
 
 - `record_id`, `recorded_at_utc`, `scope`, `project`, `source_title`, `source_reference`, `source_timestamp`, `content_hash`
 - `classification`: public / approved personal / private; retrieval must obey current authorisation
@@ -52,3 +52,7 @@ Track number of runs, minutes, artifact bytes retained, cache occupancy, externa
 A useful record can suggest a question or hypothesis, but never silently choose the answer. Tell the user what was recalled, when it applied, what has changed and how strong its evidence is. If newer evidence conflicts, re-evaluate rather than privileging memory.
 
 This extension supplements, not replaces, 00-CORE/CONSISTENCY_PROTOCOL.md, 00-CORE/RELATIONAL_CONTEXT_RULESET.md and 00-CORE/PUBLICATION_PRIVACY.md.
+
+## Canonical project terminology
+
+Use **Morrow** (M-O-R-R-O-W) in prose, **MORROW** in uppercase labels, and `morrow` in machine identifiers, paths and workflow names. Normalize speech-to-text variants when they refer to this project. Preserve unrelated proper names and source quotations, immutable history, artifact IDs and evidence digests.

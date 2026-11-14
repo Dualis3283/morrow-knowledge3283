@@ -1,0 +1,199 @@
+{
+  "schema_version": "morrow-linguistic-sources-1",
+  "reviewed_on": "2026-11-14",
+  "archive_status": "unpublished_review_draft",
+  "sources": [
+    {
+      "id": "glottolog",
+      "name": "Glottolog",
+      "version": "5.4",
+      "url": "https://glottolog.org/download",
+      "terms_url": "https://glottolog.org/download",
+      "license": "CC-BY-4.0",
+      "status": "archived",
+      "runtime_allowed": true,
+      "purposes": [
+        "language_identity"
+      ],
+      "attribution": "Hammarström, Forkel, Haspelmath and Bank (2026), Glottolog 5.4, MPI-EVA.",
+      "limitations": "Languoid classifications, not speech acts, cadence or individual intent."
+    },
+    {
+      "id": "massive",
+      "name": "MASSIVE",
+      "version": "1.1",
+      "url": "https://github.com/alexa/massive",
+      "terms_url": "https://github.com/alexa/massive/blob/main/NOTICE.md",
+      "license": "CC-BY-4.0",
+      "status": "archived",
+      "runtime_allowed": true,
+      "purposes": [
+        "intent"
+      ],
+      "attribution": "Amazon.com Inc. or affiliates; FitzGerald et al. (2022), MASSIVE; Bastianelli et al. (2020), SLURP.",
+      "limitations": "Localized single-shot assistant utterances; not natural dialogue, cultural identity or clarification benchmark."
+    },
+    {
+      "id": "clarin",
+      "name": "CLARIN Virtual Language Observatory",
+      "url": "https://vlo.clarin.eu/",
+      "terms_url": "https://vlo.clarin.eu/",
+      "license": "resource-specific",
+      "status": "catalogue_only",
+      "runtime_allowed": false,
+      "purposes": [
+        "discovery"
+      ],
+      "attribution": "CLARIN ERIC",
+      "limitations": "Catalogue access does not authorize copying individual corpora."
+    },
+    {
+      "id": "olac",
+      "name": "Open Language Archives Community",
+      "url": "https://www.language-archives.org/",
+      "terms_url": "https://www.language-archives.org/",
+      "license": "resource-specific",
+      "status": "catalogue_only",
+      "runtime_allowed": false,
+      "purposes": [
+        "discovery"
+      ],
+      "attribution": "OLAC",
+      "limitations": "Check each record and source licence."
+    },
+    {
+      "id": "common-voice",
+      "name": "Mozilla Common Voice",
+      "url": "https://commonvoice.mozilla.org/datasets",
+      "terms_url": "https://github.com/common-voice/cv-dataset",
+      "license": "CC0-1.0",
+      "status": "deferred",
+      "runtime_allowed": false,
+      "purposes": [
+        "speech"
+      ],
+      "attribution": "Mozilla Common Voice contributors",
+      "limitations": "Large voice datasets; review exact release, access terms, privacy and evaluation purpose first; no personal profiling."
+    },
+    {
+      "id": "talkbank",
+      "name": "TalkBank",
+      "url": "https://talkbank.org/0share/data.html",
+      "terms_url": "https://talkbank.org/0share/rules.html",
+      "license": "usually CC-BY-NC-SA-3.0; item-specific",
+      "status": "restricted",
+      "runtime_allowed": false,
+      "purposes": [
+        "repair",
+        "pragmatics"
+      ],
+      "attribution": "TalkBank and individual corpus contributors",
+      "limitations": "Noncommercial and web-processing restrictions; access levels vary. Do not ingest or redistribute by default."
+    },
+    {
+      "id": "spice-ireland",
+      "name": "SPICE-Ireland",
+      "url": "https://johnmkirk.co.uk/research-projects-SPICE-ireland",
+      "terms_url": "https://www.ice-corpora.uzh.ch/en/access.html",
+      "license": "licence required",
+      "status": "restricted",
+      "runtime_allowed": false,
+      "purposes": [
+        "pragmatics",
+        "speech"
+      ],
+      "attribution": "Kallen and Kirk, SPICE-Ireland",
+      "limitations": "Prosody and pragmatic annotation; obtain corpus licence first."
+    },
+    {
+      "id": "idea",
+      "name": "International Dialects of English Archive",
+      "url": "https://www.dialectsarchive.com/",
+      "terms_url": "https://www.dialectsarchive.com/copyright-credit-information",
+      "license": "copyright; permission required",
+      "status": "restricted",
+      "runtime_allowed": false,
+      "purposes": [
+        "speech"
+      ],
+      "attribution": "International Dialects of English Archive",
+      "limitations": "No audio copying or distribution without permission."
+    },
+    {
+      "id": "ehraf",
+      "name": "eHRAF World Cultures",
+      "url": "https://ehrafworldcultures.yale.edu/",
+      "terms_url": "https://ehrafworldcultures.yale.edu/terms",
+      "license": "subscription and restricted use",
+      "status": "restricted",
+      "runtime_allowed": false,
+      "purposes": [
+        "culture"
+      ],
+      "attribution": "Human Relations Area Files, Yale",
+      "limitations": "No scraping, broad copying or third-party LLM submission under terms; no runtime ingestion."
+    },
+    {
+      "id": "paradisec",
+      "name": "PARADISEC",
+      "url": "https://www.paradisec.org.au/",
+      "terms_url": "https://www.paradisec.org.au/deposit/",
+      "license": "item/depositor-specific",
+      "status": "restricted",
+      "runtime_allowed": false,
+      "purposes": [
+        "culture",
+        "speech"
+      ],
+      "attribution": "PARADISEC and depositors",
+      "limitations": "Permissions vary; culturally sensitive primary recordings require care."
+    },
+    {
+      "id": "repair-study",
+      "name": "Universal Principles in the Repair of Communication Problems",
+      "url": "https://doi.org/10.1371/journal.pone.0136100",
+      "terms_url": "https://pubmed.ncbi.nlm.nih.gov/26375483/",
+      "license": "article reference only",
+      "status": "reference_only",
+      "runtime_allowed": false,
+      "purposes": [
+        "repair"
+      ],
+      "attribution": "Dingemanse et al. (2015)",
+      "limitations": "Research evidence, not a downloaded dataset or a validated Morrow outcome."
+    }
+  ],
+  "assets": [
+    {
+      "source_id": "glottolog",
+      "filename": "glottolog-5.4-languoid.csv.zip",
+      "bytes": 591763,
+      "sha256": "74a6874c4945ca5f9ac2157bcd97d1adf142290e30cd7b854d212648458d15ee",
+      "records": 27275,
+      "kind": "original",
+      "upstream_download": "https://zenodo.org/records/24104033/files/glottolog_languoid.csv.zip?download=1",
+      "archive_tag": "linguistic-reference-2026-11-14-v1"
+    },
+    {
+      "source_id": "massive",
+      "filename": "amazon-massive-dataset-1.1.tar.gz",
+      "bytes": 40251390,
+      "sha256": "4cba5faa11c71437928e17cb1b9b3d8b8e727e7ea363a3a9a8045e19c0491577",
+      "records": 859092,
+      "kind": "original",
+      "upstream_download": "https://amazon-massive-nlu-dataset.s3.amazonaws.com/amazon-massive-dataset-1.1.tar.gz",
+      "archive_tag": "linguistic-reference-2026-11-14-v1"
+    },
+    {
+      "source_id": "massive",
+      "filename": "massive-1.1-test-intent-sample.jsonl.gz",
+      "bytes": 85415,
+      "sha256": "6c24c413dc3596d3f7311dfa4172cfd3454f44977161a923bfca988b7902eedf",
+      "records": 3068,
+      "kind": "derived",
+      "upstream_download": null,
+      "archive_tag": "linguistic-reference-2026-11-14-v1"
+    }
+  ],
+  "limitations": "No personal cultural inference; retrieval by task purpose only; archive is not a complete cultural corpus. Derived sample uses first test row per intent and locale, with only id, locale, partition, scenario, intent, utt; not independently sampled across locales."
+}
