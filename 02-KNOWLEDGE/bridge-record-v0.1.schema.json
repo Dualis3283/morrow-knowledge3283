@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:morrow:bridge-record:0.1",
+  "title": "Morrow Context Bridge Candidate Record v0.1",
+  "description": "Structural envelope only; validity does not prove external consent, authenticity, facts or model conformance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "kind",
+    "subject",
+    "captured_at",
+    "status",
+    "scope",
+    "authority",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "record_id": {
+      "$ref": "#/$defs/recordId"
+    },
+    "kind": {
+      "enum": [
+        "fact",
+        "decision",
+        "lesson",
+        "preference",
+        "hypothesis",
+        "failure_pattern",
+        "tombstone"
+      ]
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "provisional",
+        "confirmed",
+        "superseded",
+        "retracted",
+        "tombstone"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "session",
+        "project",
+        "cross_project",
+        "general"
+      ]
+    },
+    "authority": {
+      "enum": [
+        "user_explicit",
+        "observed_external",
+        "tool_receipt",
+        "assistant_inference"
+      ]
+    },
+    "provenance": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 25,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "relevance": {
+      "$ref": "#/$defs/relevance"
+    },
+    "supersession": {
+      "$ref": "#/$defs/supersession"
+    },
+    "action": {
+      "$ref": "#/$defs/action"
+    },
+    "verification": {
+      "$ref": "#/$defs/verification"
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    },
+    "deletion": {
+      "$ref": "#/$defs/deletion"
+    }
+  },
+  "$defs": {
+    "recordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{2,127}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "kind",
+        "pointer",
+        "observed_at",
+        "claim_status"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/recordId"
+        },
+        "kind": {
+          "enum": [
+            "local",
+            "url",
+            "hash",
+            "direct_observation",
+            "user_statement"
+          ]
+        },
+        "pointer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "claim_status": {
+          "enum": [
+            "confirmed",
+            "uncertain",
+            "hypothesis",
+            "unknown",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "share_policy",
+        "retention"
+      ],
+      "properties": {
+        "classification": {
+          "enum": [
+            "public",
+            "private",
+            "restricted"
+          ]
+        },
+        "share_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allowed",
+            "destinations"
+          ],
+          "properties": {
+            "allowed": {
+              "type": "boolean"
+            },
+            "destinations": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "local",
+                  "other_model",
+                  "public"
+                ]
+              }
+            }
+          }
+        },
+        "retention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy"
+          ],
+          "properties": {
+            "policy": {
+              "enum": [
+                "ephemeral",
+                "until_deleted",
+                "until_date"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "deletion_requested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "redacted": {
+          "type": "boolean"
+        }
+      }
+    },
+    "relevance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "material_differences",
+        "checked_at"
+      ],
+      "properties": {
+        "basis": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "material_differences": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          }
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "weight": {
+          "enum": [
+            "rejected",
+            "possible",
+            "supported"
+          ]
+        }
+      }
+    },
+    "supersession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supersedes"
+      ],
+      "properties": {
+        "supersedes": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/recordId"
+          }
+        },
+        "superseded_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/recordId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "proposed",
+            "attempted",
+            "accepted",
+            "active",
+            "verified",
+            "user_confirmed",
+            "failed",
+            "blocked"
+          ]
+        },
+        "receipt_ref": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "method"
+      ],
+      "properties": {
+        "result": {
+          "enum": [
+            "not_run",
+            "passed",
+            "failed",
+            "inconclusive"
+          ]
+        },
+        "method": {
+          "enum": [
+            "none",
+            "tool_receipt",
+            "independent_readback",
+            "test",
+            "human_review"
+          ]
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/recordId"
+          }
+        },
+        "limitations": {
+          "type": "string",
+          "maxLength": 800
+        }
+      }
+    },
+    "deletion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_record_id",
+        "requested_at",
+        "outcome"
+      ],
+      "properties": {
+        "target_record_id": {
+          "$ref": "#/$defs/recordId"
+        },
+        "requested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outcome": {
+          "enum": [
+            "pending",
+            "local_removed",
+            "partial",
+            "unavailable"
+          ]
+        },
+        "limitations": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "tombstone"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "deletion"
+        ],
+        "properties": {
+          "status": {
+            "const": "tombstone"
+          },
+          "privacy": {
+            "properties": {
+              "share_policy": {
+                "properties": {
+                  "allowed": {
+                    "const": false
+                  },
+                  "destinations": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "summary"
+              ]
+            },
+            {
+              "required": [
+                "provenance"
+              ]
+            },
+            {
+              "required": [
+                "action"
+              ]
+            },
+            {
+              "required": [
+                "verification"
+              ]
+            },
+            {
+              "required": [
+                "relevance"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "summary",
+          "provenance"
+        ],
+        "not": {
+          "required": [
+            "deletion"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "superseded"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "supersession"
+        ],
+        "properties": {
+          "supersession": {
+            "required": [
+              "superseded_by"
+            ],
+            "properties": {
+              "superseded_by": {
+                "$ref": "#/$defs/recordId"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "preference"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authority": {
+            "enum": [
+              "user_explicit",
+              "assistant_inference"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
