@@ -16,14 +16,14 @@ The archived Scarab God deck exercised blue/black filtering and comparison with 
 
 The first mobile review exposed a narrow evidence column beside the card image. Moving the comparison across the full result width improved readability. A separate export regression exposed browser setup in code also used by project serialization tests. Moving that setup beside the existing UI listeners restored all nine project regression tests. The offline runner permits the local Finder frame only on the Planner route.
 
-![Mobile comparison of Swamp and Underground Sea with an editable reason](land-comparison-390.jpg)
-
 ## Transfer to other projects
 
 For the Simulator, pair a selected card with its actual turn event and preserve round position on return. In the HAR and Console Inspector, retain the surrounding events while tracing a correlation ID. Distinguish a nearby timestamp from a shared identifier and an untimed console line from a timestamped event. Judge both tools by whether the user can return to the same investigation and explain the evidence behind the selection.
 
-## Release record
+## Release and rollback
 
-Merged to website main at `65a0d9d42d96a2232c5e83a02405aaf241394ce6`. Pull-request QA passed. Production promotion and live readback are pending at this checkpoint.
+The website main and production refs matched `65a0d9d42d96a2232c5e83a02405aaf241394ce6`. The public Planner HTML, Finder HTML and JavaScript, and calculator stylesheet matched the reviewed release. A second Chromium pass exercised the public URL at all three widths, recovered the saved comparison after a reload and preserved the decklist. Reviewer verification is complete. Owner confirmation remains open.
 
-[Website implementation](https://github.com/Dualis3283/david-walsh-site/pull/69) · [Pull-request Site QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/44946460634) · [Main Site QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/44946949587)
+Revert the site merge through normal Site QA and promotion if necessary. Comparison notes use the existing project format and remain readable after rollback.
+
+[Website implementation](https://github.com/Dualis3283/david-walsh-site/pull/69) · [Pull-request Site QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/44946460634) · [Main Site QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/44946949587) · [Production promotion](https://github.com/Dualis3283/david-walsh-site/actions/runs/44947517712)
