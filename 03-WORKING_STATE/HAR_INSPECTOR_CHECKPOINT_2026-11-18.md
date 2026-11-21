@@ -9,3 +9,11 @@
 **Verification** — All 65 HAR and console unit tests passed. Browser checks jumped to the last match in 3,602 requests, verified the preceding row remained visible and compared clipboard text with the displayed trace. Pull-request QA, main QA and production promotion succeeded. The public inspector assets and offline ZIP matched the release. [Site PR #61](https://github.com/Dualis3283/david-walsh-site/pull/61) · [Main QA](https://github.com/Dualis3283/david-walsh-site/actions/runs/44289896123) · [Production promotion](https://github.com/Dualis3283/david-walsh-site/actions/runs/44290475924)
 
 **Resume point** — Dave’s confirmation that jumping between repeated IDs and pasting the timing reference works for his usual investigation workflow.
+
+## 21 November cross-project learning (planned)
+
+The Deck Planner review exposed a useful distinction for investigations. Counting a matching card in a draw sample establishes that it was seen. Establishing that it could be played at that time needs separate evidence. Likewise a shared correlation ID links records for inspection. Causality needs evidence from the recorded sequence and source.
+
+Retain the current search behaviour and neighbouring events. For a future export, evaluate including the schema version, event source, line or timestamp, active search scope and the basis for each link. Keep captured identifiers and inferred relationships separately labelled. Reuse the existing redaction controls.
+
+Acceptance example: export a synthetic trace with repeated IDs, one console line without a timestamp and an intervening unrelated event. A second reviewer should be able to recover the same selection and its neighbours offline, distinguish observed ordering from inferred ordering, and identify which values were redacted. No Inspector runtime change or additional data collection was made in this review.
